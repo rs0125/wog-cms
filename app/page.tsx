@@ -1,69 +1,79 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+// Keyed to the ?error= values the OAuth routes redirect back with.
+const ERROR_MESSAGES: Record<string, string> = {
+  oauth_not_configured: "Google sign-in isn't configured yet.",
+  missing_code: 'Google sign-in was cancelled.',
+  invalid_state: 'Sign-in session expired. Please try again.',
+  token_exchange_failed: 'Could not complete Google sign-in.',
+  no_access_token: 'Could not complete Google sign-in.',
+  userinfo_failed: 'Could not read your Google profile.',
+  email_not_verified: 'Your Google email is not verified.',
+  not_allowed: 'That account is not on the CMS allowlist. Ask an admin to add you.',
+  access_denied: 'You declined the Google sign-in prompt.',
+};
+
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  if (await getCurrentUser()) redirect('/guides');
+
+  const sp = await searchParams;
+  const rawErr = typeof sp.error === 'string' ? sp.error : null;
+  const email = typeof sp.email === 'string' ? sp.email : null;
+  const err = rawErr
+    ? `${ERROR_MESSAGES[rawErr] ?? 'Sign-in failed.'}${email ? ` (${email})` : ''}`
+    : null;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="flex min-h-screen items-center justify-center p-6">
+      <div className="w-full max-w-sm rounded-2xl border border-wareongo-blue/20 bg-white p-8">
+        <span className="cms-eyebrow mb-3 block">WareOnGo</span>
+        <h1 className="font-display text-3xl text-wareongo-blue">Content Studio</h1>
+        <p className="mt-2 mb-7 text-sm text-wareongo-slate">
+          Sign in with your WareOnGo Google account to manage site content.
+        </p>
+
+        {err && (
+          <p className="mb-5 rounded-xl border border-wareongo-sienna/30 bg-wareongo-sienna/5 px-4 py-2.5 text-sm text-wareongo-sienna">
+            {err}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+        )}
+
+        <a
+          href="/api/auth/google"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-wareongo-blue/25 bg-white px-5 py-3 text-sm font-semibold text-wareongo-charcoal transition-colors hover:bg-wareongo-blue/5"
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+            <path
+              fill="#FFC107"
+              d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <path
+              fill="#FF3D00"
+              d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"
+            />
+            <path
+              fill="#4CAF50"
+              d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
+            />
+            <path
+              fill="#1976D2"
+              d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571.001-.001.002-.001.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+            />
+          </svg>
+          Continue with Google
+        </a>
+
+        <p className="mt-4 text-xs text-wareongo-slate">
+          Access is limited to the emails in <code>CMS_ALLOWED_EMAILS</code>.
+        </p>
+      </div>
+    </main>
   );
 }

@@ -1,26 +1,73 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Design tokens ported from the website's tailwind.config.ts so the CMS and the
+   live site share one palette, and so the guide preview can reuse the public
+   renderer's exact class names (text-wareongo-blue, bg-wareongo-blue/5, …).
+   Tailwind 4 has no JS config — @theme is the equivalent.
+   Keep in sync with wareongo-website/tailwind.config.ts. */
+@theme {
+  --color-wareongo-blue: #0a2239;
+  --color-wareongo-green: #3d5a4a;
+  --color-wareongo-sienna: #b3502d;
+  --color-wareongo-purple: #4a2e50;
+  --color-wareongo-ivory: #f8f6f1;
+  --color-wareongo-slate: #6c757d;
+  --color-wareongo-charcoal: #343a40;
+
+  /* Variables supplied by next/font in app/layout.tsx. */
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--color-wareongo-ivory);
+    color: var(--color-wareongo-charcoal);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Shared form idiom, matching the site's flat stroked treatment: full-strength
+   borders, generous radii, no shadows. Defined once here rather than repeated
+   as long class strings across every field. */
+@layer components {
+  .cms-label {
+    @apply block text-[11px] font-semibold uppercase tracking-[0.14em] text-wareongo-slate mb-1.5;
+  }
+
+  .cms-input {
+    @apply w-full rounded-xl border border-wareongo-blue/25 bg-white px-3.5 py-2.5 text-[15px] text-wareongo-charcoal
+      outline-none transition-colors placeholder:text-wareongo-slate/50
+      focus:border-wareongo-blue focus:ring-2 focus:ring-wareongo-blue/10;
+  }
+
+  .cms-hint {
+    @apply mt-1.5 text-xs text-wareongo-slate;
+  }
+
+  .cms-card {
+    @apply rounded-2xl border border-wareongo-blue/20 bg-white p-4;
+  }
+
+  .cms-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-wareongo-blue/25 bg-white px-3 py-1.5
+      text-xs font-medium text-wareongo-blue transition-colors hover:bg-wareongo-blue/5
+      disabled:pointer-events-none disabled:opacity-30;
+  }
+
+  .cms-btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-wareongo-blue px-5 py-2.5 text-sm font-semibold
+      text-white transition-colors hover:bg-wareongo-blue/90 disabled:opacity-50;
+  }
+
+  .cms-btn-danger {
+    @apply inline-flex items-center justify-center rounded-xl border border-wareongo-sienna/40 bg-white px-3 py-1.5
+      text-xs font-medium text-wareongo-sienna transition-colors hover:bg-wareongo-sienna/5
+      disabled:pointer-events-none disabled:opacity-30;
+  }
+
+  .cms-eyebrow {
+    @apply text-[10px] uppercase tracking-[0.2em] text-wareongo-slate sm:text-xs;
+  }
 }

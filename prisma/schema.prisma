@@ -1,0 +1,45 @@
+// ⚠️  The BACKEND repo (WareOnGo-Website-Backend/prisma/schema.prisma) owns this
+// database's schema. This file deliberately declares ONLY the tables the CMS
+// touches, so the generated client cannot reach anything else.
+//
+// NEVER run `prisma db push`, `prisma db pull` or `prisma migrate` from this
+// app. Pushing this partial schema would drop every table it omits. Schema
+// changes go in the backend repo; mirror them here by hand afterwards.
+//
+// Safe to run here: `prisma generate`.
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/// Mirror of the Guide model in the backend schema — keep in sync by hand.
+model Guide {
+  id            Int         @id @default(autoincrement())
+  slug          String      @unique
+  title         String
+  seoTitle      String
+  description   String
+  summary       String
+  keywords      String[]    @default([])
+  blocks        Json
+  faqs          Json
+  related       String[]    @default([])
+  datePublished DateTime?   @db.Date
+  dateModified  DateTime    @db.Date
+  sortOrder     Int         @default(0)
+  status        GuideStatus @default(DRAFT)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+enum GuideStatus {
+  DRAFT
+  PUBLISHED
+}
