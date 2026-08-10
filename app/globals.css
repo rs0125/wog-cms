@@ -14,9 +14,8 @@
   --color-wareongo-slate: #6c757d;
   --color-wareongo-charcoal: #343a40;
 
-  /* Variables supplied by next/font in app/layout.tsx. */
+  /* Supplied by next/font in app/layout.tsx. Montserrat throughout — no serif. */
   --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
 }
 
 @layer base {
@@ -65,6 +64,12 @@
     @apply inline-flex items-center justify-center rounded-xl border border-wareongo-sienna/40 bg-white px-3 py-1.5
       text-xs font-medium text-wareongo-sienna transition-colors hover:bg-wareongo-sienna/5
       disabled:pointer-events-none disabled:opacity-30;
+  }
+
+  /* Page/section heading. Montserrat at a tight tracking, which is how the
+     public site sets its bold headings. */
+  .cms-title {
+    @apply font-bold tracking-tight text-wareongo-blue;
   }
 
   .cms-eyebrow {

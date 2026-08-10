@@ -1,4 +1,6 @@
+import Image from 'next/image';
 import { redirect } from 'next/navigation';
+import logo from '@/public/wareongo-logo.webp';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +14,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   no_access_token: 'Could not complete Google sign-in.',
   userinfo_failed: 'Could not read your Google profile.',
   email_not_verified: 'Your Google email is not verified.',
-  not_allowed: 'That account is not on the CMS allowlist. Ask an admin to add you.',
+  not_allowed: "That account doesn't have access. Ask an admin to grant it.",
   access_denied: 'You declined the Google sign-in prompt.',
 };
 
@@ -33,8 +35,11 @@ export default async function SignInPage({
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-2xl border border-wareongo-blue/20 bg-white p-8">
-        <span className="cms-eyebrow mb-3 block">WareOnGo</span>
-        <h1 className="font-display text-3xl text-wareongo-blue">Content Studio</h1>
+        <div className="mb-4 flex items-center gap-2.5">
+          <Image src={logo} alt="WareOnGo" priority className="h-7 w-auto" />
+          <span className="text-sm font-bold tracking-widest text-wareongo-blue">WAREONGO</span>
+        </div>
+        <h1 className="cms-title text-3xl">Content Studio</h1>
         <p className="mt-2 mb-7 text-sm text-wareongo-slate">
           Sign in with your WareOnGo Google account to manage site content.
         </p>
@@ -70,9 +75,6 @@ export default async function SignInPage({
           Continue with Google
         </a>
 
-        <p className="mt-4 text-xs text-wareongo-slate">
-          Access is limited to the emails in <code>CMS_ALLOWED_EMAILS</code>.
-        </p>
       </div>
     </main>
   );

@@ -1,9 +1,12 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { guideSchema } from '@/lib/guide-schema';
 import { requireUser } from '@/lib/auth';
+import { deployHookUrl } from '@/lib/deploy';
+import { contentOf, type DeployedContent } from '@/lib/staging';
 
 export type SaveResult = { ok: false; error: string } | { ok: true };
 
@@ -116,7 +119,30 @@ export async function updateGuide(_prev: SaveResult | undefined, formData: FormD
   try {
     const guide = parseForm(formData);
     await assertRelatedExist(guide.related, guide.slug);
-    await prisma.guide.update({ where: { id }, data: toRow(guide) });
+
+    // Optimistic concurrency, folded into the write itself: `updatedAt` is part
+    // of the WHERE, so the update only lands if the row is still the version
+    // this form was rendered from. Doing it as a separate read first would cost
+    // an extra round trip *and* leave a window for another save to slip in
+    // between the check and the write.
+    const expected = String(formData.get('expectedUpdatedAt') ?? '');
+    if (expected) {
+      const { count } = await prisma.guide.updateMany({
+        where: { id, updatedAt: new Date(expected) },
+        data: toRow(guide),
+      });
+      if (count === 0) {
+        // Only now pay for a second query, to say which of the two happened.
+        const stillThere = await prisma.guide.findUnique({ where: { id }, select: { id: true } });
+        throw new EditorError(
+          stillThere
+            ? 'This guide was changed somewhere else after you opened it. Reload to see the current version — saving now would overwrite that change.'
+            : 'That guide no longer exists.',
+        );
+      }
+    } else {
+      await prisma.guide.update({ where: { id }, data: toRow(guide) });
+    }
   } catch (err) {
     return { ok: false, error: messageFor(err) };
   }
@@ -153,4 +179,170 @@ export async function deleteGuide(_prev: string | undefined, formData: FormData)
     return messageFor(err);
   }
   redirect('/guides');
+}
+
+/**
+ * Persists a new order from the drag-and-drop list. Rewrites sortOrder to the
+ * array position, so the result is always 0..n-1 with no ties — which is also
+ * why the duplicate-order warning only ever applies to older rows.
+ *
+ * One transaction: a partial reorder would leave the list in a state nobody
+ * chose.
+ */
+export async function reorderGuides(
+  _prev: string | undefined,
+  formData: FormData,
+): Promise<string | undefined> {
+  await requireUser();
+
+  let ids: number[];
+  try {
+    ids = JSON.parse(String(formData.get('ids') ?? '[]'));
+    if (!Array.isArray(ids) || ids.some((n) => !Number.isInteger(n))) throw new Error('bad ids');
+  } catch {
+    return 'Could not read the new order.';
+  }
+
+  try {
+    const existing = await prisma.guide.findMany({ select: { id: true } });
+    // Reject a stale submission rather than silently dropping a guide that was
+    // created or deleted in another tab while this list was open.
+    if (existing.length !== ids.length || existing.some((g) => !ids.includes(g.id))) {
+      return 'The guide list changed since this page loaded. Reload and try again.';
+    }
+
+    await prisma.$transaction(
+      ids.map((id, i) => prisma.guide.update({ where: { id }, data: { sortOrder: i } })),
+    );
+  } catch (err) {
+    return messageFor(err);
+  }
+  redirect('/guides?reordered=1');
+}
+
+/**
+ * Triggers a production build of the *website* (not this app) via a Vercel
+ * Deploy Hook, which is how CMS changes actually reach wareongo.com.
+ *
+ * A Deploy Hook URL needs no auth header — the unique id in the URL *is* the
+ * credential, so anyone holding it can deploy. It's read from the environment
+ * and never sent to the browser.
+ *
+ * Vercel allows 60 triggers per hour per project, and re-triggering cancels an
+ * in-flight build for the same hook, so a double-click is harmless.
+ */
+// Takes no arguments: useActionState passes (prevState, formData), but this
+// action reads neither, and a zero-arg function is assignable to that shape.
+export async function triggerSiteBuild(): Promise<string | undefined> {
+  await requireUser();
+
+  const hook = deployHookUrl();
+  if (!hook.ok) return hook.error;
+
+  // Step 1 — trigger the build.
+  let jobId: string | undefined;
+  try {
+    const res = await fetch(hook.url, { method: 'POST', cache: 'no-store' });
+    if (!res.ok) {
+      console.error('[deploy-hook] failed:', res.status, await res.text().catch(() => ''));
+      return res.status === 429
+        ? 'Vercel is rate-limiting builds (60/hour). Try again shortly.'
+        : `Vercel refused the request (${res.status}).`;
+    }
+    // Shape per Vercel's docs: { job: { id, state, createdAt } }
+    const body = (await res.json().catch(() => null)) as { job?: { id?: string } } | null;
+    jobId = body?.job?.id;
+  } catch (err) {
+    console.error('[deploy-hook] error:', err);
+    return 'Could not reach Vercel. Check the server logs.';
+  }
+
+  const started = `Build started${jobId ? ` (job ${jobId})` : ''}.`;
+
+  // Step 2 — record what went out, in its own try. The build is already running
+  // by this point, so a failure here must not be reported as a failed deploy:
+  // that would be a lie, and it would hide the real problem (badges stuck on
+  // Staged because the snapshot never advanced).
+  try {
+    // Selects only what contentOf() reads. A bare findMany() would also pull
+    // every row's existing deployedContent — a second full copy of the content —
+    // purely to throw it away.
+    const all = await prisma.guide.findMany({
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        seoTitle: true,
+        description: true,
+        summary: true,
+        keywords: true,
+        blocks: true,
+        faqs: true,
+        related: true,
+        datePublished: true,
+        dateModified: true,
+        sortOrder: true,
+        status: true,
+      },
+    });
+    const now = new Date();
+    await prisma.$transaction(
+      all.map((g) =>
+        prisma.guide.update({
+          where: { id: g.id },
+          // Cast: contentOf() returns JSON-serialisable data by construction,
+          // but `blocks`/`faqs` are typed `unknown` so Prisma can't prove it.
+          data: { deployedContent: contentOf(g) as Prisma.InputJsonValue, deployedAt: now },
+        }),
+      ),
+    );
+  } catch (err) {
+    console.error('[deploy-hook] snapshot failed after a successful trigger:', err);
+    return `${started} But the CMS could not record it, so guides may still show as Staged.`;
+  }
+
+  return `ok:${started} The site updates in a few minutes.`;
+}
+
+
+/**
+ * Discards staged edits by writing the last deployed snapshot back over the live
+ * row. Only meaningful for a guide that has been deployed at least once — with
+ * no snapshot there is nothing to go back to.
+ */
+export async function revertGuide(
+  _prev: string | undefined,
+  formData: FormData,
+): Promise<string | undefined> {
+  await requireUser();
+  const id = Number(formData.get('id'));
+
+  try {
+    const guide = await prisma.guide.findUnique({ where: { id } });
+    if (!guide) return 'That guide no longer exists.';
+    if (!guide.deployedContent) return 'This guide has never been deployed, so there is nothing to revert to.';
+
+    const snap = guide.deployedContent as DeployedContent;
+    await prisma.guide.update({
+      where: { id },
+      data: {
+        slug: snap.slug,
+        title: snap.title,
+        seoTitle: snap.seoTitle,
+        description: snap.description,
+        summary: snap.summary,
+        keywords: snap.keywords,
+        blocks: snap.blocks as object,
+        faqs: snap.faqs as object,
+        related: snap.related,
+        datePublished: snap.datePublished ? new Date(`${snap.datePublished}T00:00:00.000Z`) : null,
+        dateModified: new Date(`${snap.dateModified}T00:00:00.000Z`),
+        sortOrder: snap.sortOrder,
+        status: snap.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
+      },
+    });
+  } catch (err) {
+    return messageFor(err);
+  }
+  redirect('/guides?reverted=1');
 }

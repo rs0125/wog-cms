@@ -4,6 +4,8 @@ import DeleteGuideForm from '@/components/DeleteGuideForm';
 import { updateGuide } from '../actions';
 import { prisma } from '@/lib/prisma';
 import { guideSchema, type GuideInput } from '@/lib/guide-schema';
+import { stateOf } from '@/lib/staging';
+import { isDeployConfigured } from '@/lib/deploy';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
 
@@ -18,8 +20,20 @@ export default async function EditGuidePage({
 }) {
   const { id } = await params;
   const { saved } = await searchParams;
-  const row = await prisma.guide.findUnique({ where: { id: Number(id) } });
+  // Issued together: these don't depend on each other, and each sequential
+  // round trip to the database costs real latency.
+  const [row, allOptions] = await Promise.all([
+    prisma.guide.findUnique({ where: { id: Number(id) } }),
+    prisma.guide.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      select: { id: true, slug: true, title: true },
+    }),
+  ]);
   if (!row) notFound();
+
+  // Every guide but this one — self-references are rejected server-side, so
+  // they're simply not offered. Filtered here rather than in a second query.
+  const relatedOptions = allOptions.filter((o) => o.id !== row.id);
 
   // Parsed rather than cast: blocks/faqs are Json columns, so this is the point
   // where bad data written by anything other than this form would surface —
@@ -52,7 +66,7 @@ export default async function EditGuidePage({
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="min-w-0">
           <span className="cms-eyebrow mb-2 block">Editing guide</span>
-          <h1 className="font-display text-3xl leading-tight text-wareongo-blue sm:text-4xl">{guide.title}</h1>
+          <h1 className="cms-title text-3xl leading-tight sm:text-4xl">{guide.title}</h1>
           <a
             href={`https://wareongo.com/guides/${guide.slug}`}
             target="_blank"
@@ -69,11 +83,19 @@ export default async function EditGuidePage({
 
       {saved && (
         <p className="mb-5 rounded-xl border border-wareongo-green/30 bg-wareongo-green/5 px-4 py-2.5 text-sm text-wareongo-green">
-          Saved. It reaches the live site on the next build.
+          Draft saved. Deploy below to push it live.
         </p>
       )}
 
-      <GuideForm guide={guide} action={updateGuide} id={row.id} />
+      <GuideForm
+        guide={guide}
+        action={updateGuide}
+        id={row.id}
+        relatedOptions={relatedOptions}
+        staged={stateOf(row) === 'STAGED'}
+        deployable={isDeployConfigured()}
+        expectedUpdatedAt={row.updatedAt.toISOString()}
+      />
     </main>
   );
 }

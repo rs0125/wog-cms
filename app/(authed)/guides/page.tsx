@@ -1,81 +1,72 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import GuideList, { type GuideRow } from '@/components/GuideList';
+import DeployButton from '@/components/DeployButton';
+import { stateOf } from '@/lib/staging';
+import { isDeployConfigured } from '@/lib/deploy';
 
 // Auth and dynamic rendering both come from app/(authed)/layout.tsx.
 
-export default async function GuidesPage() {
-  const guides = await prisma.guide.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
-  const published = guides.filter((g) => g.status === 'PUBLISHED').length;
-  // sortOrder isn't unique in the schema (a unique constraint would make
-  // reordering a two-step dance), so ties are possible. Ordering still resolves
-  // deterministically by id, but the editor should see it rather than wonder why
-  // two guides won't swap.
-  const tied = new Set(
-    guides.map((g) => g.sortOrder).filter((n, i, all) => all.indexOf(n) !== i),
-  );
+export default async function GuidesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reordered?: string; reverted?: string }>;
+}) {
+  const { reordered, reverted } = await searchParams;
+  const deployable = isDeployConfigured();
+  const rows = await prisma.guide.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
+  // State computed once per row and carried alongside it, so nothing has to
+  // look it up again (and no non-null assertion on a Map lookup).
+  const withState = rows.map((g) => ({ row: g, state: stateOf(g) }));
+  const live = withState.filter((e) => e.state === 'PUBLISHED').length;
+  const staged = withState.filter((e) => e.state === 'STAGED').length;
+
+  // Dates are formatted here: a Date can't cross into a client component, and
+  // formatting on the client would risk a timezone-dependent hydration mismatch.
+  const guides: GuideRow[] = withState.map(({ row: g, state }) => ({
+    id: g.id,
+    slug: g.slug,
+    title: g.title,
+    state,
+    revertable: g.deployedContent !== null,
+    dateModified: g.dateModified.toISOString().slice(0, 10),
+    sortOrder: g.sortOrder,
+  }));
 
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
       <header className="mb-8 flex flex-wrap items-end gap-3">
         <div>
-          <span className="cms-eyebrow mb-2 block">WareOnGo Content Studio</span>
-          <h1 className="font-display text-4xl text-wareongo-blue">Guides</h1>
+          <h1 className="cms-title text-4xl">Guides</h1>
           <p className="mt-1 text-sm text-wareongo-slate">
-            {guides.length} total · {published} published on the site
+            {rows.length} total · {live} live{staged > 0 ? ` · ${staged} staged` : ''}
           </p>
         </div>
-        <Link href="/guides/new" className="cms-btn-primary ml-auto">
-          New guide
-        </Link>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {/* Whether the hook exists is all the client needs — never the URL. */}
+          <DeployButton configured={deployable} />
+          <Link href="/guides/new" className="cms-btn-primary">
+            New guide
+          </Link>
+        </div>
       </header>
 
-      <ul className="space-y-2.5">
-        {guides.map((g) => (
-          <li key={g.id}>
-            <Link
-              href={`/guides/${g.id}`}
-              className="flex items-center gap-4 rounded-2xl border border-wareongo-blue/20 bg-white p-4 transition-colors hover:bg-wareongo-blue/5"
-            >
-              <span
-                className={`w-6 shrink-0 text-xs ${
-                  tied.has(g.sortOrder) ? 'font-semibold text-wareongo-sienna' : 'text-wareongo-slate'
-                }`}
-                title={tied.has(g.sortOrder) ? `Shares sort order ${g.sortOrder} with another guide` : undefined}
-              >
-                {g.sortOrder}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate font-semibold text-wareongo-blue">{g.title}</p>
-                <p className="truncate text-xs text-wareongo-slate">
-                  /guides/{g.slug} · updated {g.dateModified.toISOString().slice(0, 10)}
-                </p>
-              </div>
-              <span
-                className={`ml-auto shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                  g.status === 'PUBLISHED'
-                    ? 'bg-wareongo-green/10 text-wareongo-green'
-                    : 'bg-wareongo-slate/10 text-wareongo-slate'
-                }`}
-              >
-                {g.status === 'PUBLISHED' ? 'Published' : 'Draft'}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-
-      {tied.size > 0 && (
-        <p className="mt-4 rounded-2xl border border-wareongo-sienna/30 bg-wareongo-sienna/5 p-4 text-xs text-wareongo-sienna">
-          Two or more guides share a sort order (highlighted). Order falls back to creation order, so give them
-          distinct numbers if the sequence matters.
+      {reverted && (
+        <p className="mb-5 rounded-xl border border-wareongo-blue/25 bg-wareongo-blue/5 px-4 py-2.5 text-sm text-wareongo-charcoal">
+          Reverted to the last deployed version.
         </p>
       )}
 
-      <p className="mt-8 rounded-2xl border border-wareongo-blue/20 bg-wareongo-blue/5 p-4 text-xs text-wareongo-slate">
-        Published guides reach wareongo.com on the next site build — the build reads them via the backend&apos;s
-        <code className="mx-1 rounded bg-white px-1 text-wareongo-blue">/guides</code> endpoint. Saving here does not
-        deploy.
-      </p>
+      {reordered && (
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-wareongo-green/30 bg-wareongo-green/5 px-4 py-2.5 text-sm text-wareongo-green">
+          <span>Order saved. Deploy to push it live.</span>
+          <span className="ml-auto">
+            <DeployButton configured={deployable} variant="subtle" />
+          </span>
+        </div>
+      )}
+
+      <GuideList guides={guides} />
     </main>
   );
 }

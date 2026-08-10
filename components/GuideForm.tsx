@@ -4,6 +4,8 @@ import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import BlockEditor from './BlockEditor';
 import GuidePreview from './GuidePreview';
+import RelatedPicker, { type GuideOption } from './RelatedPicker';
+import DeployButton from './DeployButton';
 import type { GuideBlock, GuideFaq, GuideInput } from '@/lib/guide-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
 import type { SaveResult } from '@/app/(authed)/guides/actions';
@@ -12,13 +14,29 @@ export default function GuideForm({
   guide,
   action,
   id,
+  relatedOptions,
+  staged,
+  deployable,
+  expectedUpdatedAt,
 }: {
   guide: GuideInput;
   action: (prev: SaveResult | undefined, formData: FormData) => Promise<SaveResult>;
   id?: number;
+  /** Every other guide, for the related-guides picker. */
+  relatedOptions: GuideOption[];
+  /** This guide has saved changes that haven't been deployed. */
+  staged?: boolean;
+  /** The row's updatedAt when this form was rendered, for the lost-update check. */
+  expectedUpdatedAt?: string;
+  /** Whether a deploy hook is configured; hides Deploy entirely when not. */
+  deployable?: boolean;
 }) {
   const [result, formAction, pending] = useActionState(action, undefined);
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
+  // Any input anywhere in the form counts as an edit, including the block and
+  // FAQ editors — they're plain inputs inside this form, so onInput catches them
+  // without each one having to report upward.
+  const [edited, setEdited] = useState(false);
 
   // Fields the preview reflects live in state; the rest stay uncontrolled
   // defaultValue inputs, since nothing reads them back until submit.
@@ -30,19 +48,20 @@ export default function GuideForm({
   const [blocks, setBlocks] = useState<Keyed<GuideBlock>[]>(() => keyAll(guide.blocks));
   const [faqs, setFaqs] = useState<Keyed<GuideFaq>[]>(() => keyAll(guide.faqs));
   const [keywords, setKeywords] = useState(guide.keywords.join(', '));
-  const [related, setRelated] = useState(guide.related.join(', '));
+  const [related, setRelated] = useState<string[]>(guide.related);
 
   const csv = (s: string) => s.split(',').map((v) => v.trim()).filter(Boolean);
   const plainBlocks = unkey(blocks);
   const plainFaqs = unkey(faqs);
 
   return (
-    <form action={formAction} className="pb-28">
+    <form action={formAction} onInput={() => setEdited(true)} className="pb-28">
       {id !== undefined && <input type="hidden" name="id" value={id} />}
+      {expectedUpdatedAt && <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />}
       <input type="hidden" name="blocks" value={JSON.stringify(plainBlocks)} />
       <input type="hidden" name="faqs" value={JSON.stringify(plainFaqs)} />
       <input type="hidden" name="keywords" value={JSON.stringify(csv(keywords))} />
-      <input type="hidden" name="related" value={JSON.stringify(csv(related))} />
+      <input type="hidden" name="related" value={JSON.stringify(related)} />
 
       <div className="mb-6 inline-flex rounded-xl border border-wareongo-blue/25 bg-white p-1">
         {(['edit', 'preview'] as const).map((t) => (
@@ -142,15 +161,28 @@ export default function GuideForm({
           </div>
 
           <div className="sm:col-span-2">
-            <label className="cms-label" htmlFor="related">Related guide slugs</label>
-            <input id="related" value={related} onChange={(e) => setRelated(e.target.value)} className="cms-input" />
-            <p className="cms-hint">Comma-separated slugs, rendered as cross-links at the foot of the guide.</p>
+            <span className="cms-label">Related guides</span>
+            <RelatedPicker
+              options={relatedOptions}
+              value={related}
+              onChange={(next) => {
+                setEdited(true);
+                setRelated(next);
+              }}
+            />
+            <p className="cms-hint">Rendered as cross-links at the foot of the guide.</p>
           </div>
         </section>
 
         <section>
           <h2 className="cms-label mb-3">Content blocks</h2>
-          <BlockEditor blocks={blocks} onChange={setBlocks} />
+          <BlockEditor
+            blocks={blocks}
+            onChange={(next) => {
+              setEdited(true);
+              setBlocks(next);
+            }}
+          />
         </section>
 
         <section>
@@ -166,7 +198,10 @@ export default function GuideForm({
                   <button
                     type="button"
                     className="cms-btn-danger ml-auto"
-                    onClick={() => setFaqs(removeAt(faqs, i))}
+                    onClick={() => {
+                      setEdited(true);
+                      setFaqs(removeAt(faqs, i));
+                    }}
                   >
                     Remove
                   </button>
@@ -186,7 +221,10 @@ export default function GuideForm({
                 />
               </div>
             ))}
-            <button type="button" className="cms-btn" onClick={() => setFaqs([...faqs, keyed({ q: '', a: '' })])}>
+            <button type="button" className="cms-btn" onClick={() => {
+                setEdited(true);
+                setFaqs([...faqs, keyed({ q: '', a: '' })]);
+              }}>
               + FAQ
             </button>
           </div>
@@ -198,7 +236,7 @@ export default function GuideForm({
           Rendered with the live site&apos;s components and palette. Links are inert here.
         </p>
         <GuidePreview
-          guide={{ title, summary, dateModified, blocks: plainBlocks, faqs: plainFaqs, related: csv(related) }}
+          guide={{ title, summary, dateModified, blocks: plainBlocks, faqs: plainFaqs, related }}
         />
       </div>
 
@@ -208,9 +246,18 @@ export default function GuideForm({
             ← Back
           </Link>
           {result && !result.ok && <p className="text-sm text-wareongo-sienna">{result.error}</p>}
-          <button type="submit" disabled={pending} className="cms-btn-primary ml-auto">
-            {pending ? 'Saving…' : 'Save'}
-          </button>
+          <div className="ml-auto">
+            {/* Nothing edited and nothing waiting to go out → neither action
+                applies, so the slot shows a disabled Save draft rather than an
+                enabled button that would write a no-op. */}
+            {!edited && staged ? (
+              <DeployButton configured={Boolean(deployable)} />
+            ) : (
+              <button type="submit" disabled={pending || !edited} className="cms-btn-primary">
+                {pending ? 'Saving…' : 'Save draft'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </form>

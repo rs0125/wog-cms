@@ -32,6 +32,10 @@ model Guide {
   datePublished DateTime?   @db.Date
   dateModified  DateTime    @db.Date
   sortOrder     Int         @default(0)
+  /// Content as of the last triggered deploy; null if never deployed. Drives
+  /// the Staged badge and the revert action.
+  deployedContent Json?
+  deployedAt      DateTime?
   status        GuideStatus @default(DRAFT)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
