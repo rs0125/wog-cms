@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { redirect } from 'next/navigation';
-import logo from '@/public/wareongo-logo.webp';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +35,7 @@ export default async function SignInPage({
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm rounded-2xl border border-wareongo-blue/20 bg-white p-8">
         <div className="mb-4 flex items-center gap-2.5">
-          <Image src={logo} alt="WareOnGo" priority className="h-7 w-auto" />
+          <Image src="/wareongo-logo.webp" alt="WareOnGo" width={120} height={85} priority className="h-7 w-auto" />
           <span className="text-sm font-bold tracking-widest text-wareongo-blue">WAREONGO</span>
         </div>
         <h1 className="cms-title text-3xl">Content Studio</h1>

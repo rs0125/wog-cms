@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { requireUser } from '@/lib/auth';
-import logo from '@/public/wareongo-logo.webp';
 
 // Every authenticated page lives under this route group, so the auth check
 // happens once here instead of being repeated (and eventually forgotten) in each
@@ -21,7 +20,7 @@ export default async function AuthedLayout({ children }: { children: React.React
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-6 py-3">
           {/* Same logo + wordmark pairing as the public site's navbar. */}
           <Link href="/guides" className="flex items-center gap-2.5">
-            <Image src={logo} alt="WareOnGo" priority className="h-8 w-auto" />
+            <Image src="/wareongo-logo.webp" alt="WareOnGo" width={120} height={85} priority className="h-8 w-auto" />
             <span className="leading-tight">
               <span className="block text-sm font-bold tracking-widest text-wareongo-blue">WAREONGO</span>
               <span className="block text-[11px] tracking-wide text-wareongo-slate">Content Studio</span>
