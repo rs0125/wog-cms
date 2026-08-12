@@ -19,6 +19,11 @@ Saving here does **not** deploy. Published guides appear on the next site build
 (~5 min). Drafts are never exposed by the backend endpoint, so they cannot reach
 the static site even if a build runs mid-edit.
 
+The same applies in reverse: the **Delist** button on a guide flips it back to
+draft in one click, but the page stays live until the next build removes it —
+which is why the guide reads as *Staged* the moment you delist it. Delisting
+destroys nothing, and the same button lists it again.
+
 ## Running locally
 
 ```bash

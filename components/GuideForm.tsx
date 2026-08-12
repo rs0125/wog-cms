@@ -95,7 +95,14 @@ export default function GuideForm({
 
           <div>
             <label className="cms-label" htmlFor="status">Status</label>
-            <select id="status" name="status" defaultValue={guide.status} className="cms-input">
+            {/* Keyed on the value it defaults to, so that the Delist/List button
+                above — which writes this column and then refreshes the page's
+                props rather than navigating — remounts the select onto the new
+                status. Without the key an uncontrolled select would keep showing
+                the old one, and the next save would quietly undo the toggle.
+                Everything else in this form is state-backed and survives that
+                refresh, which is the point of doing it this way. */}
+            <select key={guide.status} id="status" name="status" defaultValue={guide.status} className="cms-input">
               <option value="DRAFT">Draft — not on the site</option>
               <option value="PUBLISHED">Published — included in next build</option>
             </select>

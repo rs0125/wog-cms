@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import GuideForm from '@/components/GuideForm';
 import DeleteGuideForm from '@/components/DeleteGuideForm';
+import ListingToggle from '@/components/ListingToggle';
 import { updateGuide } from '../actions';
 import { prisma } from '@/lib/prisma';
 import { guideSchema, type GuideInput } from '@/lib/guide-schema';
@@ -76,7 +77,10 @@ export default async function EditGuidePage({
             wareongo.com/guides/{guide.slug} ↗
           </a>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex flex-wrap items-start justify-end gap-2">
+          {/* Reads the row, not the parsed copy: this is about what the database
+              currently says, which is also what the action flips. */}
+          <ListingToggle id={row.id} listed={row.status === 'PUBLISHED'} />
           <DeleteGuideForm id={row.id} slug={guide.slug} />
         </div>
       </div>

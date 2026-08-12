@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { refresh } from 'next/cache';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { guideSchema } from '@/lib/guide-schema';
@@ -24,7 +25,9 @@ const asDate = (s: string) => new Date(`${s}T00:00:00.000Z`);
 
 // No revalidatePath anywhere in here: every page in this group is
 // force-dynamic, so there is no cached output to invalidate. Calling it would
-// only imply caching that isn't happening.
+// only imply caching that isn't happening. `refresh()` in toggleGuideListing is
+// a different thing — it re-renders the open page's server components, which is
+// about getting fresh props into a form that's still on screen, not about cache.
 
 // The form posts blocks/faqs/keywords/related as JSON strings because they're
 // nested structures; everything else arrives as plain fields.
@@ -179,6 +182,45 @@ export async function deleteGuide(_prev: string | undefined, formData: FormData)
     return messageFor(err);
   }
   redirect('/guides');
+}
+
+/**
+ * Delist / list in one click — flips the guide between PUBLISHED and DRAFT.
+ *
+ * Delisting destroys nothing: it drops the guide out of the backend's PUBLISHED
+ * query, so the next build stops emitting the page. Until that build runs the
+ * old page is still live, which is exactly why the guide reads as Staged
+ * immediately afterwards.
+ *
+ * The new status is computed from the row as it stands, not taken from the
+ * client. A button rendered against a status that has since changed elsewhere
+ * therefore can't publish something the editor meant to pull.
+ *
+ * refresh() rather than redirect(): the editor may well be open with unsaved
+ * text in it. A refresh re-renders this page's server components in place —
+ * client state is preserved, so the typing survives, while the props derived
+ * from the row (status, the Staged badge, the lost-update stamp the form saves
+ * against) all come back current. A redirect would discard that work silently.
+ */
+export async function toggleGuideListing(
+  _prev: string | undefined,
+  formData: FormData,
+): Promise<string | undefined> {
+  await requireUser();
+  const id = Number(formData.get('id'));
+
+  try {
+    const guide = await prisma.guide.findUnique({ where: { id }, select: { status: true } });
+    if (!guide) return 'That guide no longer exists.';
+    await prisma.guide.update({
+      where: { id },
+      data: { status: guide.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED' },
+    });
+  } catch (err) {
+    return messageFor(err);
+  }
+
+  refresh();
 }
 
 /**
