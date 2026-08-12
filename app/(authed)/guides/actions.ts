@@ -11,6 +11,9 @@ import { contentOf, type DeployedContent } from '@/lib/staging';
 
 export type SaveResult = { ok: false; error: string } | { ok: true };
 
+/** `listed` is the state the guide ended up in; `at` distinguishes one toggle from the next. */
+export type ListingResult = { ok: true; listed: boolean; at: number } | { ok: false; error: string };
+
 /**
  * An error whose message is written for the editor to read. Anything else is
  * treated as internal and replaced with a generic message, so raw Prisma text
@@ -160,10 +163,14 @@ export async function updateGuide(_prev: SaveResult | undefined, formData: FormD
 export async function deleteGuide(_prev: string | undefined, formData: FormData): Promise<string | undefined> {
   await requireUser();
   const id = Number(formData.get('id'));
+  // Held outside the try so the redirect below — which has to sit outside it,
+  // since redirect() signals by throwing — can still name what was deleted.
+  let slug: string;
 
   try {
     const guide = await prisma.guide.findUnique({ where: { id }, select: { slug: true } });
     if (!guide) return 'That guide no longer exists.';
+    slug = guide.slug;
 
     if (String(formData.get('confirmSlug') ?? '').trim() !== guide.slug) {
       return `Type "${guide.slug}" exactly to confirm deletion.`;
@@ -181,7 +188,9 @@ export async function deleteGuide(_prev: string | undefined, formData: FormData)
   } catch (err) {
     return messageFor(err);
   }
-  redirect('/guides');
+  // The slug rides along so the list page can name what went — this is the last
+  // moment it exists anywhere.
+  redirect(`/guides?deleted=${encodeURIComponent(slug)}`);
 }
 
 /**
@@ -203,24 +212,27 @@ export async function deleteGuide(_prev: string | undefined, formData: FormData)
  * against) all come back current. A redirect would discard that work silently.
  */
 export async function toggleGuideListing(
-  _prev: string | undefined,
+  _prev: ListingResult | undefined,
   formData: FormData,
-): Promise<string | undefined> {
+): Promise<ListingResult> {
   await requireUser();
   const id = Number(formData.get('id'));
+  let listed: boolean;
 
   try {
     const guide = await prisma.guide.findUnique({ where: { id }, select: { status: true } });
-    if (!guide) return 'That guide no longer exists.';
-    await prisma.guide.update({
-      where: { id },
-      data: { status: guide.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED' },
-    });
+    if (!guide) return { ok: false, error: 'That guide no longer exists.' };
+    listed = guide.status !== 'PUBLISHED';
+    await prisma.guide.update({ where: { id }, data: { status: listed ? 'PUBLISHED' : 'DRAFT' } });
   } catch (err) {
-    return messageFor(err);
+    return { ok: false, error: messageFor(err) };
   }
 
   refresh();
+  // `at` exists to make each result distinct. The confirmation card keys off it,
+  // and without it a second toggle back to a state already reported would
+  // reconcile onto the dismissed card and never show.
+  return { ok: true, listed, at: Date.now() };
 }
 
 /**

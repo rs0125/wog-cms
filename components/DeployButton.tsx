@@ -22,10 +22,20 @@ import { triggerSiteBuild } from '@/app/(authed)/guides/actions';
 export default function DeployButton({
   configured,
   variant = 'default',
+  label = 'Deploy',
+  confirm = true,
 }: {
   configured: boolean;
   /** `subtle` sits inside a banner; `default` is a standalone primary button. */
   variant?: 'default' | 'subtle';
+  label?: string;
+  /**
+   * The modal guards a bare "Deploy" sitting in a toolbar, where a stray click
+   * would republish production. Pass false where the surrounding UI already asks
+   * the question — the save card offers "Deploy now" against "Do it later", so a
+   * second dialog would only be ceremony.
+   */
+  confirm?: boolean;
 }) {
   const [result, setResult] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
@@ -79,36 +89,39 @@ export default function DeployButton({
     <>
       <button
         type="button"
-        onClick={() => dialog.current?.showModal()}
+        onClick={() => (confirm ? dialog.current?.showModal() : deploy())}
+        disabled={pending}
         className={variant === 'subtle' ? 'cms-btn' : 'cms-btn-primary'}
       >
-        Deploy
+        {pending ? 'Deploying…' : label}
       </button>
 
-      <dialog
-        ref={dialog}
-        className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-2xl border border-wareongo-blue/20 bg-white p-0 backdrop:bg-wareongo-blue/40 backdrop:backdrop-blur-sm"
-      >
-        <div className="p-6">
-          <h2 className="cms-title mb-2 text-xl">Deploy to production?</h2>
-          <p className="mb-1 text-sm text-wareongo-slate">
-            This starts a production build of <strong className="text-wareongo-charcoal">wareongo.com</strong> and
-            publishes every saved change that is marked Published.
-          </p>
-          <p className="mb-6 text-sm text-wareongo-slate">
-            The build takes a few minutes and notifies search engines when it finishes.
-          </p>
+      {confirm && (
+        <dialog
+          ref={dialog}
+          className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-2xl border border-wareongo-blue/20 bg-white p-0 backdrop:bg-wareongo-blue/40 backdrop:backdrop-blur-sm"
+        >
+          <div className="p-6">
+            <h2 className="cms-title mb-2 text-xl">Deploy to production?</h2>
+            <p className="mb-1 text-sm text-wareongo-slate">
+              This starts a production build of <strong className="text-wareongo-charcoal">wareongo.com</strong> and
+              publishes every saved change that is marked Published.
+            </p>
+            <p className="mb-6 text-sm text-wareongo-slate">
+              The build takes a few minutes and notifies search engines when it finishes.
+            </p>
 
-          <div className="flex flex-wrap justify-end gap-2">
-            <button type="button" onClick={() => dialog.current?.close()} className="cms-btn px-4 py-2.5 text-sm">
-              Cancel
-            </button>
-            <button type="button" onClick={deploy} disabled={pending} className="cms-btn-primary">
-              {pending ? 'Deploying…' : 'Deploy'}
-            </button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={() => dialog.current?.close()} className="cms-btn px-4 py-2.5 text-sm">
+                Cancel
+              </button>
+              <button type="button" onClick={deploy} disabled={pending} className="cms-btn-primary">
+                {pending ? 'Deploying…' : 'Deploy'}
+              </button>
+            </div>
           </div>
-        </div>
-      </dialog>
+        </dialog>
+      )}
     </>
   );
 }

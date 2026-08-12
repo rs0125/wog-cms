@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import GuideForm from '@/components/GuideForm';
 import DeleteGuideForm from '@/components/DeleteGuideForm';
 import ListingToggle from '@/components/ListingToggle';
+import Toast from '@/components/Toast';
+import DeployButton from '@/components/DeployButton';
 import { updateGuide } from '../actions';
 import { prisma } from '@/lib/prisma';
 import { guideSchema, type GuideInput } from '@/lib/guide-schema';
@@ -86,9 +88,15 @@ export default async function EditGuidePage({
       </div>
 
       {saved && (
-        <p className="mb-5 rounded-xl border border-wareongo-green/30 bg-wareongo-green/5 px-4 py-2.5 text-sm text-wareongo-green">
-          Draft saved. Deploy below to push it live.
-        </p>
+        <Toast
+          title="Draft saved"
+          detail="It's in the CMS, not on the site yet — wareongo.com keeps serving the old version until you deploy."
+          dismissLabel="Do it later"
+        >
+          {/* No second confirmation behind this one: the card is already asking
+              the question, with the alternative sitting right next to it. */}
+          <DeployButton configured={isDeployConfigured()} label="Deploy now" confirm={false} />
+        </Toast>
       )}
 
       <GuideForm

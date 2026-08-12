@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import GuideList, { type GuideRow } from '@/components/GuideList';
 import DeployButton from '@/components/DeployButton';
+import Toast from '@/components/Toast';
 import { stateOf } from '@/lib/staging';
 import { isDeployConfigured } from '@/lib/deploy';
 
@@ -10,9 +11,9 @@ import { isDeployConfigured } from '@/lib/deploy';
 export default async function GuidesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reordered?: string; reverted?: string }>;
+  searchParams: Promise<{ reordered?: string; reverted?: string; deleted?: string }>;
 }) {
-  const { reordered, reverted } = await searchParams;
+  const { reordered, reverted, deleted } = await searchParams;
   const deployable = isDeployConfigured();
   const rows = await prisma.guide.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
   // State computed once per row and carried alongside it, so nothing has to
@@ -51,12 +52,15 @@ export default async function GuidesPage({
         </div>
       </header>
 
-      {reverted && (
-        <p className="mb-5 rounded-xl border border-wareongo-blue/25 bg-wareongo-blue/5 px-4 py-2.5 text-sm text-wareongo-charcoal">
-          Reverted to the last deployed version.
-        </p>
-      )}
+      {/* No second line: whether the site still serves the page depends on what
+          was last deployed, which this page can't know without reading the
+          snapshot column, and a confident wrong sentence is worse than none. */}
+      {deleted && <Toast title={`“${deleted}” deleted`} tone="removed" />}
 
+      {reverted && <Toast title="Reverted to the last deployed version" />}
+
+      {/* Stays an inline banner: it holds a Deploy button, and an action that
+          fades itself out after six seconds is a trap. */}
       {reordered && (
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-wareongo-green/30 bg-wareongo-green/5 px-4 py-2.5 text-sm text-wareongo-green">
           <span>Order saved. Deploy to push it live.</span>
