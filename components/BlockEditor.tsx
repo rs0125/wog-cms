@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import ImagesEditor from './ImagesEditor';
 import { BLOCK_KINDS, emptyBlock, type GuideBlock } from '@/lib/guide-schema';
 import { keyAll, keyed, removeAt, replaceAt, swap, unkey, type Keyed } from '@/lib/keyed';
 
@@ -11,6 +12,7 @@ const KIND_LABEL: Record<GuideBlock['kind'], string> = {
   ul: 'Bulleted list',
   ol: 'Numbered list',
   table: 'Table',
+  images: 'Images',
 };
 
 // Shared classes live in app/globals.css so the CMS and the site keep one idiom.
@@ -83,6 +85,10 @@ export default function BlockEditor({
               table={block.table}
               onChange={(table) => onChange(replaceAt(blocks, i, { ...block, table }))}
             />
+          )}
+
+          {block.kind === 'images' && (
+            <ImagesEditor block={block} onChange={(next) => onChange(replaceAt(blocks, i, next))} />
           )}
         </div>
       ))}

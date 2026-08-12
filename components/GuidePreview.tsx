@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { GuideBlock, GuideFaq } from '@/lib/guide-schema';
+import { COLLAGE_GRID, collageSpan } from '@/lib/collage';
 
 // A faithful copy of how the public site renders a guide — the Block switch in
 // wareongo-website/src/pages/GuideDetail.tsx and the accordion in
@@ -82,6 +83,59 @@ const Block = ({ block }: { block: GuideBlock }) => {
           </div>
         </div>
       );
+    case 'images': {
+      const count = block.images.length;
+      // The saved page can't have this (the schema requires an image), but the
+      // preview renders whatever is on screen — including a block whose upload
+      // hasn't happened yet.
+      if (count === 0) {
+        return (
+          <p className="mb-6 rounded-2xl border border-dashed border-wareongo-blue/25 px-4 py-6 text-center text-xs text-wareongo-slate">
+            No images in this block yet.
+          </p>
+        );
+      }
+      return (
+        <figure className="mb-6">
+          {count === 1 ? (
+            // Its own aspect ratio, capped in height so a portrait shot doesn't
+            // push the rest of the guide off the screen. w-auto with max-w-full
+            // keeps it undistorted when the cap bites.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={block.images[0].url}
+              alt={block.images[0].alt}
+              width={block.images[0].width}
+              height={block.images[0].height}
+              className="mx-auto block h-auto w-auto max-h-[32rem] max-w-full rounded-2xl border border-wareongo-blue/20 bg-wareongo-blue/5"
+            />
+          ) : (
+            <div className={`grid gap-2 sm:gap-3 ${COLLAGE_GRID[count]}`}>
+              {block.images.map((img, i) => (
+                // Tiles are cropped to a common 4:3 so rows line up whatever the
+                // source photos are.
+                <div
+                  key={img.url}
+                  className={`aspect-[4/3] overflow-hidden rounded-xl border border-wareongo-blue/20 bg-wareongo-blue/5 sm:rounded-2xl ${collageSpan(count, i)}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt={img.alt}
+                    width={img.width}
+                    height={img.height}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+          {block.caption && (
+            <figcaption className="mt-2 text-center text-xs text-wareongo-slate sm:text-sm">{block.caption}</figcaption>
+          )}
+        </figure>
+      );
+    }
   }
 };
 

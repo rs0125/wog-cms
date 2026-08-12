@@ -43,6 +43,7 @@ Copy `.env.example` to `.env` and fill in:
 | `GOOGLE_REDIRECT_URI`  | Must be registered on that OAuth client              |
 | `CMS_ALLOWED_EMAILS`   | Comma-separated list of who may sign in              |
 | `SESSION_SECRET`       | Signs the session cookie — `openssl rand -base64 32` |
+| `R2_*` (five)          | Cloudflare R2 bucket for guide images — copy from the backend's `.env` |
 
 One file, not two: Next loads `.env` (and `.env.local`, which this project
 deliberately doesn't use) while the Prisma CLI reads **only** `.env` — so a
@@ -148,6 +149,44 @@ changes, `GuidePreview.tsx` needs the same edit.**
 
 Repeated form classes (`cms-input`, `cms-label`, `cms-btn`, `cms-card`, …) are
 defined once in `globals.css` under `@layer components`.
+
+## Images
+
+An **Images** block holds one to four images, and the collage layout follows from
+the count alone — 1 full width, 2 side by side, 3 in a row, 4 as a 2×2. There is
+no layout field, so nothing can disagree with the images. On a phone the grid
+stays two columns wide (a pair should still read as a pair) and the odd tile of a
+3-up spans the full width instead of shrinking to a thumbnail; the geometry lives
+in `lib/collage.ts` and is mirrored in the site's `GuideDetail.tsx`.
+
+The upload path is deliberately split:
+
+```
+browser: downscale to 1600px, encode WebP, measure  (lib/image-upload.ts)
+   └─► POST /api/uploads  ──►  R2  guides/<name>-<sha256[0:16]>.webp
+          └─► { url }  ──►  stored in the block's JSON alongside alt/width/height
+```
+
+The browser does the encoding for three reasons: a Vercel function's request body
+is capped at 4.5MB and phone photos are routinely larger; the width/height stored
+in the guide must describe the file that was actually uploaded, and measuring the
+bitmap we just encoded is the only way to be certain; and it keeps `sharp` out of
+this app entirely. If a browser can't do any of it, the original file is uploaded
+as-is under the same 4MB limit.
+
+Keys are content-addressed, so re-uploading the same file lands on the same
+object rather than a duplicate — and because the name changes whenever the bytes
+do, the immutable cache header is always safe. Nothing is ever deleted from R2:
+removing an image from a block leaves the object in place, since an already-built
+version of the site may still point at it. Orphans are cheap; broken images on a
+live page are not.
+
+Guide images are served through Vercel's image optimizer on the website (`sizes`
+per collage shape, `loading="lazy"`), which is why `R2_PUBLIC_URL` has to be a
+host listed in the website's `vercel.json` → `images.remotePatterns`. If the
+optimizer refuses a source — unlisted host, or a 402 once the account's
+transformation quota is spent — the renderer falls back to the raw R2 URL once,
+so the reader gets a slower image rather than a broken one.
 
 ## Schema ownership
 
