@@ -191,6 +191,8 @@ function FaqAccordion({ items }: { items: GuideFaq[] }) {
 export interface PreviewGuide {
   title: string;
   summary: string;
+  /** Empty string means no byline — the page credits WareOnGo instead. */
+  author: string;
   dateModified: string;
   blocks: GuideBlock[];
   faqs: GuideFaq[];
@@ -215,7 +217,15 @@ export default function GuidePreview({ guide }: { guide: PreviewGuide }) {
               {guide.title || 'Untitled guide'}
             </h1>
             <p className="text-xs text-wareongo-slate">
-              Updated <time dateTime={guide.dateModified}>{guide.dateModified}</time> · WareOnGo
+              {guide.author ? (
+                <>
+                  By {guide.author} · Updated <time dateTime={guide.dateModified}>{guide.dateModified}</time>
+                </>
+              ) : (
+                <>
+                  Updated <time dateTime={guide.dateModified}>{guide.dateModified}</time> · WareOnGo
+                </>
+              )}
             </p>
           </header>
 

@@ -44,6 +44,7 @@ function parseForm(formData: FormData) {
     }
   };
   const datePublished = String(formData.get('datePublished') ?? '').trim();
+  const author = String(formData.get('author') ?? '').trim();
 
   return guideSchema.parse({
     slug: String(formData.get('slug') ?? ''),
@@ -55,6 +56,7 @@ function parseForm(formData: FormData) {
     related: json('related'),
     blocks: json('blocks'),
     faqs: json('faqs'),
+    author: author === '' ? null : author,
     datePublished: datePublished === '' ? null : datePublished,
     dateModified: String(formData.get('dateModified') ?? ''),
     sortOrder: Number(formData.get('sortOrder') ?? 0),
@@ -333,6 +335,7 @@ export async function triggerSiteBuild(): Promise<string | undefined> {
         blocks: true,
         faqs: true,
         related: true,
+        author: true,
         datePublished: true,
         dateModified: true,
         sortOrder: true,
@@ -389,6 +392,7 @@ export async function revertGuide(
         blocks: snap.blocks as object,
         faqs: snap.faqs as object,
         related: snap.related,
+        author: snap.author,
         datePublished: snap.datePublished ? new Date(`${snap.datePublished}T00:00:00.000Z`) : null,
         dateModified: new Date(`${snap.dateModified}T00:00:00.000Z`),
         sortOrder: snap.sortOrder,

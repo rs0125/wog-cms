@@ -42,6 +42,9 @@ export default function GuideForm({
   // defaultValue inputs, since nothing reads them back until submit.
   const [title, setTitle] = useState(guide.title);
   const [summary, setSummary] = useState(guide.summary);
+  // Empty string in the field, null in the database — the action maps between
+  // them, so the preview can just treat '' as "no byline".
+  const [author, setAuthor] = useState(guide.author ?? '');
   const [dateModified, setDateModified] = useState(guide.dateModified);
   // Wrapped with stable keys so reordering a block or deleting an FAQ moves the
   // DOM node with the item instead of stranding focus — see lib/keyed.ts.
@@ -133,6 +136,21 @@ export default function GuideForm({
             />
             <p className="cms-hint">
               The direct answer AI engines extract first — the page&apos;s speakable block. Make it stand alone.
+            </p>
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="cms-label" htmlFor="author">Byline</label>
+            <input
+              id="author"
+              name="author"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="WareOnGo"
+              className="cms-input"
+            />
+            <p className="cms-hint">
+              Optional. Shown under the title and emitted as the Article author. Leave blank to credit WareOnGo.
             </p>
           </div>
 
@@ -243,7 +261,7 @@ export default function GuideForm({
           Rendered with the live site&apos;s components and palette. Links are inert here.
         </p>
         <GuidePreview
-          guide={{ title, summary, dateModified, blocks: plainBlocks, faqs: plainFaqs, related }}
+          guide={{ title, summary, author, dateModified, blocks: plainBlocks, faqs: plainFaqs, related }}
         />
       </div>
 

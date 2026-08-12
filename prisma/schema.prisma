@@ -29,6 +29,8 @@ model Guide {
   blocks        Json
   faqs          Json
   related       String[]    @default([])
+  /// Optional byline; null falls back to the WareOnGo organisation.
+  author        String?
   datePublished DateTime?   @db.Date
   dateModified  DateTime    @db.Date
   sortOrder     Int         @default(0)

@@ -28,6 +28,7 @@ export default async function NewGuidePage() {
     related: [],
     blocks: [{ kind: 'p', text: '' }],
     faqs: [],
+    author: null,
     datePublished: today,
     dateModified: today,
     sortOrder: (last?.sortOrder ?? -1) + 1,

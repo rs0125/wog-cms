@@ -71,6 +71,10 @@ export const guideSchema = z.object({
   summary: nonEmpty,
   keywords: z.array(nonEmpty),
   related: z.array(nonEmpty),
+  // Optional byline. null, not '', so "no byline" is one value rather than two —
+  // the empty string would otherwise show up as a difference against the
+  // deployed snapshot and mark the guide Staged for nothing.
+  author: nonEmpty.nullable(),
   blocks: z.array(guideBlockSchema).min(1, 'a guide needs at least one block').refine(tableRowsMatchHeaders, {
     message: 'every table row must have the same number of cells as headers',
   }),

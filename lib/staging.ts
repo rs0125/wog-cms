@@ -29,6 +29,7 @@ export type ContentSource = Pick<
   | 'blocks'
   | 'faqs'
   | 'related'
+  | 'author'
   | 'datePublished'
   | 'dateModified'
   | 'sortOrder'
@@ -46,6 +47,7 @@ export type DeployedContent = {
   blocks: unknown;
   faqs: unknown;
   related: string[];
+  author: string | null;
   datePublished: string | null;
   dateModified: string;
   sortOrder: number;
@@ -69,6 +71,7 @@ export function contentOf(g: ContentSource): DeployedContent {
     blocks: g.blocks,
     faqs: g.faqs,
     related: g.related,
+    author: g.author,
     datePublished: iso(g.datePublished),
     dateModified: iso(g.dateModified) as string,
     sortOrder: g.sortOrder,
