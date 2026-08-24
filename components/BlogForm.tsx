@@ -3,15 +3,15 @@
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import BlockEditor from './BlockEditor';
-import GuidePreview from './GuidePreview';
-import RelatedPicker, { type GuideOption } from './RelatedPicker';
+import BlogPreview from './BlogPreview';
+import RelatedPicker, { type BlogOption } from './RelatedPicker';
 import DeployButton from './DeployButton';
-import type { GuideBlock, GuideFaq, GuideInput } from '@/lib/guide-schema';
+import type { BlogBlock, BlogFaq, BlogInput } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
-import type { SaveResult } from '@/app/(authed)/guides/actions';
+import type { SaveResult } from '@/app/(authed)/blogs/actions';
 
-export default function GuideForm({
-  guide,
+export default function BlogForm({
+  blog,
   action,
   id,
   relatedOptions,
@@ -19,12 +19,12 @@ export default function GuideForm({
   deployable,
   expectedUpdatedAt,
 }: {
-  guide: GuideInput;
+  blog: BlogInput;
   action: (prev: SaveResult | undefined, formData: FormData) => Promise<SaveResult>;
   id?: number;
-  /** Every other guide, for the related-guides picker. */
-  relatedOptions: GuideOption[];
-  /** This guide has saved changes that haven't been deployed. */
+  /** Every other blog, for the related-blogs picker. */
+  relatedOptions: BlogOption[];
+  /** This blog has saved changes that haven't been deployed. */
   staged?: boolean;
   /** The row's updatedAt when this form was rendered, for the lost-update check. */
   expectedUpdatedAt?: string;
@@ -40,18 +40,18 @@ export default function GuideForm({
 
   // Fields the preview reflects live in state; the rest stay uncontrolled
   // defaultValue inputs, since nothing reads them back until submit.
-  const [title, setTitle] = useState(guide.title);
-  const [summary, setSummary] = useState(guide.summary);
+  const [title, setTitle] = useState(blog.title);
+  const [summary, setSummary] = useState(blog.summary);
   // Empty string in the field, null in the database — the action maps between
   // them, so the preview can just treat '' as "no byline".
-  const [author, setAuthor] = useState(guide.author ?? '');
-  const [dateModified, setDateModified] = useState(guide.dateModified);
+  const [author, setAuthor] = useState(blog.author ?? '');
+  const [dateModified, setDateModified] = useState(blog.dateModified);
   // Wrapped with stable keys so reordering a block or deleting an FAQ moves the
   // DOM node with the item instead of stranding focus — see lib/keyed.ts.
-  const [blocks, setBlocks] = useState<Keyed<GuideBlock>[]>(() => keyAll(guide.blocks));
-  const [faqs, setFaqs] = useState<Keyed<GuideFaq>[]>(() => keyAll(guide.faqs));
-  const [keywords, setKeywords] = useState(guide.keywords.join(', '));
-  const [related, setRelated] = useState<string[]>(guide.related);
+  const [blocks, setBlocks] = useState<Keyed<BlogBlock>[]>(() => keyAll(blog.blocks));
+  const [faqs, setFaqs] = useState<Keyed<BlogFaq>[]>(() => keyAll(blog.faqs));
+  const [keywords, setKeywords] = useState(blog.keywords.join(', '));
+  const [related, setRelated] = useState<string[]>(blog.related);
 
   const csv = (s: string) => s.split(',').map((v) => v.trim()).filter(Boolean);
   const plainBlocks = unkey(blocks);
@@ -92,8 +92,8 @@ export default function GuideForm({
 
           <div>
             <label className="cms-label" htmlFor="slug">Slug</label>
-            <input id="slug" name="slug" defaultValue={guide.slug} required className="cms-input" />
-            <p className="cms-hint">Public URL: /guides/{'{slug}'} — changing this breaks existing links.</p>
+            <input id="slug" name="slug" defaultValue={blog.slug} required className="cms-input" />
+            <p className="cms-hint">Public URL: /blogs/{'{slug}'} — changing this breaks existing links.</p>
           </div>
 
           <div>
@@ -105,7 +105,7 @@ export default function GuideForm({
                 the old one, and the next save would quietly undo the toggle.
                 Everything else in this form is state-backed and survives that
                 refresh, which is the point of doing it this way. */}
-            <select key={guide.status} id="status" name="status" defaultValue={guide.status} className="cms-input">
+            <select key={blog.status} id="status" name="status" defaultValue={blog.status} className="cms-input">
               <option value="DRAFT">Draft — not on the site</option>
               <option value="PUBLISHED">Published — included in next build</option>
             </select>
@@ -113,13 +113,13 @@ export default function GuideForm({
 
           <div className="sm:col-span-2">
             <label className="cms-label" htmlFor="seoTitle">SEO title &lt;title&gt;</label>
-            <input id="seoTitle" name="seoTitle" defaultValue={guide.seoTitle} required className="cms-input" />
+            <input id="seoTitle" name="seoTitle" defaultValue={blog.seoTitle} required className="cms-input" />
             <p className="cms-hint">Aim for ≤60 characters.</p>
           </div>
 
           <div className="sm:col-span-2">
             <label className="cms-label" htmlFor="description">Meta description</label>
-            <textarea id="description" name="description" rows={2} defaultValue={guide.description} required className="cms-input" />
+            <textarea id="description" name="description" rows={2} defaultValue={blog.description} required className="cms-input" />
             <p className="cms-hint">Aim for ≤160 characters. Also used as Article.description.</p>
           </div>
 
@@ -156,7 +156,7 @@ export default function GuideForm({
 
           <div>
             <label className="cms-label" htmlFor="datePublished">First published</label>
-            <input id="datePublished" name="datePublished" type="date" defaultValue={guide.datePublished ?? ''} className="cms-input" />
+            <input id="datePublished" name="datePublished" type="date" defaultValue={blog.datePublished ?? ''} className="cms-input" />
           </div>
 
           <div>
@@ -175,8 +175,8 @@ export default function GuideForm({
 
           <div>
             <label className="cms-label" htmlFor="sortOrder">Sort order</label>
-            <input id="sortOrder" name="sortOrder" type="number" min={0} defaultValue={guide.sortOrder} className="cms-input" />
-            <p className="cms-hint">Position on /guides and in its ItemList schema.</p>
+            <input id="sortOrder" name="sortOrder" type="number" min={0} defaultValue={blog.sortOrder} className="cms-input" />
+            <p className="cms-hint">Position on /blogs and in its ItemList schema.</p>
           </div>
 
           <div>
@@ -186,7 +186,7 @@ export default function GuideForm({
           </div>
 
           <div className="sm:col-span-2">
-            <span className="cms-label">Related guides</span>
+            <span className="cms-label">Related blogs</span>
             <RelatedPicker
               options={relatedOptions}
               value={related}
@@ -195,7 +195,7 @@ export default function GuideForm({
                 setRelated(next);
               }}
             />
-            <p className="cms-hint">Rendered as cross-links at the foot of the guide.</p>
+            <p className="cms-hint">Rendered as cross-links at the foot of the blog.</p>
           </div>
         </section>
 
@@ -260,14 +260,14 @@ export default function GuideForm({
         <p className="mb-3 text-xs text-wareongo-slate">
           Rendered with the live site&apos;s components and palette. Links are inert here.
         </p>
-        <GuidePreview
-          guide={{ title, summary, author, dateModified, blocks: plainBlocks, faqs: plainFaqs, related }}
+        <BlogPreview
+          blog={{ title, summary, author, dateModified, blocks: plainBlocks, faqs: plainFaqs, related }}
         />
       </div>
 
       <div className="fixed inset-x-0 bottom-0 border-t border-wareongo-blue/20 bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
-          <Link href="/guides" className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
+          <Link href="/blogs" className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
             ← Back
           </Link>
           {result && !result.ok && <p className="text-sm text-wareongo-sienna">{result.error}</p>}

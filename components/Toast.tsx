@@ -9,9 +9,9 @@ import { useEffect, useState } from 'react';
 // time there's anything to report.
 //
 // The param is deliberately left in the URL. An earlier version tidied it away
-// with window.history.replaceState, which broke the guide form: the App Router
-// keys a page's leaf segment by its search params, so `/guides/5?saved=1` is a
-// different segment from `/guides/5`. Rewriting the URL underneath a mounted
+// with window.history.replaceState, which broke the blog form: the App Router
+// keys a page's leaf segment by its search params, so `/blogs/5?saved=1` is a
+// different segment from `/blogs/5`. Rewriting the URL underneath a mounted
 // page puts the router's idea of the current segment back on the pre-save one,
 // and the form re-renders against those older props — losing the Staged state
 // that turns "Save draft" into "Deploy". A slightly untidy address bar is a much
@@ -31,7 +31,7 @@ const TONE: Record<Tone, { border: string; badge: string; accent: string }> = {
     badge: 'bg-wareongo-green/10',
     accent: 'text-wareongo-green',
   },
-  // A deletion succeeded, but green would read as "all good" about a guide that
+  // A deletion succeeded, but green would read as "all good" about a blog that
   // no longer exists. Sienna says done-and-it-was-a-removal.
   removed: {
     border: 'border-wareongo-sienna/40',

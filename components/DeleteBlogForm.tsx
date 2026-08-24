@@ -1,15 +1,15 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { deleteGuide } from '@/app/(authed)/guides/actions';
+import { deleteBlog } from '@/app/(authed)/blogs/actions';
 
 // Two-step delete: the button reveals a field where the slug has to be typed
 // back. There is no version history behind this, so a single misclick would be
 // unrecoverable. The server re-checks the typed slug regardless of what this
 // form sends.
-export default function DeleteGuideForm({ id, slug }: { id: number; slug: string }) {
+export default function DeleteBlogForm({ id, slug }: { id: number; slug: string }) {
   const [armed, setArmed] = useState(false);
-  const [error, action, pending] = useActionState(deleteGuide, undefined);
+  const [error, action, pending] = useActionState(deleteBlog, undefined);
 
   if (!armed) {
     return (

@@ -2,16 +2,16 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { reorderGuides, revertGuide } from '@/app/(authed)/guides/actions';
-import { STATE_CLASS, STATE_HINT, STATE_LABEL, type GuideState } from '@/lib/staging';
+import { reorderBlogs, revertBlog } from '@/app/(authed)/blogs/actions';
+import { STATE_CLASS, STATE_HINT, STATE_LABEL, type BlogState } from '@/lib/staging';
 
-export type GuideRow = {
+export type BlogRow = {
   id: number;
   slug: string;
   title: string;
   /** Draft / Published / Staged — Staged means saved but not yet deployed. */
-  state: GuideState;
-  /** False when the guide has never been deployed, so there's nothing to revert to. */
+  state: BlogState;
+  /** False when the blog has never been deployed, so there's nothing to revert to. */
   revertable: boolean;
   /** Pre-formatted YYYY-MM-DD — Dates don't cross the server/client boundary. */
   dateModified: string;
@@ -34,22 +34,22 @@ const GAP_PX = 10;
  *
  * Nothing is written until "Save new order" is pressed.
  */
-export default function GuideList({ guides }: { guides: GuideRow[] }) {
-  const [order, setOrder] = useState<GuideRow[]>(guides);
+export default function BlogList({ blogs }: { blogs: BlogRow[] }) {
+  const [order, setOrder] = useState<BlogRow[]>(blogs);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   // One render after a drop, transitions are suppressed: the row has moved in
   // the DOM *and* lost its transform in the same commit, so animating between
   // those two states would show a jump.
   const [committing, setCommitting] = useState(false);
-  const [error, saveAction, saving] = useActionState(reorderGuides, undefined);
+  const [error, saveAction, saving] = useActionState(reorderBlogs, undefined);
 
   /** Row height + gap, measured when a drag starts. */
   const [step, setStep] = useState(0);
 
   const dragging = dragIndex !== null;
-  const dirty = !dragging && order.map((g) => g.id).join(',') !== guides.map((g) => g.id).join(',');
-  const hasTies = guides.map((g) => g.sortOrder).some((n, i, all) => all.indexOf(n) !== i);
+  const dirty = !dragging && order.map((g) => g.id).join(',') !== blogs.map((g) => g.id).join(',');
+  const hasTies = blogs.map((g) => g.sortOrder).some((n, i, all) => all.indexOf(n) !== i);
 
   useEffect(() => {
     if (!committing) return;
@@ -126,10 +126,10 @@ export default function GuideList({ guides }: { guides: GuideRow[] }) {
               <span className="w-5 shrink-0 text-xs text-wareongo-slate">{i + 1}</span>
 
               {/* draggable={false} so dragging a row doesn't become a link drag. */}
-              <Link href={`/guides/${g.id}`} draggable={false} className="min-w-0 flex-1">
+              <Link href={`/blogs/${g.id}`} draggable={false} className="min-w-0 flex-1">
                 <span className="block truncate font-semibold text-wareongo-blue">{g.title}</span>
                 <span className="block truncate text-xs text-wareongo-slate">
-                  /guides/{g.slug} · updated {g.dateModified}
+                  /blogs/{g.slug} · updated {g.dateModified}
                 </span>
               </Link>
 
@@ -142,7 +142,7 @@ export default function GuideList({ guides }: { guides: GuideRow[] }) {
 
               {/* Only offered where it means something: staged edits sitting on
                   top of a snapshot we can put back. */}
-              {g.state === 'STAGED' && g.revertable && <ResetGuide id={g.id} />}
+              {g.state === 'STAGED' && g.revertable && <ResetBlog id={g.id} />}
             </li>
           );
         })}
@@ -150,7 +150,7 @@ export default function GuideList({ guides }: { guides: GuideRow[] }) {
 
       {hasTies && !dirty && (
         <p className="mt-4 rounded-2xl border border-wareongo-sienna/30 bg-wareongo-sienna/5 p-4 text-xs text-wareongo-sienna">
-          Two or more guides share the same stored sort order, so their sequence falls back to creation order. Drag them
+          Two or more blogs share the same stored sort order, so their sequence falls back to creation order. Drag them
           into the order you want and save to fix it for good.
         </p>
       )}
@@ -164,7 +164,7 @@ export default function GuideList({ guides }: { guides: GuideRow[] }) {
           <p className="text-sm text-wareongo-charcoal">Order changed.</p>
           {error && <p className="text-sm text-wareongo-sienna">{error}</p>}
           <div className="ml-auto flex gap-2">
-            <button type="button" onClick={() => setOrder(guides)} className="cms-btn px-4 py-2.5 text-sm">
+            <button type="button" onClick={() => setOrder(blogs)} className="cms-btn px-4 py-2.5 text-sm">
               Reset
             </button>
             <button type="submit" disabled={saving} className="cms-btn-primary">
@@ -178,10 +178,10 @@ export default function GuideList({ guides }: { guides: GuideRow[] }) {
 }
 
 
-/** Discards a guide's staged edits, restoring the last deployed version. */
-function ResetGuide({ id }: { id: number }) {
+/** Discards a blog's staged edits, restoring the last deployed version. */
+function ResetBlog({ id }: { id: number }) {
   const [armed, setArmed] = useState(false);
-  const [error, action, pending] = useActionState(revertGuide, undefined);
+  const [error, action, pending] = useActionState(revertBlog, undefined);
 
   if (!armed) {
     return (

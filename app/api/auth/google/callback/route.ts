@@ -70,5 +70,5 @@ export async function GET(req: Request) {
   // Google's display name is carried in the signed payload, so CurrentUser.name
   // is the real name rather than a local-part guessed from the address.
   await setSession({ email: userInfo.email, name: userInfo.name?.trim() || userInfo.email });
-  return NextResponse.redirect(`${origin}/guides`);
+  return NextResponse.redirect(`${origin}/blogs`);
 }

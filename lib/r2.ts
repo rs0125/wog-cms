@@ -2,15 +2,15 @@ import { S3Client } from '@aws-sdk/client-s3';
 
 // Cloudflare R2, addressed through the S3 API — the same five variables and the
 // same bucket the backend's scripts/compress_photos_to_webp.js already uses, so
-// there is one bucket and one public host to reason about. Guide images live
-// under the `guides/` prefix, alongside the warehouse photos.
+// there is one bucket and one public host to reason about. Blog images live
+// under the `blogs/` prefix, alongside the warehouse photos.
 //
 // Shaped like lib/deploy.ts: one module knows how this is configured, and a
 // missing variable produces a sentence an editor can act on rather than a stack
 // trace from deep inside the AWS SDK.
 
 /** Object-key prefix for everything this app uploads. */
-export const KEY_PREFIX = 'guides';
+export const KEY_PREFIX = 'blogs';
 
 export type R2Target = {
   client: S3Client;
@@ -41,7 +41,7 @@ export function r2(): { ok: true; target: R2Target } | { ok: false; error: strin
     return { ok: false, error: `Image uploads are not configured. Missing: ${missing.join(', ')}.` };
   }
 
-  // The public base is stored inside every guide's content, so a mis-pasted
+  // The public base is stored inside every blog's content, so a mis-pasted
   // value would bake broken image URLs into the site.
   const publicBase = env.R2_PUBLIC_URL!.replace(/\/+$/, '');
   if (!publicBase.startsWith('https://')) {

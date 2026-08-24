@@ -1,11 +1,11 @@
-import type { Guide } from '@prisma/client';
+import type { Blog } from '@prisma/client';
 
-// Whether a guide's saved state has reached the live site.
+// Whether a blog's saved state has reached the live site.
 //
 // Saving writes to Postgres; only a build publishes. So a row can be marked
 // PUBLISHED while the site still serves older text — which is why the badge
-// can't just read `status`. On each deploy the CMS snapshots every guide into
-// `deployedContent`, and a guide whose current content differs from its
+// can't just read `status`. On each deploy the CMS snapshots every blog into
+// `deployedContent`, and a blog whose current content differs from its
 // snapshot is *staged*: saved, not live.
 //
 // Caveat worth knowing: the snapshot records a deploy being **triggered**. The
@@ -13,13 +13,13 @@ import type { Guide } from '@prisma/client';
 // was started with this exact content", not "confirmed live".
 
 /**
- * The subset of a Guide row that content is derived from. Typed as a Pick rather
+ * The subset of a Blog row that content is derived from. Typed as a Pick rather
  * than the whole model so callers can `select` just these columns instead of
  * dragging `deployedContent` (a full second copy of the content) across the wire
  * when they don't need it.
  */
 export type ContentSource = Pick<
-  Guide,
+  Blog,
   | 'slug'
   | 'title'
   | 'seoTitle'
@@ -57,7 +57,7 @@ export type DeployedContent = {
 const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
 
 /**
- * `status` is included on purpose: flipping a live guide to DRAFT doesn't remove
+ * `status` is included on purpose: flipping a live blog to DRAFT doesn't remove
  * it from the site until the next build, so that change is staged too.
  */
 export function contentOf(g: ContentSource): DeployedContent {
@@ -94,15 +94,15 @@ const canonical = (v: unknown): unknown =>
 const sameContent = (a: unknown, b: unknown) =>
   JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
-export type GuideState = 'DRAFT' | 'PUBLISHED' | 'STAGED';
+export type BlogState = 'DRAFT' | 'PUBLISHED' | 'STAGED';
 
-export function stateOf(g: ContentSource & Pick<Guide, 'deployedContent'>): GuideState {
+export function stateOf(g: ContentSource & Pick<Blog, 'deployedContent'>): BlogState {
   const snapshot = g.deployedContent as DeployedContent | null | undefined;
-  // Is a version of this guide currently on the site? Only true if the last
+  // Is a version of this blog currently on the site? Only true if the last
   // deployed snapshot was itself PUBLISHED.
   const live = Boolean(snapshot) && snapshot!.status === 'PUBLISHED';
 
-  // Nothing of this guide is on the site and it isn't marked for publication:
+  // Nothing of this blog is on the site and it isn't marked for publication:
   // editing it can't put the site out of date, so it's just a draft.
   if (!live && g.status === 'DRAFT') return 'DRAFT';
 
@@ -110,24 +110,24 @@ export function stateOf(g: ContentSource & Pick<Guide, 'deployedContent'>): Guid
   if (!live) return 'STAGED';
 
   // Live: staged exactly when the saved content differs from what went out.
-  // A live guide flipped to DRAFT counts, since it stays on the site until the
+  // A live blog flipped to DRAFT counts, since it stays on the site until the
   // next build removes it.
   return sameContent(contentOf(g), snapshot) ? 'PUBLISHED' : 'STAGED';
 }
 
-export const STATE_LABEL: Record<GuideState, string> = {
+export const STATE_LABEL: Record<BlogState, string> = {
   DRAFT: 'Draft',
   PUBLISHED: 'Published',
   STAGED: 'Staged',
 };
 
-export const STATE_CLASS: Record<GuideState, string> = {
+export const STATE_CLASS: Record<BlogState, string> = {
   DRAFT: 'bg-wareongo-slate/10 text-wareongo-slate',
   PUBLISHED: 'bg-wareongo-green/10 text-wareongo-green',
   STAGED: 'bg-wareongo-sienna/10 text-wareongo-sienna',
 };
 
-export const STATE_HINT: Record<GuideState, string> = {
+export const STATE_HINT: Record<BlogState, string> = {
   DRAFT: 'Not on the site.',
   PUBLISHED: 'This exact content was included in a deploy.',
   STAGED: 'Saved but not deployed — the site still shows the previous version.',

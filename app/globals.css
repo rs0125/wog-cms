@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* Design tokens ported from the website's tailwind.config.ts so the CMS and the
-   live site share one palette, and so the guide preview can reuse the public
+   live site share one palette, and so the blog preview can reuse the public
    renderer's exact class names (text-wareongo-blue, bg-wareongo-blue/5, …).
    Tailwind 4 has no JS config — @theme is the equivalent.
    Keep in sync with wareongo-website/tailwind.config.ts. */

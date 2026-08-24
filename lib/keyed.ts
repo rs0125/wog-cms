@@ -8,7 +8,7 @@
 // letting it travel with the item fixes that.
 //
 // Ids live in a wrapper rather than on the item itself, so the shape posted to
-// the server stays exactly the GuideBlock/GuideFaq the schema expects.
+// the server stays exactly the BlogBlock/BlogFaq the schema expects.
 
 export type Keyed<T> = { key: string; value: T };
 

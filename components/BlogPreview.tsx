@@ -1,19 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import type { GuideBlock, GuideFaq } from '@/lib/guide-schema';
+import type { BlogBlock, BlogFaq } from '@/lib/blog-schema';
 import { COLLAGE_GRID, collageSpan } from '@/lib/collage';
 
-// A faithful copy of how the public site renders a guide — the Block switch in
-// wareongo-website/src/pages/GuideDetail.tsx and the accordion in
+// A faithful copy of how the public site renders a blog — the Block switch in
+// wareongo-website/src/pages/BlogDetail.tsx and the accordion in
 // components/FAQAccordion.tsx, class-for-class, on the same palette.
 //
 // Deliberately duplicated rather than shared: the two apps are separate
 // deployments with separate Tailwind setups, and a published npm package for
-// five guides would cost more than it saves. If GuideDetail's markup changes,
+// five blogs would cost more than it saves. If BlogDetail's markup changes,
 // this needs the same edit — that's the tradeoff.
 
-const Block = ({ block }: { block: GuideBlock }) => {
+const Block = ({ block }: { block: BlogBlock }) => {
   switch (block.kind) {
     case 'h2':
       return <h2 className="text-xl sm:text-2xl font-bold text-wareongo-blue mt-10 mb-3">{block.text}</h2>;
@@ -99,7 +99,7 @@ const Block = ({ block }: { block: GuideBlock }) => {
         <figure className="mb-6">
           {count === 1 ? (
             // Its own aspect ratio, capped in height so a portrait shot doesn't
-            // push the rest of the guide off the screen. w-auto with max-w-full
+            // push the rest of the blog off the screen. w-auto with max-w-full
             // keeps it undistorted when the cap bites.
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -139,7 +139,7 @@ const Block = ({ block }: { block: GuideBlock }) => {
   }
 };
 
-function FaqAccordion({ items }: { items: GuideFaq[] }) {
+function FaqAccordion({ items }: { items: BlogFaq[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   return (
     <div className="bg-transparent border border-wareongo-blue rounded-2xl shadow-none overflow-hidden">
@@ -188,18 +188,18 @@ function FaqAccordion({ items }: { items: GuideFaq[] }) {
   );
 }
 
-export interface PreviewGuide {
+export interface PreviewBlog {
   title: string;
   summary: string;
   /** Empty string means no byline — the page credits WareOnGo instead. */
   author: string;
   dateModified: string;
-  blocks: GuideBlock[];
-  faqs: GuideFaq[];
+  blocks: BlogBlock[];
+  faqs: BlogFaq[];
   related: string[];
 }
 
-export default function GuidePreview({ guide }: { guide: PreviewGuide }) {
+export default function BlogPreview({ blog }: { blog: PreviewBlog }) {
   return (
     // The ivory ground and max-w-3xl column are the live page's, so line lengths
     // and heading rhythm read exactly as they will once published.
@@ -207,55 +207,55 @@ export default function GuidePreview({ guide }: { guide: PreviewGuide }) {
       <div className="px-4 py-6 sm:px-6 sm:py-10">
         <article className="max-w-3xl mx-auto">
           <nav className="mb-4 text-xs text-wareongo-slate sm:mb-6" aria-label="Breadcrumb">
-            Home <span className="mx-1">/</span> Guides <span className="mx-1">/</span>
-            <span className="text-wareongo-charcoal"> {guide.title || 'Untitled guide'}</span>
+            Home <span className="mx-1">/</span> Blogs <span className="mx-1">/</span>
+            <span className="text-wareongo-charcoal"> {blog.title || 'Untitled blog'}</span>
           </nav>
 
           <header className="mb-6">
-            <span className="cms-eyebrow mb-3 block">Guide</span>
+            <span className="cms-eyebrow mb-3 block">Blog</span>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-wareongo-blue leading-tight mb-3">
-              {guide.title || 'Untitled guide'}
+              {blog.title || 'Untitled blog'}
             </h1>
             <p className="text-xs text-wareongo-slate">
-              {guide.author ? (
+              {blog.author ? (
                 <>
-                  By {guide.author} · Updated <time dateTime={guide.dateModified}>{guide.dateModified}</time>
+                  By {blog.author} · Updated <time dateTime={blog.dateModified}>{blog.dateModified}</time>
                 </>
               ) : (
                 <>
-                  Updated <time dateTime={guide.dateModified}>{guide.dateModified}</time> · WareOnGo
+                  Updated <time dateTime={blog.dateModified}>{blog.dateModified}</time> · WareOnGo
                 </>
               )}
             </p>
           </header>
 
-          {/* #guide-summary on the live page — the speakable target answer
+          {/* #blog-summary on the live page — the speakable target answer
               engines extract, which is why it gets its own visual treatment. */}
           <div className="border-l-4 border-wareongo-blue/40 bg-wareongo-blue/5 rounded-r-xl px-4 py-3 mb-8">
             <p className="text-sm font-semibold text-wareongo-charcoal mb-1">In short</p>
             <p className="text-[15px] sm:text-base text-wareongo-slate leading-relaxed">
-              {guide.summary || <span className="italic text-wareongo-slate/60">No summary yet.</span>}
+              {blog.summary || <span className="italic text-wareongo-slate/60">No summary yet.</span>}
             </p>
           </div>
 
-          {guide.blocks.map((block, i) => (
+          {blog.blocks.map((block, i) => (
             <Block key={i} block={block} />
           ))}
 
-          {guide.faqs.length > 0 && (
+          {blog.faqs.length > 0 && (
             <section className="mt-10">
               <h2 className="text-xl sm:text-2xl font-bold text-wareongo-blue mb-4">Frequently asked questions</h2>
-              <FaqAccordion items={guide.faqs} />
+              <FaqAccordion items={blog.faqs} />
             </section>
           )}
 
-          {guide.related.length > 0 && (
-            <section aria-label="Related guides" className="mt-10">
-              <h2 className="text-base font-semibold text-wareongo-charcoal mb-3">Related guides</h2>
+          {blog.related.length > 0 && (
+            <section aria-label="Related blogs" className="mt-10">
+              <h2 className="text-base font-semibold text-wareongo-charcoal mb-3">Related blogs</h2>
               <ul className="space-y-2">
-                {guide.related.map((slug) => (
+                {blog.related.map((slug) => (
                   <li key={slug}>
-                    <span className="text-wareongo-blue underline-offset-2 hover:underline">/guides/{slug}</span>
+                    <span className="text-wareongo-blue underline-offset-2 hover:underline">/blogs/{slug}</span>
                   </li>
                 ))}
               </ul>

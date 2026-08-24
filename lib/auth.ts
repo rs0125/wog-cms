@@ -51,7 +51,7 @@ function safeEqual(a: string, b: string) {
 /**
  * Who may use the CMS. The portal reads its equivalent list from the DB and
  * uses env only for the admin flag; here it's env-only, because this app's
- * Prisma schema deliberately declares just the Guide model. Move it to a table
+ * Prisma schema deliberately declares just the Blog model. Move it to a table
  * if the editor list changes often enough that a redeploy is annoying.
  */
 function allowedEmails(): Set<string> {

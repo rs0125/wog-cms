@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import ImagesEditor from './ImagesEditor';
-import { BLOCK_KINDS, emptyBlock, type GuideBlock } from '@/lib/guide-schema';
+import { BLOCK_KINDS, emptyBlock, type BlogBlock } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, swap, unkey, type Keyed } from '@/lib/keyed';
 
-const KIND_LABEL: Record<GuideBlock['kind'], string> = {
+const KIND_LABEL: Record<BlogBlock['kind'], string> = {
   h2: 'Heading 2',
   h3: 'Heading 3',
   p: 'Paragraph',
@@ -24,8 +24,8 @@ export default function BlockEditor({
   blocks,
   onChange,
 }: {
-  blocks: Keyed<GuideBlock>[];
-  onChange: (next: Keyed<GuideBlock>[]) => void;
+  blocks: Keyed<BlogBlock>[];
+  onChange: (next: Keyed<BlogBlock>[]) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -36,7 +36,7 @@ export default function BlockEditor({
           <div className="mb-2 flex items-center gap-2">
             <select
               value={block.kind}
-              onChange={(e) => onChange(replaceAt(blocks, i, emptyBlock(e.target.value as GuideBlock['kind'])))}
+              onChange={(e) => onChange(replaceAt(blocks, i, emptyBlock(e.target.value as BlogBlock['kind'])))}
               className="rounded-lg border border-wareongo-blue/25 bg-white px-2.5 py-1.5 text-xs text-wareongo-blue"
             >
               {BLOCK_KINDS.map((k) => (

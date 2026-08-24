@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import Toast from './Toast';
-import { toggleGuideListing } from '@/app/(authed)/guides/actions';
+import { toggleBlogListing } from '@/app/(authed)/blogs/actions';
 
 // Sits next to Delete, and works the way Delete deliberately doesn't: one click,
 // no confirm step. Nothing is destroyed and the same button puts it back, so the
@@ -13,7 +13,7 @@ import { toggleGuideListing } from '@/app/(authed)/guides/actions';
 // means there's no query param for the confirmation card to key off, so it comes
 // from the action's own result instead.
 export default function ListingToggle({ id, listed }: { id: number; listed: boolean }) {
-  const [result, action, pending] = useActionState(toggleGuideListing, undefined);
+  const [result, action, pending] = useActionState(toggleBlogListing, undefined);
 
   return (
     <>
@@ -24,8 +24,8 @@ export default function ListingToggle({ id, listed }: { id: number; listed: bool
           disabled={pending}
           title={
             listed
-              ? 'Take this guide off wareongo.com — it comes down on the next deploy'
-              : 'Put this guide back on wareongo.com — it returns on the next deploy'
+              ? 'Take this blog off wareongo.com — it comes down on the next deploy'
+              : 'Put this blog back on wareongo.com — it returns on the next deploy'
           }
           className="cms-btn px-4 py-2.5 text-sm"
         >

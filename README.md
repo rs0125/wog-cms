@@ -7,21 +7,21 @@ app — it stays a `vite-react-ssg` static build.
 ## How content reaches the site
 
 ```
-CMS (this app)  ──writes──►  Supabase: Guide table
+CMS (this app)  ──writes──►  Supabase: Blog table
                                   │
-backend  GET /guides  ◄───────────┘   (PUBLISHED rows only)
+backend  GET /blogs  ◄───────────┘   (PUBLISHED rows only)
     │
-    └─►  website build: scripts/generate-guides.mjs
-             └─► src/data/guides.generated.ts  ──►  prerendered /guides/*
+    └─►  website build: scripts/generate-blogs.mjs
+             └─► src/data/blogs.generated.ts  ──►  prerendered /blogs/*
 ```
 
-Saving here does **not** deploy. Published guides appear on the next site build
+Saving here does **not** deploy. Published blogs appear on the next site build
 (~5 min). Drafts are never exposed by the backend endpoint, so they cannot reach
 the static site even if a build runs mid-edit.
 
-The same applies in reverse: the **Delist** button on a guide flips it back to
+The same applies in reverse: the **Delist** button on a blog flips it back to
 draft in one click, but the page stays live until the next build removes it —
-which is why the guide reads as *Staged* the moment you delist it. Delisting
+which is why the blog reads as *Staged* the moment you delist it. Delisting
 destroys nothing, and the same button lists it again.
 
 ## Running locally
@@ -48,7 +48,7 @@ Copy `.env.example` to `.env` and fill in:
 | `GOOGLE_REDIRECT_URI`  | Must be registered on that OAuth client              |
 | `CMS_ALLOWED_EMAILS`   | Comma-separated list of who may sign in              |
 | `SESSION_SECRET`       | Signs the session cookie — `openssl rand -base64 32` |
-| `R2_*` (five)          | Cloudflare R2 bucket for guide images — copy from the backend's `.env` |
+| `R2_*` (five)          | Cloudflare R2 bucket for blog images — copy from the backend's `.env` |
 
 One file, not two: Next loads `.env` (and `.env.local`, which this project
 deliberately doesn't use) while the Prisma CLI reads **only** `.env` — so a
@@ -111,7 +111,7 @@ React `cache`, so a layout and the page under it don't each redo the work.
 
 The portal reads its equivalent list from the database and uses env only for the
 admin flag. Here it's env-only, because this app's Prisma schema deliberately
-declares just the `Guide` model. Move it to a table if the editor list starts
+declares just the `Blog` model. Move it to a table if the editor list starts
 changing often enough that a redeploy is annoying.
 
 ### Credentials are shared with the portal
@@ -130,27 +130,27 @@ environment. **Each new URI must be added in Google Cloud Console → Credential
 `app/(authed)/layout.tsx` calls `requireUser()`, and every authenticated page
 lives under that route group. One check, in the render path, that a new page
 cannot forget — `(authed)` is a route group so it never appears in a URL and
-`/guides` stays `/guides`.
+`/blogs` stays `/blogs`.
 
 There is deliberately **no** `middleware.ts`/`proxy.ts`. Proxy code may run on
 the edge or at the CDN, where it can't reach the session store, so it could only
 ever do a partial check — which invites treating it as the boundary when it
 isn't. The portal takes the same approach.
 
-## Styling and the guide preview
+## Styling and the blog preview
 
 `app/globals.css` ports the website's palette into a Tailwind 4 `@theme` block —
 Tailwind 4 has no JS config, so this is the equivalent of the site's
 `tailwind.config.ts`. **Keep the two in sync.** `app/layout.tsx` loads the same
 Montserrat + Instrument Serif via `next/font`, self-hosted.
 
-That shared palette is what lets `components/GuidePreview.tsx` reuse the public
+That shared palette is what lets `components/BlogPreview.tsx` reuse the public
 renderer's exact class names, so the Edit/Preview toggle shows real type,
 spacing and table treatment rather than an approximation. The preview is a
-deliberate copy of `GuideDetail.tsx`'s block switch and `FAQAccordion.tsx`, not a
+deliberate copy of `BlogDetail.tsx`'s block switch and `FAQAccordion.tsx`, not a
 shared package — two separate deployments with separate Tailwind setups made a
-package cost more than it saves for five guides. **If the site's guide markup
-changes, `GuidePreview.tsx` needs the same edit.**
+package cost more than it saves for five blogs. **If the site's blog markup
+changes, `BlogPreview.tsx` needs the same edit.**
 
 Repeated form classes (`cms-input`, `cms-label`, `cms-btn`, `cms-card`, …) are
 defined once in `globals.css` under `@layer components`.
@@ -162,19 +162,19 @@ the count alone — 1 full width, 2 side by side, 3 in a row, 4 as a 2×2. There
 no layout field, so nothing can disagree with the images. On a phone the grid
 stays two columns wide (a pair should still read as a pair) and the odd tile of a
 3-up spans the full width instead of shrinking to a thumbnail; the geometry lives
-in `lib/collage.ts` and is mirrored in the site's `GuideDetail.tsx`.
+in `lib/collage.ts` and is mirrored in the site's `BlogDetail.tsx`.
 
 The upload path is deliberately split:
 
 ```
 browser: downscale to 1600px, encode WebP, measure  (lib/image-upload.ts)
-   └─► POST /api/uploads  ──►  R2  guides/<name>-<sha256[0:16]>.webp
+   └─► POST /api/uploads  ──►  R2  blogs/<name>-<sha256[0:16]>.webp
           └─► { url }  ──►  stored in the block's JSON alongside alt/width/height
 ```
 
 The browser does the encoding for three reasons: a Vercel function's request body
 is capped at 4.5MB and phone photos are routinely larger; the width/height stored
-in the guide must describe the file that was actually uploaded, and measuring the
+in the blog must describe the file that was actually uploaded, and measuring the
 bitmap we just encoded is the only way to be certain; and it keeps `sharp` out of
 this app entirely. If a browser can't do any of it, the original file is uploaded
 as-is under the same 4MB limit.
@@ -186,7 +186,7 @@ removing an image from a block leaves the object in place, since an already-buil
 version of the site may still point at it. Orphans are cheap; broken images on a
 live page are not.
 
-Guide images are served through Vercel's image optimizer on the website (`sizes`
+Blog images are served through Vercel's image optimizer on the website (`sizes`
 per collage shape, `loading="lazy"`), which is why `R2_PUBLIC_URL` has to be a
 host listed in the website's `vercel.json` → `images.remotePatterns`. If the
 optimizer refuses a source — unlisted host, or a 402 once the account's
@@ -195,7 +195,7 @@ so the reader gets a slower image rather than a broken one.
 
 ## Schema ownership
 
-`prisma/schema.prisma` here declares **only** the `Guide` model, so the generated
+`prisma/schema.prisma` here declares **only** the `Blog` model, so the generated
 client cannot reach any other table.
 
 **Never run `prisma db push`, `db pull` or `migrate` from this app** — pushing a
@@ -204,7 +204,7 @@ partial schema would drop every table it omits. Schema changes belong in
 
 ## Validation
 
-`lib/guide-schema.ts` is the contract. It enforces the `GuideBlock` union the
+`lib/blog-schema.ts` is the contract. It enforces the `BlogBlock` union the
 public renderer switches on, and rejects ragged tables. The renderer has no
 default case, so an unrecognised block kind renders as nothing — validating on
 save is what keeps a malformed block from silently blanking a section of a live

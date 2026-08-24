@@ -5,7 +5,7 @@
 //   * A Vercel function's request body is capped at 4.5MB, and phone photos are
 //     routinely bigger. Encoding first means what crosses the wire is a few
 //     hundred KB, not 8MB.
-//   * The dimensions the guide stores have to match the file that was actually
+//   * The dimensions the blog stores have to match the file that was actually
 //     stored. Measuring the very bitmap we encoded is the only way to be sure,
 //     and it costs nothing extra here.
 //   * No sharp in this app, so no native binary to build or bundle.
@@ -13,7 +13,7 @@
 // The whole pass is best-effort: if any step is unsupported the original file is
 // uploaded as-is (subject to the same size limit) and measured from an <img>.
 
-/** Longest edge kept. The guide column is 768px wide, so this covers 2× displays. */
+/** Longest edge kept. The blog column is 768px wide, so this covers 2× displays. */
 const MAX_EDGE = 1600;
 const WEBP_QUALITY = 0.82;
 
@@ -86,7 +86,7 @@ async function toWebp(file: File): Promise<{ file: File; width: number; height: 
 /**
  * Uploads one file and returns the entry to store in the block. `alt` comes back
  * empty on purpose — it's the editor's to write, and the schema won't let a
- * guide save without it.
+ * blog save without it.
  */
 export async function uploadImage(file: File): Promise<UploadedImage> {
   const encoded = await toWebp(file);

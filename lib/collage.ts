@@ -3,9 +3,9 @@
 //
 // Shared between the editor (which names the layout so you know what you're
 // getting) and the preview (which draws it). The live site's copy of the grid
-// classes is in wareongo-website/src/pages/GuideDetail.tsx — same deliberate
-// duplication as the rest of the guide renderer, for the reason in
-// GuidePreview.tsx.
+// classes is in wareongo-website/src/pages/BlogDetail.tsx — same deliberate
+// duplication as the rest of the blog renderer, for the reason in
+// BlogPreview.tsx.
 
 /** Column counts. Mobile keeps two columns rather than one, so a pair reads as a pair. */
 export const COLLAGE_GRID: Record<number, string> = {

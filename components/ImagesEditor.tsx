@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { MAX_IMAGES, type GuideImage, type GuideImagesBlock } from '@/lib/guide-schema';
+import { MAX_IMAGES, type BlogImage, type BlogImagesBlock } from '@/lib/blog-schema';
 import { COLLAGE_LABEL } from '@/lib/collage';
 import { uploadImage } from '@/lib/image-upload';
 
@@ -18,8 +18,8 @@ export default function ImagesEditor({
   block,
   onChange,
 }: {
-  block: GuideImagesBlock;
-  onChange: (next: GuideImagesBlock) => void;
+  block: BlogImagesBlock;
+  onChange: (next: BlogImagesBlock) => void;
 }) {
   const { images, caption } = block;
   const [busy, setBusy] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export default function ImagesEditor({
   const fileInput = useRef<HTMLInputElement>(null);
 
   const room = MAX_IMAGES - images.length;
-  const setImages = (next: GuideImage[]) => onChange({ ...block, images: next });
+  const setImages = (next: BlogImage[]) => onChange({ ...block, images: next });
 
   async function addFiles(picked: File[]) {
     setError(null);
@@ -36,7 +36,7 @@ export default function ImagesEditor({
     // file it's on. Whatever succeeded is committed in a single change at the
     // end: partial success survives a mid-batch failure, and there's exactly one
     // write back into the block rather than one per file.
-    let next: GuideImage[] = images;
+    let next: BlogImage[] = images;
     const problems: string[] = [];
 
     for (const file of picked.slice(0, room)) {
@@ -169,7 +169,7 @@ export default function ImagesEditor({
   );
 }
 
-const reorder = (images: GuideImage[], from: number, to: number): GuideImage[] => {
+const reorder = (images: BlogImage[], from: number, to: number): BlogImage[] => {
   if (to < 0 || to >= images.length) return images;
   const next = [...images];
   [next[from], next[to]] = [next[to], next[from]];

@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-export type GuideOption = { slug: string; title: string };
+export type BlogOption = { slug: string; title: string };
 
 /**
  * Multi-select for the `related` slugs. Replaces a free-text field where a typo
  * produced a cross-link the public site silently dropped — picking from the real
- * guide list makes an invalid slug impossible to enter. The server still
+ * blog list makes an invalid slug impossible to enter. The server still
  * validates, since a form post doesn't have to come from this UI.
  */
 export default function RelatedPicker({
@@ -15,7 +15,7 @@ export default function RelatedPicker({
   value,
   onChange,
 }: {
-  options: GuideOption[];
+  options: BlogOption[];
   value: string[];
   onChange: (next: string[]) => void;
 }) {
@@ -99,7 +99,7 @@ export default function RelatedPicker({
         >
           {options.length === 0 ? (
             <p className="px-3 py-2 text-xs text-wareongo-slate">
-              No other guides exist yet.
+              No other blogs exist yet.
             </p>
           ) : (
             options.map((o) => {
@@ -119,7 +119,7 @@ export default function RelatedPicker({
                   />
                   <span className="min-w-0">
                     <span className="block text-wareongo-charcoal">{o.title}</span>
-                    <span className="block truncate text-xs text-wareongo-slate">/guides/{o.slug}</span>
+                    <span className="block truncate text-xs text-wareongo-slate">/blogs/{o.slug}</span>
                   </span>
                 </label>
               );

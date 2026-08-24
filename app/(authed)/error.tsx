@@ -18,8 +18,8 @@ export default function AuthedError({ reset }: { error: Error & { digest?: strin
         <button onClick={reset} className="cms-btn-primary">
           Try again
         </button>
-        <Link href="/guides" className="cms-btn px-4 py-2.5 text-sm">
-          Back to guides
+        <Link href="/blogs" className="cms-btn px-4 py-2.5 text-sm">
+          Back to blogs
         </Link>
       </div>
     </main>
