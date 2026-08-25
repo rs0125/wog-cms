@@ -219,7 +219,7 @@ export default function BlogPreview({ blog }: { blog: PreviewBlog }) {
             <p className="text-xs text-wareongo-slate">
               {blog.author ? (
                 <>
-                  By {blog.author} · Updated <time dateTime={blog.dateModified}>{blog.dateModified}</time>
+                  By {blog.author.replace(/^\s*by\s+/i, '').trim()} · Updated <time dateTime={blog.dateModified}>{blog.dateModified}</time>
                 </>
               ) : (
                 <>

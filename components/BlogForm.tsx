@@ -150,7 +150,7 @@ export default function BlogForm({
               className="cms-input"
             />
             <p className="cms-hint">
-              Optional. Shown under the title and emitted as the Article author. Leave blank to credit WareOnGo.
+              Optional. The name only &mdash; the page adds &ldquo;By&rdquo;. Emitted as the Article author; leave blank to credit WareOnGo.
             </p>
           </div>
 
