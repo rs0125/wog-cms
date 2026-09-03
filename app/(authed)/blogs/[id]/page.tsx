@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
 import BlogForm from '@/components/BlogForm';
-import DeleteBlogForm from '@/components/DeleteBlogForm';
+import DeleteForm from '@/components/DeleteForm';
 import ListingToggle from '@/components/ListingToggle';
 import Toast from '@/components/Toast';
 import DeployButton from '@/components/DeployButton';
-import { updateBlog } from '../actions';
+import { updateBlog, deleteBlog, toggleBlogListing } from '../actions';
 import { prisma } from '@/lib/prisma';
 import { blogSchema, type BlogInput } from '@/lib/blog-schema';
 import { stateOf } from '@/lib/staging';
@@ -82,8 +82,14 @@ export default async function EditBlogPage({
         <div className="ml-auto flex flex-wrap items-start justify-end gap-2">
           {/* Reads the row, not the parsed copy: this is about what the database
               currently says, which is also what the action flips. */}
-          <ListingToggle id={row.id} listed={row.status === 'PUBLISHED'} />
-          <DeleteBlogForm id={row.id} slug={blog.slug} />
+          <ListingToggle
+            id={row.id}
+            listed={row.status === 'PUBLISHED'}
+            action={toggleBlogListing}
+            listedHint="Take this blog off wareongo.com — it comes down on the next deploy"
+            delistedHint="Put this blog back on wareongo.com — it returns on the next deploy"
+          />
+          <DeleteForm id={row.id} slug={blog.slug} action={deleteBlog} />
         </div>
       </div>
 

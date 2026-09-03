@@ -11,7 +11,7 @@
   --color-wareongo-sienna: #b3502d;
   --color-wareongo-purple: #4a2e50;
   --color-wareongo-ivory: #f8f6f1;
-  --color-wareongo-slate: #6c757d;
+  --color-wareongo-slate: #677078;
   --color-wareongo-charcoal: #343a40;
 
   /* Supplied by next/font in app/layout.tsx. Montserrat throughout — no serif. */
@@ -30,6 +30,31 @@
 /* Shared form idiom, matching the site's flat stroked treatment: full-strength
    borders, generous radii, no shadows. Defined once here rather than repeated
    as long class strings across every field. */
+/* The public site's container config (tailwind.config.ts), which Tailwind 4 has
+   no equivalent for out of the box. Only the preview needs it — it uses the
+   site's own `container` class — but a mismatch here silently changed the page
+   width the editor was shown. Keep in sync with wareongo-website. */
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  max-width: 100%;
+  @media (width >= 640px) {
+    max-width: 640px;
+  }
+  @media (width >= 768px) {
+    max-width: 768px;
+  }
+  @media (width >= 1024px) {
+    max-width: 1024px;
+  }
+  @media (width >= 1280px) {
+    max-width: 1280px;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
 @layer components {
   .cms-label {
     @apply block text-[11px] font-semibold uppercase tracking-[0.14em] text-wareongo-slate mb-1.5;

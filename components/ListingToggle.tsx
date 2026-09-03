@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import Toast from './Toast';
-import { toggleBlogListing } from '@/app/(authed)/blogs/actions';
+import type { ListingResult } from '@/lib/action-results';
 
 // Sits next to Delete, and works the way Delete deliberately doesn't: one click,
 // no confirm step. Nothing is destroyed and the same button puts it back, so the
@@ -12,21 +12,34 @@ import { toggleBlogListing } from '@/app/(authed)/blogs/actions';
 // server props in place, so nothing typed into the form below is lost. That also
 // means there's no query param for the confirmation card to key off, so it comes
 // from the action's own result instead.
-export default function ListingToggle({ id, listed }: { id: number; listed: boolean }) {
-  const [result, action, pending] = useActionState(toggleBlogListing, undefined);
+//
+// The action arrives as a prop rather than being imported: blogs and micromarket
+// pages flip the same column for the same reason, and only the row differs.
+export default function ListingToggle({
+  id,
+  listed,
+  action,
+  listedHint,
+  delistedHint,
+}: {
+  id: number;
+  listed: boolean;
+  action: (prev: ListingResult | undefined, formData: FormData) => Promise<ListingResult>;
+  /** Tooltip while listed — what Delist will do. */
+  listedHint: string;
+  /** Tooltip while delisted — what List will do. */
+  delistedHint: string;
+}) {
+  const [result, formAction, pending] = useActionState(action, undefined);
 
   return (
     <>
-      <form action={action} className="flex flex-col items-end gap-1">
+      <form action={formAction} className="flex flex-col items-end gap-1">
         <input type="hidden" name="id" value={id} />
         <button
           type="submit"
           disabled={pending}
-          title={
-            listed
-              ? 'Take this blog off wareongo.com — it comes down on the next deploy'
-              : 'Put this blog back on wareongo.com — it returns on the next deploy'
-          }
+          title={listed ? listedHint : delistedHint}
           className="cms-btn px-4 py-2.5 text-sm"
         >
           {pending ? (listed ? 'Delisting…' : 'Listing…') : listed ? 'Delist' : 'List'}

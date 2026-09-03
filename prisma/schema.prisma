@@ -49,3 +49,51 @@ enum BlogStatus {
   DRAFT
   PUBLISHED
 }
+
+/// Mirror of the MicromarketPage model in the backend schema — keep in sync by hand.
+///
+/// Editorial content for /listings/city/{citySlug}/{slug}. A micromarket with
+/// no PUBLISHED row here keeps rendering the plain listing grid; a row switches
+/// that same URL to the editorial template. Prose only — every number on the
+/// page is computed from live listings by the website at build time.
+model MicromarketPage {
+  id               Int                   @id @default(autoincrement())
+  citySlug         String
+  slug             String
+  /// Display name, for this CMS's list view only.
+  name             String
+  seoTitle         String
+  metaDescription  String
+  h1               String
+  heroEyebrow      String?
+  heroProse        String
+  heroImage        Json?
+  marketHeading    String?
+  marketProse      String?
+  marketImage      Json?
+  rentsHeading     String?
+  rentsProse       String?
+  specHeading      String?
+  specProse        String?
+  inventoryHeading String?
+  faqs             Json
+  relatedBlogs     String[]              @default([])
+  /// Manual corrections to the figures the website derives from live listings.
+  /// Partial and optional — see the backend schema for the full contract, and
+  /// lib/micromarket-schema.ts for the validated shape.
+  statOverrides    Json?
+  status           MicromarketPageStatus @default(DRAFT)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  /// Same contract as Blog.deployedContent — see lib/staging.ts.
+  deployedAt       DateTime?
+  deployedContent  Json?
+
+  @@unique([citySlug, slug])
+  @@index([status])
+}
+
+enum MicromarketPageStatus {
+  DRAFT
+  PUBLISHED
+}

@@ -91,10 +91,23 @@ const canonical = (v: unknown): unknown =>
         )
       : v;
 
-const sameContent = (a: unknown, b: unknown) =>
+/**
+ * Exported because MicromarketPage rows go through the identical three-state
+ * dance against their own `deployedContent`, and two copies of a
+ * key-order-insensitive JSON compare would be two places to get it wrong.
+ */
+export const sameContent = (a: unknown, b: unknown) =>
   JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
-export type BlogState = 'DRAFT' | 'PUBLISHED' | 'STAGED';
+/**
+ * Draft / Published / Staged applies to anything the CMS saves to Postgres and
+ * publishes by build — blogs and micromarket pages both. The label, colour and
+ * hint maps below are shared for the same reason.
+ */
+export type ContentState = 'DRAFT' | 'PUBLISHED' | 'STAGED';
+
+/** Kept as a name for existing importers; the states are not blog-specific. */
+export type BlogState = ContentState;
 
 export function stateOf(g: ContentSource & Pick<Blog, 'deployedContent'>): BlogState {
   const snapshot = g.deployedContent as DeployedContent | null | undefined;
@@ -115,19 +128,19 @@ export function stateOf(g: ContentSource & Pick<Blog, 'deployedContent'>): BlogS
   return sameContent(contentOf(g), snapshot) ? 'PUBLISHED' : 'STAGED';
 }
 
-export const STATE_LABEL: Record<BlogState, string> = {
+export const STATE_LABEL: Record<ContentState, string> = {
   DRAFT: 'Draft',
   PUBLISHED: 'Published',
   STAGED: 'Staged',
 };
 
-export const STATE_CLASS: Record<BlogState, string> = {
+export const STATE_CLASS: Record<ContentState, string> = {
   DRAFT: 'bg-wareongo-slate/10 text-wareongo-slate',
   PUBLISHED: 'bg-wareongo-green/10 text-wareongo-green',
   STAGED: 'bg-wareongo-sienna/10 text-wareongo-sienna',
 };
 
-export const STATE_HINT: Record<BlogState, string> = {
+export const STATE_HINT: Record<ContentState, string> = {
   DRAFT: 'Not on the site.',
   PUBLISHED: 'This exact content was included in a deploy.',
   STAGED: 'Saved but not deployed — the site still shows the previous version.',

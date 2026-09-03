@@ -22,7 +22,7 @@ export default async function SignInPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  if (await getCurrentUser()) redirect('/blogs');
+  if (await getCurrentUser()) redirect('/dashboard');
 
   const sp = await searchParams;
   const rawErr = typeof sp.error === 'string' ? sp.error : null;

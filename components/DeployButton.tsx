@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { triggerSiteBuild } from '@/app/(authed)/blogs/actions';
+import { triggerSiteBuild } from '@/app/(authed)/deploy-actions';
 
 /**
  * Deploys the live site, behind a confirmation modal.
@@ -13,7 +13,7 @@ import { triggerSiteBuild } from '@/app/(authed)/blogs/actions';
  * the modal.
  *
  * The action is invoked directly rather than through a <form>. This component
- * renders inside the blog form's footer, and a nested <form> is invalid HTML —
+ * renders inside a content form's footer, and a nested <form> is invalid HTML —
  * React reports it as a hydration error.
  *
  * Uses a native <dialog> so focus trapping, Escape-to-close and the backdrop
@@ -54,9 +54,9 @@ export default function DeployButton({
       // Close once there's an outcome, so it shows in the page rather than
       // inside a modal the user then has to dismiss.
       dialog.current?.close();
-      // A successful deploy just advanced every blog's snapshot, which clears
-      // the Staged badges. Without this the page would keep showing the state
-      // from before the deploy until a manual reload.
+      // A successful deploy just advanced every blog's and micromarket page's
+      // snapshot, which clears the Staged badges. Without this the page would
+      // keep showing the state from before the deploy until a manual reload.
       if (r?.startsWith('ok:')) router.refresh();
     });
   };

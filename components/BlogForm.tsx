@@ -38,8 +38,17 @@ export default function BlogForm({
   // without each one having to report upward.
   const [edited, setEdited] = useState(false);
 
-  // Fields the preview reflects live in state; the rest stay uncontrolled
-  // defaultValue inputs, since nothing reads them back until submit.
+  /**
+   * Every field is state-backed, not just the ones the preview reflects.
+   *
+   * React 19 resets an uncontrolled form after a form action completes,
+   * including when the action *failed* — so a save rejected for one bad field
+   * silently wiped the slug, SEO title, description, dates and sort order the
+   * editor had typed, with nothing on screen to say so. Because several of them
+   * are `required`, the browser then refused to resubmit and the Save button
+   * looked dead. Controlled inputs re-render from state, so the reset is a
+   * no-op. Found in the sibling micromarket form; identical here.
+   */
   const [title, setTitle] = useState(blog.title);
   const [summary, setSummary] = useState(blog.summary);
   // Empty string in the field, null in the database — the action maps between
@@ -52,6 +61,18 @@ export default function BlogForm({
   const [faqs, setFaqs] = useState<Keyed<BlogFaq>[]>(() => keyAll(blog.faqs));
   const [keywords, setKeywords] = useState(blog.keywords.join(', '));
   const [related, setRelated] = useState<string[]>(blog.related);
+  const [text, setText] = useState({
+    slug: blog.slug,
+    seoTitle: blog.seoTitle,
+    description: blog.description,
+    datePublished: blog.datePublished ?? '',
+    sortOrder: String(blog.sortOrder),
+  });
+  const bind = (key: keyof typeof text) => ({
+    value: text[key],
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setText((t) => ({ ...t, [key]: e.target.value })),
+  });
 
   const csv = (s: string) => s.split(',').map((v) => v.trim()).filter(Boolean);
   const plainBlocks = unkey(blocks);
@@ -92,7 +113,7 @@ export default function BlogForm({
 
           <div>
             <label className="cms-label" htmlFor="slug">Slug</label>
-            <input id="slug" name="slug" defaultValue={blog.slug} required className="cms-input" />
+            <input id="slug" name="slug" {...bind('slug')} required className="cms-input" />
             <p className="cms-hint">Public URL: /blogs/{'{slug}'} — changing this breaks existing links.</p>
           </div>
 
@@ -105,21 +126,18 @@ export default function BlogForm({
                 the old one, and the next save would quietly undo the toggle.
                 Everything else in this form is state-backed and survives that
                 refresh, which is the point of doing it this way. */}
-            <select key={blog.status} id="status" name="status" defaultValue={blog.status} className="cms-input">
-              <option value="DRAFT">Draft — not on the site</option>
-              <option value="PUBLISHED">Published — included in next build</option>
-            </select>
+            <StatusSelect key={blog.status} status={blog.status} />
           </div>
 
           <div className="sm:col-span-2">
             <label className="cms-label" htmlFor="seoTitle">SEO title &lt;title&gt;</label>
-            <input id="seoTitle" name="seoTitle" defaultValue={blog.seoTitle} required className="cms-input" />
+            <input id="seoTitle" name="seoTitle" {...bind('seoTitle')} required className="cms-input" />
             <p className="cms-hint">Aim for ≤60 characters.</p>
           </div>
 
           <div className="sm:col-span-2">
             <label className="cms-label" htmlFor="description">Meta description</label>
-            <textarea id="description" name="description" rows={2} defaultValue={blog.description} required className="cms-input" />
+            <textarea id="description" name="description" rows={2} {...bind('description')} required className="cms-input" />
             <p className="cms-hint">Aim for ≤160 characters. Also used as Article.description.</p>
           </div>
 
@@ -156,7 +174,7 @@ export default function BlogForm({
 
           <div>
             <label className="cms-label" htmlFor="datePublished">First published</label>
-            <input id="datePublished" name="datePublished" type="date" defaultValue={blog.datePublished ?? ''} className="cms-input" />
+            <input id="datePublished" name="datePublished" type="date" {...bind('datePublished')} className="cms-input" />
           </div>
 
           <div>
@@ -175,7 +193,7 @@ export default function BlogForm({
 
           <div>
             <label className="cms-label" htmlFor="sortOrder">Sort order</label>
-            <input id="sortOrder" name="sortOrder" type="number" min={0} defaultValue={blog.sortOrder} className="cms-input" />
+            <input id="sortOrder" name="sortOrder" type="number" min={0} {...bind('sortOrder')} className="cms-input" />
             <p className="cms-hint">Position on /blogs and in its ItemList schema.</p>
           </div>
 
@@ -286,5 +304,27 @@ export default function BlogForm({
         </div>
       </div>
     </form>
+  );
+}
+
+/**
+ * Controlled, and remounted by its `key` when the saved status changes — so
+ * React's post-action reset cannot revert an unsaved choice, while a
+ * Delist/List click (which refreshes server props rather than navigating) is
+ * still reflected here.
+ */
+function StatusSelect({ status }: { status: BlogInput['status'] }) {
+  const [value, setValue] = useState(status);
+  return (
+    <select
+      id="status"
+      name="status"
+      value={value}
+      onChange={(e) => setValue(e.target.value as BlogInput['status'])}
+      className="cms-input"
+    >
+      <option value="DRAFT">Draft — not on the site</option>
+      <option value="PUBLISHED">Published — included in next build</option>
+    </select>
   );
 }
