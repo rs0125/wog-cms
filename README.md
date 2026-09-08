@@ -58,6 +58,38 @@ single `.env` serves both and there's no second copy of `DATABASE_URL` to drift.
 On Vercel these come from Project Settings → Environment Variables; `.env` is
 not deployed.
 
+## Nightly website build
+
+`POST https://wog-cms.vercel.app/api/deploy` triggers the **website** build and
+records the same blog/micromarket snapshots as the CMS Deploy button. It uses
+`Authorization: Bearer <WEBSITE_DEPLOY_HOOK_URL>`: the **full existing hook URL**
+is the credential, not a Google session or `SESSION_SECRET`. No new environment
+variable is required. The production CMS must have that same hook configured.
+
+Deploy this CMS change first, then run
+[`scripts/schedule-nightly-build.sql`](scripts/schedule-nightly-build.sql) in the
+Supabase SQL editor, replacing its credential placeholder. The script stores
+the credential in Vault and schedules one daily POST at **02:00 Asia/Kolkata**
+(`30 20 * * *` in UTC). Re-running it updates the same named job. It does not
+trigger a build immediately, and it rejects a non-UTC cron timezone rather
+than silently scheduling the wrong hour.
+
+The response is `202` with `status: "accepted"` and Vercel's `jobId` when
+available. This means **build requested**, not deployment completed. A snapshot
+failure is returned as a warning alongside `202`, since retrying would trigger
+another build. Missing/wrong credentials return `401`; an unconfigured hook
+returns `503`; Vercel rejection, rate limiting and timeout return `502`, `429`
+and `504` respectively. GET does not trigger a build. Check Vercel before
+retrying a timeout, since the trigger might already have reached it.
+
+The cron's successful SQL execution only means `pg_net` enqueued the request;
+inspect its HTTP response as shown in the script, and use Vercel's deployment
+dashboard for final build status. The whole site rebuilds, including saved
+changes to published blogs and micromarkets, just like the manual Deploy button.
+
+Run `npm run test:deploy` for isolated auth/trigger/snapshot tests. These mock
+Vercel and Prisma and never trigger a real build or access the database.
+
 ## Database connection
 
 Use the Supabase **transaction pooler (port 6543)** here, with
