@@ -58,15 +58,23 @@ single `.env` serves both and there's no second copy of `DATABASE_URL` to drift.
 On Vercel these come from Project Settings → Environment Variables; `.env` is
 not deployed.
 
-## Nightly website build
+## Nightly website build and WebP compression
 
-`POST https://wog-cms.vercel.app/api/deploy` triggers the **website** build and
-records the same blog/micromarket snapshots as the CMS Deploy button. It uses
+`POST https://wog-cms.vercel.app/api/deploy` starts the **website** build and the
+backend's warehouse WebP compression sweep in parallel. It records the same
+blog/micromarket snapshots as the CMS Deploy button. It uses
 `Authorization: Bearer <WEBSITE_DEPLOY_HOOK_URL>`: the **full existing hook URL**
 is the credential, not a Google session or `SESSION_SECRET`. No new environment
 variable is required. The production CMS must have that same hook configured.
 
-Deploy this CMS change first, then run
+For an existing nightly job, **leave Supabase unchanged**: its URL, bearer token,
+schedule and SQL all stay the same. Deploy `WareOnGo-Website-Backend` first, then
+this CMS. Both services must have the same existing `R2_SECRET_ACCESS_KEY`.
+The CMS derives a dedicated compression bearer token from that key; it never
+sends the storage secret itself. `WAREONGO_API_BASE` optionally overrides the
+default backend URL, `https://wareongo-website-backend.onrender.com`.
+
+For a first-time schedule only, deploy both services, then run
 [`scripts/schedule-nightly-build.sql`](scripts/schedule-nightly-build.sql) in the
 Supabase SQL editor, replacing its credential placeholder. The script stores
 the credential in Vault and schedules one daily POST at **02:00 Asia/Kolkata**
@@ -74,8 +82,21 @@ the credential in Vault and schedules one daily POST at **02:00 Asia/Kolkata**
 trigger a build immediately, and it rejects a non-UTC cron timezone rather
 than silently scheduling the wrong hour.
 
-The response is `202` with `status: "accepted"` and Vercel's `jobId` when
-available. This means **build requested**, not deployment completed. A snapshot
+The response is `202` with `status: "accepted"`, Vercel's `jobId` when available,
+and `compression: { status: "accepted" | "already_running", jobId }`. The CMS
+waits only for the two trigger acknowledgements, never the compression sweep.
+The Render backend keeps working after returning its acknowledgement. Photos
+that finish too late for this build are picked up by the next daily build;
+the website's original-image fallback still applies.
+
+Compression failure returns `compression: { status: "unavailable", error }`
+and a warning while preserving an accepted website build. Likewise, a rejected
+build still reports independently accepted compression. Check final compression
+status with authenticated `GET /maintenance/webp` on the backend, or its
+`[warehouse-webp]` logs. See the backend README for recovery and limits. The
+manual CMS Deploy button continues to request a build only.
+
+An acknowledgement means **build requested**, not deployment completed. A snapshot
 failure is returned as a warning alongside `202`, since retrying would trigger
 another build. Missing/wrong credentials return `401`; an unconfigured hook
 returns `503`; Vercel rejection, rate limiting and timeout return `502`, `429`
@@ -87,8 +108,9 @@ inspect its HTTP response as shown in the script, and use Vercel's deployment
 dashboard for final build status. The whole site rebuilds, including saved
 changes to published blogs and micromarkets, just like the manual Deploy button.
 
-Run `npm run test:deploy` for isolated auth/trigger/snapshot tests. These mock
-Vercel and Prisma and never trigger a real build or access the database.
+Run `npm run test:deploy` for isolated auth/parallel-trigger/snapshot tests.
+These mock Vercel, compression HTTP responses and Prisma; they never trigger
+a real build, compress production images or access the database.
 
 ## Database connection
 

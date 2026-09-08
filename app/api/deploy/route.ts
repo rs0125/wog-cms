@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { deployHookUrl } from '@/lib/deploy';
-import { requestSiteBuild } from '@/lib/site-build';
+import { requestSiteBuild, type SiteBuildResult } from '@/lib/site-build';
+import { requestWebpCompression, type WebpTriggerResult } from '@/lib/webp-compression';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -8,7 +9,7 @@ export const maxDuration = 60;
 const json = (body: unknown, status: number) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 
-// The existing hook URL is already a build-only credential. Supabase holds
+// The existing hook URL remains the nightly maintenance credential. Supabase holds
 // the same value in Vault and sends it as a bearer token. No session signing
 // secret or user cookie is needed for machine-to-machine deployment.
 export async function POST(request: Request) {
@@ -22,14 +23,26 @@ export async function POST(request: Request) {
     return json({ error: 'Unauthorized' }, 401);
   }
 
-  const result = await requestSiteBuild();
-  if (!result.ok) return json({ error: result.error }, result.status);
+  // Both triggers start immediately. A compression failure cannot prevent the
+  // website build, and the CMS never waits for the backend's full photo sweep.
+  const [buildAttempt, compressionAttempt] = await Promise.allSettled([
+    requestSiteBuild(), requestWebpCompression(),
+  ]);
+  const result: SiteBuildResult = buildAttempt.status === 'fulfilled' ? buildAttempt.value
+    : { ok: false, status: 502, error: 'Website build request failed. Check Vercel before retrying.' };
+  const webp: WebpTriggerResult = compressionAttempt.status === 'fulfilled' ? compressionAttempt.value
+    : { ok: false, error: 'WebP compression could not be requested.' };
+  const compression = webp.ok ? { status: webp.status, jobId: webp.jobId }
+    : { status: 'unavailable', error: webp.error };
+  if (!result.ok) return json({ error: result.error, compression }, result.status);
+  const warnings = [result.warning, webp.ok ? undefined : `Website build accepted, but ${webp.error}`].filter(Boolean);
 
   // Accepted means Vercel acknowledged the trigger, not that the build is live.
   return json({
     status: 'accepted',
-    message: 'Website build requested. Check Vercel for deployment completion.',
+    message: 'Website build requested. Compression runs independently; check each service for completion.',
     jobId: result.jobId ?? null,
-    ...(result.warning ? { warning: result.warning } : {}),
+    compression,
+    ...(warnings.length ? { warning: warnings.join(' ') } : {}),
   }, 202);
 }
