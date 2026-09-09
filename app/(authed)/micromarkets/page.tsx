@@ -39,6 +39,7 @@ export default async function MicromarketsPage({
     return {
       id: row?.id ?? null,
       citySlug: m.citySlug as string,
+      stateSlug: m.stateSlug,
       slug: m.slug,
       name: m.name,
       city: m.parentCity as string,
@@ -50,8 +51,7 @@ export default async function MicromarketsPage({
 
   /**
    * Content whose slug pair matches nothing the site builds. Surfaced rather
-   * than hidden: this is the one failure mode of the whole feature that produces
-   * no error anywhere — the URL simply keeps serving the plain grid.
+   * than hidden: no overview URL will be emitted for these records.
    */
   const buildableKeys = new Set(buildable.map((m) => `${m.citySlug}/${m.slug}`));
   const orphans: MicromarketRow[] = rows
@@ -59,6 +59,7 @@ export default async function MicromarketsPage({
     .map((r) => ({
       id: r.id,
       citySlug: r.citySlug,
+      stateSlug: null,
       slug: r.slug,
       name: r.name,
       city: r.citySlug,
@@ -100,10 +101,10 @@ export default async function MicromarketsPage({
       </header>
 
       <p className="mb-7 rounded-2xl border border-wareongo-blue/20 bg-white p-4 text-sm text-wareongo-slate">
-        Every micromarket below already has a working URL showing a plain listing grid of its
-        warehouses. Writing one replaces that grid with the editorial layout — prose, FAQs and
-        cross-links wrapped around the same listings. <strong>No content</strong> is not a fault; it
-        is the plain grid. Deleting or delisting a page hands the URL back to it, so nothing 404s.
+        Publish prose, FAQs and market context at <strong>/overview/&#123;state&#125;/&#123;city&#125;/&#123;micromarket&#125;</strong>.
+        The state comes from the city&apos;s location data. Existing micromarket listing URLs
+        continue to show the plain warehouse grid. Deleting or delisting content removes its
+        overview page on the next build.
       </p>
 
       {deleted && <Toast title={`“${deleted}” deleted`} tone="removed" />}

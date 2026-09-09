@@ -109,21 +109,20 @@ export function stateOf(
 
 /**
  * What the *website* does with this page today, which is the thing that isn't
- * obvious from Draft/Published alone: a micromarket with no deployed content
- * still has a working URL serving the plain listing grid. Delisting one doesn't
- * 404 it — it reverts it.
+ * obvious from Draft/Published alone: only deployed content creates an overview
+ * URL. Its separate warehouse listing page is always available.
  */
 export const LIVE_LAYOUT_HINT: Record<ContentState, string> = {
-  DRAFT: 'The URL currently serves the plain listing grid.',
-  PUBLISHED: 'The URL serves this editorial page.',
-  STAGED: 'The URL serves the previously deployed version until the next build.',
+  DRAFT: 'No overview is published. The warehouse listing page is available.',
+  PUBLISHED: 'The overview URL serves this editorial page.',
+  STAGED: 'Overview publication changes take effect on the next build.',
 };
 
 /**
  * A micromarket's state from the listing screen's point of view, which has one
  * more case than the editor does: `STUB` is a micromarket the site builds a page
- * for that nobody has written yet. It is not an error — that URL works and
- * serves the warehouse grid — so it reads as a state, not a warning.
+ * for that nobody has written yet. Its listing page is available, and its
+ * overview can be written and published separately.
  */
 export type PageState = 'STUB' | ContentState;
 
@@ -145,8 +144,8 @@ export const PAGE_STATE_CLASS: Record<PageState, string> = {
 };
 
 export const PAGE_STATE_HINT: Record<PageState, string> = {
-  STUB: 'Nothing written. The URL serves the plain grid of warehouses.',
-  DRAFT: 'Written but not marked for publication. The URL still serves the plain grid.',
+  STUB: 'No overview written. The warehouse listing page is available.',
+  DRAFT: 'Overview written but not marked for publication.',
   PUBLISHED: 'This exact content was included in a deploy.',
   STAGED: 'Saved but not deployed — the site still shows the previous version.',
 };

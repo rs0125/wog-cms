@@ -49,7 +49,7 @@ export default async function DashboardPage() {
           ? `${mmWritten} of ${withPage.length} written`
           : `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`,
       detail: `${mmLive} live${mmStaged > 0 ? ` · ${mmStaged} staged` : ''}`,
-      body: 'Editorial copy over the listing pages. Anything unwritten still works — it serves the plain grid of warehouses.',
+      body: 'Market overviews at /overview/{state}/{city}/{micromarket}. Existing warehouse listing pages keep their plain grids.',
     },
   ];
 

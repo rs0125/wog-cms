@@ -293,7 +293,11 @@ export default function MicromarketPreview({ data }: { data: MicromarketPreviewD
             </li>
             <li className="flex items-center gap-1">
               <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
-              {data.citySlug || 'city'}
+              {data.stats?.parentState || 'state'}
+            </li>
+            <li className="flex items-center gap-1">
+              <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
+              {data.stats?.parentCity || data.citySlug || 'city'}
             </li>
             <li className="flex items-center gap-1">
               <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
@@ -589,6 +593,10 @@ export default function MicromarketPreview({ data }: { data: MicromarketPreviewD
 
           <section aria-label="Related pages" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
             <dl className="space-y-5 text-sm">
+              <div className="sm:flex sm:gap-6">
+                <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>All listings</dt>
+                <dd className="text-wareongo-blue">Browse all warehouses in {data.name || 'this micromarket'} →</dd>
+              </div>
               {siblings.length > 0 && (
                 <div className="sm:flex sm:gap-6">
                   <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>

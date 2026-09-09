@@ -48,6 +48,8 @@ export interface Micromarket {
   parentCity: string | null;
   /** The {city} URL segment, or null when it has no page. */
   citySlug: string | null;
+  parentState: string | null;
+  stateSlug: string | null;
   /**
    * Whether the site builds a page for this at all. False means writing content
    * for it would render nowhere.
@@ -109,3 +111,14 @@ export const findMicromarket = (
   citySlug: string,
   slug: string,
 ): Micromarket | undefined => all.find((m) => m.citySlug === citySlug && m.slug === slug);
+
+/** Public editorial URL; the content record keeps its existing city/slug key. */
+export const micromarketOverviewPath = (
+  market: Pick<Micromarket, 'stateSlug' | 'citySlug' | 'slug' | 'hasPage' | 'parentState'> | null | undefined,
+): string | null => {
+  if (!market?.hasPage || !market.parentState) return null;
+  const segments = [market.stateSlug, market.citySlug, market.slug];
+  return segments.every((segment) => segment && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segment))
+    ? `/overview/${segments.join('/')}`
+    : null;
+};

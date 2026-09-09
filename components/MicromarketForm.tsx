@@ -7,7 +7,7 @@ import SingleImagePicker from './SingleImagePicker';
 import StatOverridesEditor from './StatOverridesEditor';
 import DeviceFrame from './DeviceFrame';
 import { applyOverrides } from '@/lib/micromarket-format';
-import type { Micromarket } from '@/lib/micromarkets-api';
+import { findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
 import MicromarketPreview from './MicromarketPreview';
 import DeployButton from './DeployButton';
 import {
@@ -38,7 +38,7 @@ export default function MicromarketForm({
   staged,
   deployable,
   expectedUpdatedAt,
-  stats = null,
+  inventory,
 }: {
   page: MicromarketInput;
   action: (prev: SaveResult | undefined, formData: FormData) => Promise<SaveResult>;
@@ -52,11 +52,10 @@ export default function MicromarketForm({
   /** Whether a deploy hook is configured; hides Deploy entirely when not. */
   deployable?: boolean;
   /**
-   * The figures the site derives from live listings. Null when the slug pair
-   * matches no micromarket, or when the query failed — the preview and the
-   * overrides section both degrade to "not recorded" rather than inventing one.
+   * Backend geography and figures. Resolve the current slug pair as it is
+   * edited so the URL, preview and overrides all describe the same micromarket.
    */
-  stats?: Micromarket | null;
+  inventory: Micromarket[];
 }) {
   const [result, formAction, pending] = useActionState(action, undefined);
   // Any input anywhere in the form counts as an edit, including the FAQ editor —
@@ -69,6 +68,7 @@ export default function MicromarketForm({
   // a form action — see the note on `text` below.
   const [citySlug, setCitySlug] = useState(page.citySlug);
   const [slug, setSlug] = useState(page.slug);
+  const stats = findMicromarket(inventory, citySlug, slug) ?? null;
   const [heroProse, setHeroProse] = useState(page.heroProse);
   const [marketProse, setMarketProse] = useState(page.marketProse ?? '');
   const [rentsProse, setRentsProse] = useState(page.rentsProse ?? '');
@@ -201,14 +201,16 @@ export default function MicromarketForm({
       <section className="grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-2 rounded-2xl border border-wareongo-blue/20 bg-white p-4">
           <p className="cms-label mb-1">Page URL</p>
-          <p className="font-mono text-sm text-wareongo-charcoal">
-            /listings/city/{citySlug || '{city}'}/{slug || '{micromarket}'}
+          <p className="break-all font-mono text-sm text-wareongo-charcoal" data-testid="overview-url">
+            /overview/{stats?.stateSlug || '{state}'}/{citySlug || '{city}'}/{slug || '{micromarket}'}
           </p>
           <p className="cms-hint">
-            Both segments have to match the URL the site already builds for this micromarket — that
-            pairing is how the content finds its page. Get one wrong and the page keeps rendering the
-            plain listing grid with no error anywhere.
+            State is filled from the city&apos;s location data. Choose city and micromarket slugs
+            that match the inventory. Publishing creates this overview; the existing listing
+            page continues to show its warehouse grid.
           </p>
+          {!stats?.stateSlug && <p className="cms-hint text-wareongo-sienna">The overview URL needs a matching micromarket with a known state.</p>}
+          {stats && !stats.hasPage && <p className="cms-hint text-wareongo-sienna">This micromarket does not have enough listings to publish an overview yet. You can still save its content as a draft.</p>}
         </div>
 
         <div>
@@ -641,8 +643,8 @@ function StatusSelect({ status }: { status: MicromarketInput['status'] }) {
       onChange={(e) => setValue(e.target.value as MicromarketInput['status'])}
       className="cms-input"
     >
-      <option value="DRAFT">Draft — URL keeps the plain listing grid</option>
-      <option value="PUBLISHED">Published — editorial page from next build</option>
+      <option value="DRAFT">Draft — overview is not published</option>
+      <option value="PUBLISHED">Published — overview page from next build</option>
     </select>
   );
 }

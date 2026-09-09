@@ -3,7 +3,7 @@ import MicromarketForm from '@/components/MicromarketForm';
 import { createMicromarket } from '../actions';
 import { prisma } from '@/lib/prisma';
 import { NO_OVERRIDES, type MicromarketInput } from '@/lib/micromarket-schema';
-import { fetchMicromarkets, findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
+import { fetchMicromarkets, findMicromarket, micromarketOverviewPath } from '@/lib/micromarkets-api';
 import { isDeployConfigured } from '@/lib/deploy';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
@@ -40,7 +40,7 @@ export default async function NewMicromarketPage({
   const citySlug = asSlug(prefill.citySlug);
   const slug = asSlug(prefill.slug);
   const name = slug ? (prefill.name ?? '').trim().slice(0, 120) : '';
-  const stats: Micromarket | null = findMicromarket(inventory, citySlug, slug) ?? null;
+  const path = micromarketOverviewPath(findMicromarket(inventory, citySlug, slug));
 
   const blank: MicromarketInput = {
     citySlug,
@@ -81,16 +81,16 @@ export default async function NewMicromarketPage({
       </Link>
       <h1 className="cms-title text-4xl">{name || 'Micromarket page'}</h1>
       <p className="mt-1 mb-6 text-sm text-wareongo-slate">
-        {slug
-          ? `Writing over the listing grid at /listings/city/${citySlug}/${slug}.`
-          : 'Both slugs have to match a URL the site already builds — start from the Micromarkets list to have them filled in for you.'}
+        {path
+          ? `Writing the overview at ${path}.`
+          : 'Start from the Micromarkets list to fill the city and micromarket slugs. State comes from the location data.'}
       </p>
       <MicromarketForm
         page={blank}
         action={createMicromarket}
         blogOptions={blogOptions}
         deployable={isDeployConfigured()}
-        stats={stats}
+        inventory={inventory}
       />
     </main>
   );

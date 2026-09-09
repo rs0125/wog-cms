@@ -264,3 +264,18 @@ default case, so an unrecognised block kind renders as nothing — validating on
 save is what keeps a malformed block from silently blanking a section of a live
 page. The edit page re-validates on load, so bad rows written by anything other
 than this form surface here rather than on the site.
+
+## Micromarket overviews
+
+Micromarket content now targets `/overview/{state}/{city}/{micromarket}`. The
+backend derives state from the canonical city's warehouse location data; editors
+keep the existing city and micromarket slug fields. The URL and preview update
+together as those fields change. The database schema and deployed-content
+snapshot remain unchanged.
+
+The separate `/listings/city/{city}/{micromarket}` pages always show their plain
+warehouse grids. Publishing adds the overview on the next build; delisting or
+deleting removes that overview on the next build. The listing URLs remain.
+Deploy the backend's state geography fields, then rebuild the website, then
+deploy this CMS. No migration, new credential, endpoint or cron job is required.
+The state/city editorial stashes are separate future work.

@@ -180,8 +180,8 @@ export async function updateMicromarket(
  * calls this asks for the slug to be typed back. Both checks live here rather
  * than in the browser, so a stray double-submit can't get through either.
  *
- * Nothing 404s as a result: the URL goes back to serving the plain listing grid
- * on the next deploy, which is what it served before this row existed.
+ * The next deploy removes the overview URL. The separate warehouse listing
+ * URL remains available.
  */
 export async function deleteMicromarket(
   _prev: string | undefined,
@@ -212,9 +212,8 @@ export async function deleteMicromarket(
 /**
  * Delist / list in one click — flips the page between PUBLISHED and DRAFT.
  *
- * Delisting destroys nothing and takes no URL down: it drops the row out of the
- * backend's PUBLISHED query, so the next build stops emitting the editorial
- * layout and the same URL goes back to the plain listing grid. Until that build
+ * Delisting retains the row but drops it out of the backend's PUBLISHED query,
+ * so the next build stops emitting its overview URL. Until that build
  * runs the editorial page is still live, which is exactly why the page reads as
  * Staged immediately afterwards.
  *

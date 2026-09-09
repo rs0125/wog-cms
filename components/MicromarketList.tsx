@@ -14,6 +14,7 @@ export type MicromarketRow = {
   /** Null until someone writes content for it. */
   id: number | null;
   citySlug: string;
+  stateSlug: string | null;
   slug: string;
   name: string;
   /** Parent city's display name, for the group heading. */
@@ -67,14 +68,14 @@ export default function MicromarketList({
           </h2>
           <p className="mb-3 text-xs text-wareongo-slate">
             The city and micromarket slugs have to match a URL the site actually builds. These
-            don&apos;t, so whatever is written in them renders nowhere — the URL falls back to the
-            plain grid, with no error anywhere. Usually a typo in one of the two slugs.
+            don&apos;t, so their overview content cannot be published. Check the city and
+            micromarket slugs, and whether the backend has a state for that city.
           </p>
           <ul className="space-y-1.5">
             {orphans.map((o) => (
               <li key={o.id}>
                 <Link href={`/micromarkets/${o.id}`} className="text-sm text-wareongo-blue hover:underline">
-                  {o.name} — /listings/city/{o.citySlug}/{o.slug} ↗
+                  {o.name} — /overview/{o.stateSlug || '{state}'}/{o.citySlug}/{o.slug} ↗
                 </Link>
               </li>
             ))}
@@ -102,7 +103,7 @@ export default function MicromarketList({
                   <div className="min-w-0 flex-1">
                     <span className="block truncate font-semibold text-wareongo-blue">{r.name}</span>
                     <span className="block truncate text-xs text-wareongo-slate">
-                      /listings/city/{r.citySlug}/{r.slug}
+                      /overview/{r.stateSlug || '{state}'}/{r.citySlug}/{r.slug}
                     </span>
                   </div>
 

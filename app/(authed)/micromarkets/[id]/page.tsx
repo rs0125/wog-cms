@@ -8,7 +8,7 @@ import { updateMicromarket, deleteMicromarket, toggleMicromarketListing } from '
 import { prisma } from '@/lib/prisma';
 import { micromarketSchema, type MicromarketInput } from '@/lib/micromarket-schema';
 import { stateOf } from '@/lib/micromarket-staging';
-import { fetchMicromarkets, findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
+import { fetchMicromarkets, findMicromarket, micromarketOverviewPath } from '@/lib/micromarkets-api';
 import { isDeployConfigured } from '@/lib/deploy';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
@@ -58,14 +58,9 @@ export default async function EditMicromarketPage({
   }
 
   const page: MicromarketInput = parsed.data;
-  const path = `/listings/city/${page.citySlug}/${page.slug}`;
-  // Null when the slug pair matches nothing the site builds — which the list
-  // screen flags separately, and which the preview shows as a dash rather than
-  // pretending to a number.
-  // Null when the slug pair matches no micromarket the site builds — which the
-  // list screen flags separately, and which the editor shows as "not recorded"
-  // rather than pretending to a number.
-  const stats: Micromarket | null = findMicromarket(inventory, page.citySlug, page.slug) ?? null;
+  // Avoid linking to a fabricated state when the inventory cannot locate this page.
+  const market = findMicromarket(inventory, page.citySlug, page.slug);
+  const path = micromarketOverviewPath(market);
 
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
@@ -73,14 +68,22 @@ export default async function EditMicromarketPage({
         <div className="min-w-0">
           <span className="cms-eyebrow mb-2 block">Editing micromarket page</span>
           <h1 className="cms-title text-3xl leading-tight sm:text-4xl">{page.name}</h1>
-          <a
-            href={`https://wareongo.com${path}`}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 inline-block text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue"
-          >
-            wareongo.com{path} ↗
-          </a>
+          {path ? (
+            <a
+              href={`https://wareongo.com${path}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block break-all text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue"
+            >
+              wareongo.com{path} ↗
+            </a>
+          ) : (
+            <p className="mt-1 text-sm text-wareongo-sienna">
+              {market && !market.hasPage
+                ? 'This micromarket does not have enough listings to publish an overview yet.'
+                : 'The overview URL needs a matching micromarket with a known state.'}
+            </p>
+          )}
         </div>
         <div className="ml-auto flex flex-wrap items-start justify-end gap-2">
           {/* Reads the row, not the parsed copy: this is about what the database
@@ -89,14 +92,14 @@ export default async function EditMicromarketPage({
             id={row.id}
             listed={row.status === 'PUBLISHED'}
             action={toggleMicromarketListing}
-            listedHint="Hand this URL back to the plain listing grid on the next deploy"
-            delistedHint="Serve this editorial page at that URL from the next deploy"
+            listedHint="Remove this overview page on the next deploy"
+            delistedHint="Publish this overview page on the next deploy"
           />
           <DeleteForm
             id={row.id}
             slug={page.slug}
             action={deleteMicromarket}
-            consequence="The URL keeps working — it goes back to serving the plain listing grid."
+            consequence="The overview page is removed on the next deploy. The warehouse listing page stays available."
           />
         </div>
       </div>
@@ -121,7 +124,7 @@ export default async function EditMicromarketPage({
         staged={stateOf(row) === 'STAGED'}
         deployable={isDeployConfigured()}
         expectedUpdatedAt={row.updatedAt.toISOString()}
-        stats={stats}
+        inventory={inventory}
       />
     </main>
   );

@@ -52,10 +52,9 @@ enum BlogStatus {
 
 /// Mirror of the MicromarketPage model in the backend schema — keep in sync by hand.
 ///
-/// Editorial content for /listings/city/{citySlug}/{slug}. A micromarket with
-/// no PUBLISHED row here keeps rendering the plain listing grid; a row switches
-/// that same URL to the editorial template. Prose only — every number on the
-/// page is computed from live listings by the website at build time.
+/// Editorial content for /overview/{state}/{citySlug}/{slug}. State is derived
+/// from the backend's canonical city geography. Only PUBLISHED rows produce an
+/// overview; existing micromarket listing URLs always render the plain grid.
 model MicromarketPage {
   id               Int                   @id @default(autoincrement())
   citySlug         String
