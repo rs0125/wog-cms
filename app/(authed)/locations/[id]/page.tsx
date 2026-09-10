@@ -1,19 +1,20 @@
 import { notFound } from 'next/navigation';
-import EditorialForm from '@/components/EditorialForm';
+import EditorialForm, { type EditorialFormPage } from '@/components/EditorialForm';
 import DeleteForm from '@/components/DeleteForm';
 import ListingToggle from '@/components/ListingToggle';
 import Toast from '@/components/Toast';
 import DeployButton from '@/components/DeployButton';
-import { updateMicromarket, deleteMicromarket, toggleMicromarketListing } from '../actions';
+import { updateLocation, deleteLocation, toggleLocationListing } from '../actions';
 import { prisma } from '@/lib/prisma';
-import { micromarketSchema, type MicromarketInput } from '@/lib/micromarket-schema';
-import { stateOf } from '@/lib/micromarket-staging';
-import { fetchMicromarkets, findMicromarket, micromarketOverviewPath } from '@/lib/micromarkets-api';
+import { locationSchema } from '@/lib/location-schema';
+import { stateOf } from '@/lib/location-staging';
+import { fetchLocations, findLocation, listFor, locationOverviewPath, KIND_LABEL, KIND_PLURAL, type Location } from '@/lib/locations-api';
 import { isDeployConfigured } from '@/lib/deploy';
+import Link from 'next/link';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
 
-export default async function EditMicromarketPage({
+export default async function EditLocationPage({
   params,
   searchParams,
 }: {
@@ -22,25 +23,27 @@ export default async function EditMicromarketPage({
 }) {
   const { id } = await params;
   const { saved } = await searchParams;
-  // Issued together: these don't depend on each other, and each sequential round
-  // trip to the database costs real latency.
+  // Issued together: these don't depend on each other, and each sequential
+  // round trip to the database costs real latency.
   const [row, blogOptions, inventory] = await Promise.all([
-    prisma.micromarketPage.findUnique({ where: { id: Number(id) } }),
+    prisma.locationPage.findUnique({ where: { id: Number(id) } }),
     prisma.blog.findMany({
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       select: { slug: true, title: true },
     }),
     // Derived figures for the preview and the overrides reference; never fatal.
-    fetchMicromarkets()
-      .then((r) => r.data)
-      .catch(() => []),
+    fetchLocations().catch(() => ({
+      cities: [] as Location[],
+      states: [] as Location[],
+      gates: { locationPageMinListings: 0 },
+    })),
   ]);
   if (!row) notFound();
 
   // Parsed rather than cast: faqs and the two images are Json columns, so this
   // is the point where bad data written by anything other than this form would
   // surface — better here than as a blank section on the live page.
-  const parsed = micromarketSchema.safeParse(row);
+  const parsed = locationSchema.safeParse(row);
 
   if (!parsed.success) {
     return (
@@ -57,33 +60,34 @@ export default async function EditMicromarketPage({
     );
   }
 
-  const page: MicromarketInput = parsed.data;
-  // Avoid linking to a fabricated state when the inventory cannot locate this page.
-  const market = findMicromarket(inventory, page.citySlug, page.slug);
-  const path = micromarketOverviewPath(market);
+  const page = parsed.data;
+  const kind = page.kind;
+  const backHref = `/locations?kind=${kind}`;
+  // Null when the slug matches nothing the site builds — which the list screen
+  // flags separately, and which the editor shows as "not recorded" rather than
+  // pretending to a number.
+  const stats = findLocation(listFor(inventory, kind), page.slug) ?? null;
+
+  const path = stats ? locationOverviewPath(stats) : null;
+  const formPage: EditorialFormPage = page;
 
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="min-w-0">
-          <span className="cms-eyebrow mb-2 block">Editing micromarket page</span>
+          <Link href={backHref} className="cms-eyebrow mb-2 block hover:text-wareongo-blue">
+            ← {KIND_PLURAL[kind]}
+          </Link>
+          <span className="cms-eyebrow mb-2 block">Editing {KIND_LABEL[kind].toLowerCase()} page</span>
           <h1 className="cms-title text-3xl leading-tight sm:text-4xl">{page.name}</h1>
-          {path ? (
-            <a
-              href={`https://wareongo.com${path}`}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-1 inline-block break-all text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue"
-            >
-              wareongo.com{path} ↗
-            </a>
-          ) : (
-            <p className="mt-1 text-sm text-wareongo-sienna">
-              {market && !market.hasPage
-                ? 'This micromarket does not have enough listings to publish an overview yet.'
-                : 'The overview URL needs a matching micromarket with a known state.'}
-            </p>
-          )}
+          {path && <a
+            href={`https://wareongo.com${path}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 inline-block text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue"
+          >
+            wareongo.com{path} ↗
+          </a>}
         </div>
         <div className="ml-auto flex flex-wrap items-start justify-end gap-2">
           {/* Reads the row, not the parsed copy: this is about what the database
@@ -91,15 +95,15 @@ export default async function EditMicromarketPage({
           <ListingToggle
             id={row.id}
             listed={row.status === 'PUBLISHED'}
-            action={toggleMicromarketListing}
-            listedHint="Remove this overview page on the next deploy"
-            delistedHint="Publish this overview page on the next deploy"
+            action={toggleLocationListing}
+            listedHint="Remove this overview on the next deploy; its listing page stays available"
+            delistedHint="Publish this overview from the next deploy"
           />
           <DeleteForm
             id={row.id}
             slug={page.slug}
-            action={deleteMicromarket}
-            consequence="The overview page is removed on the next deploy. The warehouse listing page stays available."
+            action={deleteLocation}
+            consequence="The next build removes this overview. Its warehouse listing page stays available."
           />
         </div>
       </div>
@@ -110,28 +114,25 @@ export default async function EditMicromarketPage({
           detail="It's in the CMS, not on the site yet — wareongo.com keeps serving the old version until you deploy."
           dismissLabel="Do it later"
         >
-          {/* No second confirmation behind this one: the card is already asking
-              the question, with the alternative sitting right next to it. */}
           <DeployButton configured={isDeployConfigured()} label="Deploy now" confirm={false} />
         </Toast>
       )}
 
       <EditorialForm
-        page={page}
-        identity={{
-          scope: 'micromarket',
-          citySlug: page.citySlug,
-          slug: page.slug,
-          parentLabel: null,
-        }}
-        backHref="/micromarkets"
-        action={updateMicromarket}
+        page={formPage}
+        identity={
+          kind === 'CITY'
+            ? { scope: 'city', slug: page.slug, parentLabel: stats?.parentState ?? null }
+            : { scope: 'state', slug: page.slug }
+        }
+        backHref={backHref}
+        action={updateLocation}
         id={row.id}
         blogOptions={blogOptions}
         staged={stateOf(row) === 'STAGED'}
         deployable={isDeployConfigured()}
         expectedUpdatedAt={row.updatedAt.toISOString()}
-        inventory={inventory}
+        locationInventory={listFor(inventory, kind)}
       />
     </main>
   );

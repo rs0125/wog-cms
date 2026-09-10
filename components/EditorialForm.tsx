@@ -8,39 +8,88 @@ import StatOverridesEditor from './StatOverridesEditor';
 import DeviceFrame from './DeviceFrame';
 import { applyOverrides } from '@/lib/micromarket-format';
 import { findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
-import MicromarketPreview from './MicromarketPreview';
+import { findLocation, type Location } from '@/lib/locations-api';
+import EditorialPreview, { type PreviewScope } from './EditorialPreview';
 import DeployButton from './DeployButton';
 import {
   PROSE_BANDS,
   countWords,
-  type MicromarketFaq,
-  type MicromarketImage,
-  type MicromarketInput,
+  type EditorialFaq,
+  type EditorialImage,
   type StatOverrides,
-} from '@/lib/micromarket-schema';
+} from '@/lib/editorial-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
 import type { SaveResult } from '@/lib/action-results';
 
 /**
- * Editor for one micromarket page.
+ * Editor for one editorial listing page — a micromarket, a city or a state.
+ *
+ * One wireframe serves all three scopes, so one editor does too. Everything
+ * that differs arrives in `identity`: which URL segments address the page, and
+ * how the preview names what sits above it. Nothing else in this form knows
+ * which scope it is editing.
  *
  * The preview shows the real template at a real device width, with the computed
- * blocks — stat tiles, nearby-market chart, specification table, listing grid —
+ * blocks — stat tiles, peer rent chart, specification table, listing grid —
  * drawn at their true size and labelled rather than filled with invented
- * numbers. See MicromarketPreview for why dashes beat samples, and DeviceFrame
+ * numbers. See EditorialPreview for why dashes beat samples, and DeviceFrame
  * for why the width toggle has to be an iframe.
  */
-export default function MicromarketForm({
+
+/**
+ * How this page is addressed, and what the preview should say sits above it.
+ *
+ * A micromarket is addressed by the pair (citySlug, slug) because the same
+ * locality tag can exist under two cities. A city or state is addressed by its
+ * own slug inside a fixed kind, which the form posts as a hidden field rather
+ * than letting an editor retype it — moving a page between kinds is not an edit,
+ * it is a different page.
+ */
+export type FormIdentity =
+  | { scope: 'micromarket'; citySlug: string; slug: string; parentLabel: string | null }
+  | { scope: 'city'; slug: string; parentLabel: string | null }
+  | { scope: 'state'; slug: string };
+
+export interface EditorialFormPage {
+  name: string;
+  seoTitle: string;
+  metaDescription: string;
+  h1: string;
+  heroEyebrow: string | null;
+  heroProse: string;
+  heroImage: EditorialImage | null;
+  marketHeading: string | null;
+  marketProse: string | null;
+  marketImage: EditorialImage | null;
+  rentsHeading: string | null;
+  rentsProse: string | null;
+  specHeading: string | null;
+  specProse: string | null;
+  inventoryHeading: string | null;
+  faqs: EditorialFaq[];
+  relatedBlogs: string[];
+  statOverrides: StatOverrides;
+  status: 'DRAFT' | 'PUBLISHED';
+}
+
+export default function EditorialForm({
   page,
+  identity,
+  backHref,
   action,
   id,
   blogOptions,
   staged,
   deployable,
   expectedUpdatedAt,
-  inventory,
+  inventory = [],
+  locationInventory = [],
 }: {
-  page: MicromarketInput;
+  page: EditorialFormPage;
+  /** Which URL segments address this page — see FormIdentity. */
+  identity: FormIdentity;
+  /** Where "← Back" goes: the list this page was opened from. */
+  backHref: string;
   action: (prev: SaveResult | undefined, formData: FormData) => Promise<SaveResult>;
   id?: number;
   /** Every blog, for the editorial cross-link picker. */
@@ -52,10 +101,12 @@ export default function MicromarketForm({
   /** Whether a deploy hook is configured; hides Deploy entirely when not. */
   deployable?: boolean;
   /**
-   * Backend geography and figures. Resolve the current slug pair as it is
-   * edited so the URL, preview and overrides all describe the same micromarket.
+   * The figures the site derives from live listings. Null when the slug matches
+   * no real location, or when the query failed — the preview and the overrides
+   * section both degrade to "not recorded" rather than inventing one.
    */
-  inventory: Micromarket[];
+  inventory?: Micromarket[];
+  locationInventory?: Location[];
 }) {
   const [result, formAction, pending] = useActionState(action, undefined);
   // Any input anywhere in the form counts as an edit, including the FAQ editor —
@@ -66,16 +117,20 @@ export default function MicromarketForm({
   // Every field is state-backed: the prose so the word counters can track it as
   // it is typed, and the rest because React 19 resets an uncontrolled form after
   // a form action — see the note on `text` below.
-  const [citySlug, setCitySlug] = useState(page.citySlug);
-  const [slug, setSlug] = useState(page.slug);
-  const stats = findMicromarket(inventory, citySlug, slug) ?? null;
+  const [citySlug, setCitySlug] = useState(
+    identity.scope === 'micromarket' ? identity.citySlug : '',
+  );
+  const [slug, setSlug] = useState(identity.slug);
+  const market = identity.scope === 'micromarket' ? findMicromarket(inventory, citySlug, slug) : null;
+  const location = identity.scope !== 'micromarket' ? findLocation(locationInventory, slug) : null;
+  const stats = market ?? location ?? null;
   const [heroProse, setHeroProse] = useState(page.heroProse);
   const [marketProse, setMarketProse] = useState(page.marketProse ?? '');
   const [rentsProse, setRentsProse] = useState(page.rentsProse ?? '');
   const [specProse, setSpecProse] = useState(page.specProse ?? '');
-  const [heroImage, setHeroImage] = useState<MicromarketImage | null>(page.heroImage);
-  const [marketImage, setMarketImage] = useState<MicromarketImage | null>(page.marketImage);
-  const [faqs, setFaqs] = useState<Keyed<MicromarketFaq>[]>(() => keyAll(page.faqs));
+  const [heroImage, setHeroImage] = useState<EditorialImage | null>(page.heroImage);
+  const [marketImage, setMarketImage] = useState<EditorialImage | null>(page.marketImage);
+  const [faqs, setFaqs] = useState<Keyed<EditorialFaq>[]>(() => keyAll(page.faqs));
   const [relatedBlogs, setRelatedBlogs] = useState<string[]>(page.relatedBlogs);
   const [statOverrides, setStatOverrides] = useState<StatOverrides>(page.statOverrides);
 
@@ -118,6 +173,26 @@ export default function MicromarketForm({
   // corrections already applied, so the preview and the live page agree.
   const previewStats = stats ? applyOverrides(stats, statOverrides) : null;
 
+  const isMicromarket = identity.scope === 'micromarket';
+  const parentLabel = isMicromarket ? market?.parentCity ?? null : location?.parentState ?? null;
+  /** The URL the site will serve this content at, shown back to the editor. */
+  const pagePath = isMicromarket
+    ? `/overview/${market?.stateSlug || '{state}'}/${citySlug || '{city}'}/${slug || '{micromarket}'}`
+    : identity.scope === 'city' ? `/overview/${location?.stateSlug || '{state}'}/${slug || '{city}'}`
+    : `/overview/${slug || '{state}'}`;
+  const previewScope: PreviewScope = {
+    parentLabel,
+    ancestors: isMicromarket ? [market?.parentState || 'state', market?.parentCity || citySlug || 'city']
+      : identity.scope === 'city' ? [location?.parentState || 'state'] : [],
+    peersLabel: identity.scope === 'state' ? 'Other states' : 'Nearby markets',
+    up: parentLabel
+      ? {
+          label: `All of ${parentLabel}`,
+          linkLabel: `Warehouse for rent in ${parentLabel} →`,
+        }
+      : null,
+  };
+
   return (
     <form action={formAction} onInput={touch} className="space-y-8 pb-28">
       {id !== undefined && <input type="hidden" name="id" value={id} />}
@@ -141,8 +216,8 @@ export default function MicromarketForm({
           </li>
           <li>
             Every number — listing count, rents, sizes, clear height, the compliance band — is
-            counted from the warehouses tagged with this micromarket on each deploy, so it stays
-            true on its own. Don&apos;t write figures into the prose.
+            counted from {isMicromarket ? 'the warehouses tagged with this micromarket' : `the warehouses in this ${identity.scope}`}{' '}
+            on each deploy, so it stays true on its own. Don&apos;t write figures into the prose.
           </li>
           <li>
             <strong>Preview</strong> shows the finished page at a real phone and desktop width.
@@ -201,44 +276,54 @@ export default function MicromarketForm({
       <section className="grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-2 rounded-2xl border border-wareongo-blue/20 bg-white p-4">
           <p className="cms-label mb-1">Page URL</p>
-          <p className="break-all font-mono text-sm text-wareongo-charcoal" data-testid="overview-url">
-            /overview/{stats?.stateSlug || '{state}'}/{citySlug || '{city}'}/{slug || '{micromarket}'}
-          </p>
+          <p className="break-all font-mono text-sm text-wareongo-charcoal" data-testid="overview-url">{pagePath}</p>
           <p className="cms-hint">
-            State is filled from the city&apos;s location data. Choose city and micromarket slugs
-            that match the inventory. Publishing creates this overview; the existing listing
-            page continues to show its warehouse grid.
+            Choose slugs that match the inventory. The state for a city or micromarket is filled
+            from its location data. Publishing creates this overview page.
           </p>
-          {!stats?.stateSlug && <p className="cms-hint text-wareongo-sienna">The overview URL needs a matching micromarket with a known state.</p>}
-          {stats && !stats.hasPage && <p className="cms-hint text-wareongo-sienna">This micromarket does not have enough listings to publish an overview yet. You can still save its content as a draft.</p>}
+          {!stats && <p className="cms-hint text-wareongo-sienna">No matching {identity.scope} was found in the inventory.</p>}
+          {identity.scope !== 'state' && !stats?.stateSlug && <p className="cms-hint text-wareongo-sienna">The overview URL needs a matching {identity.scope} with a known state.</p>}
+          {stats && !stats.hasPage && <p className="cms-hint text-wareongo-sienna">This {identity.scope} does not have enough listings to publish an overview yet. You can still save its content as a draft.</p>}
         </div>
 
-        <div>
-          <label className="cms-label" htmlFor="citySlug">City slug</label>
-          <input
-            id="citySlug"
-            name="citySlug"
-            value={citySlug}
-            onChange={(e) => setCitySlug(e.target.value)}
-            required
-            placeholder="bengaluru"
-            className="cms-input"
-          />
-          <p className="cms-hint">The parent city page&apos;s slug, e.g. bengaluru, not bangalore.</p>
-        </div>
+        {/* Fixed, not editable: moving a page between city and state is not an
+            edit, it is a different page over different inventory. */}
+        {!isMicromarket && <input type="hidden" name="kind" value={identity.scope.toUpperCase()} />}
+
+        {isMicromarket && (
+          <div>
+            <label className="cms-label" htmlFor="citySlug">City slug</label>
+            <input
+              id="citySlug"
+              name="citySlug"
+              value={citySlug}
+              onChange={(e) => setCitySlug(e.target.value)}
+              required
+              placeholder="bengaluru"
+              className="cms-input"
+            />
+            <p className="cms-hint">The parent city page&apos;s slug, e.g. bengaluru, not bangalore.</p>
+          </div>
+        )}
 
         <div>
-          <label className="cms-label" htmlFor="slug">Micromarket slug</label>
+          <label className="cms-label" htmlFor="slug">
+            {isMicromarket ? 'Micromarket slug' : `${identity.scope === 'city' ? 'City' : 'State'} slug`}
+          </label>
           <input
             id="slug"
             name="slug"
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             required
-            placeholder="nelamangala"
+            placeholder={isMicromarket ? 'nelamangala' : identity.scope === 'city' ? 'bengaluru' : 'karnataka'}
             className="cms-input"
           />
-          <p className="cms-hint">A &ldquo;/&rdquo; in the name becomes a hyphen: alipur-budhpur.</p>
+          <p className="cms-hint">
+            {isMicromarket
+              ? 'A “/” in the name becomes a hyphen: alipur-budhpur.'
+              : 'Lowercase, hyphenated: bengaluru, not bangalore; uttar-pradesh, not Uttar Pradesh.'}
+          </p>
         </div>
 
         <div>
@@ -449,6 +534,7 @@ export default function MicromarketForm({
       <StatOverridesEditor
         value={statOverrides}
         computed={stats}
+        scopeNoun={identity.scope}
         onChange={(next) => {
           touch();
           setStatOverrides(next);
@@ -518,11 +604,11 @@ export default function MicromarketForm({
           to be free. */}
       {tab === 'preview' && (
         <DeviceFrame width={device === 'mobile' ? 390 : 1280}>
-          <MicromarketPreview
+          <EditorialPreview
             data={{
-              citySlug,
+              scope: previewScope,
               slug,
-              name: text.name,
+              name: stats?.name || text.name,
               h1: text.h1,
               heroEyebrow: text.heroEyebrow,
               heroProse,
@@ -544,7 +630,7 @@ export default function MicromarketForm({
 
       <div className="fixed inset-x-0 bottom-0 border-t border-wareongo-blue/20 bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
-          <Link href="/micromarkets" className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
+          <Link href={backHref} className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
             ← Back
           </Link>
           {result && !result.ok && <p className="text-sm text-wareongo-sienna">{result.error}</p>}
@@ -633,14 +719,14 @@ function ProseField({
  * throw away an unsaved choice, and remounted so a Delist/List click — which
  * refreshes server props in place instead of navigating — is reflected here.
  */
-function StatusSelect({ status }: { status: MicromarketInput['status'] }) {
+function StatusSelect({ status }: { status: EditorialFormPage['status'] }) {
   const [value, setValue] = useState(status);
   return (
     <select
       id="status"
       name="status"
       value={value}
-      onChange={(e) => setValue(e.target.value as MicromarketInput['status'])}
+      onChange={(e) => setValue(e.target.value as EditorialFormPage['status'])}
       className="cms-input"
     >
       <option value="DRAFT">Draft — overview is not published</option>

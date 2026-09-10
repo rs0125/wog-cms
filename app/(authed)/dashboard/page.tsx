@@ -2,26 +2,35 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { stateOf as blogStateOf } from '@/lib/staging';
 import { stateOf as micromarketStateOf } from '@/lib/micromarket-staging';
+import { stateOf as locationStateOf } from '@/lib/location-staging';
 import { buildablePages, fetchMicromarkets } from '@/lib/micromarkets-api';
+import { eligible, fetchLocations, type Location } from '@/lib/locations-api';
 
 // Auth and dynamic rendering both come from app/(authed)/layout.tsx.
 
 /**
  * The signed-in landing page.
  *
- * Two sections, and a count on each, because the useful thing to know on arrival
- * is how much is live and how much is waiting — not a list. The micromarket
- * figure counts every micromarket the site builds a page for, not the rows this
- * app happens to hold, so "3 of 41 written" is visible from the front door.
+ * One card per kind of content, and a count on each, because the useful thing to
+ * know on arrival is how much is live and how much is waiting — not a list. The
+ * location figures count every place the site would carry an editorial page, not
+ * the rows this app happens to hold, so "3 of 41 written" is visible from the
+ * front door.
  */
 export default async function DashboardPage() {
-  const [blogs, pages, inventory] = await Promise.all([
+  const [blogs, pages, locationRows, inventory, locations] = await Promise.all([
     prisma.blog.findMany(),
     prisma.micromarketPage.findMany(),
+    prisma.locationPage.findMany(),
     // Never fatal: the dashboard is still worth showing if the backend is down.
     fetchMicromarkets()
       .then((r) => r.data)
       .catch(() => []),
+    fetchLocations().catch(() => ({
+      cities: [] as Location[],
+      states: [] as Location[],
+      gates: { locationPageMinListings: 0 },
+    })),
   ]);
 
   const blogLive = blogs.filter((b) => blogStateOf(b) === 'PUBLISHED').length;
@@ -32,6 +41,22 @@ export default async function DashboardPage() {
   const mmLive = pages.filter((m) => micromarketStateOf(m) === 'PUBLISHED').length;
   const mmStaged = pages.filter((m) => micromarketStateOf(m) === 'STAGED').length;
   const mmWritten = withPage.filter((m) => written.has(`${m.citySlug}/${m.slug}`)).length;
+
+  /** Both kinds share one table, so each card counts its own slice of it. */
+  const locationCard = (kind: 'CITY' | 'STATE') => {
+    const rows = locationRows.filter((r) => r.kind === kind);
+    const all = eligible(kind === 'CITY' ? locations.cities : locations.states);
+    const slugs = new Set(rows.map((r) => r.slug));
+    return {
+      total: all.length,
+      written: all.filter((l) => slugs.has(l.slug)).length,
+      live: rows.filter((r) => locationStateOf(r) === 'PUBLISHED').length,
+      staged: rows.filter((r) => locationStateOf(r) === 'STAGED').length,
+      rows: rows.length,
+    };
+  };
+  const cityStats = locationCard('CITY');
+  const stateStats = locationCard('STATE');
 
   const cards = [
     {
@@ -50,6 +75,26 @@ export default async function DashboardPage() {
           : `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`,
       detail: `${mmLive} live${mmStaged > 0 ? ` · ${mmStaged} staged` : ''}`,
       body: 'Market overviews at /overview/{state}/{city}/{micromarket}. Existing warehouse listing pages keep their plain grids.',
+    },
+    {
+      href: '/locations?kind=CITY',
+      title: 'City pages',
+      lead:
+        cityStats.total > 0
+          ? `${cityStats.written} of ${cityStats.total} written`
+          : `${cityStats.rows} ${cityStats.rows === 1 ? 'page' : 'pages'}`,
+      detail: `${cityStats.live} live${cityStats.staged > 0 ? ` · ${cityStats.staged} staged` : ''}`,
+      body: 'City overviews at /overview/{state}/{city}, using the shared editorial wireframe.',
+    },
+    {
+      href: '/locations?kind=STATE',
+      title: 'State pages',
+      lead:
+        stateStats.total > 0
+          ? `${stateStats.written} of ${stateStats.total} written`
+          : `${stateStats.rows} ${stateStats.rows === 1 ? 'page' : 'pages'}`,
+      detail: `${stateStats.live} live${stateStats.staged > 0 ? ` · ${stateStats.staged} staged` : ''}`,
+      body: 'State overviews at /overview/{state}, using the shared editorial wireframe.',
     },
   ];
 

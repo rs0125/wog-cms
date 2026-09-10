@@ -1,14 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import type { MicromarketFaq, MicromarketImage } from '@/lib/micromarket-schema';
+import type { EditorialFaq, EditorialImage } from '@/lib/editorial-schema';
 import { formatRentRange, formatSqft, formatSqftRange } from '@/lib/micromarket-format';
-import type { Micromarket } from '@/lib/micromarkets-api';
+import type { DerivedStats } from '@/lib/derived-stats';
 
 /**
- * How the public site lays out a micromarket page, class-for-class from
- * wareongo-website src/pages/MicromarketPage.tsx and the components under
+ * How the public site lays out an editorial listing page, class-for-class from
+ * wareongo-website src/pages/EditorialLocationPage.tsx and the components under
  * src/components/micromarket/.
+ *
+ * One wireframe serves micromarkets, cities and states, so one preview does
+ * too. Everything that differs between the scopes arrives in `scope` — the same
+ * shape the website's loader resolves for the real template — which is why
+ * there are no scope conditionals in the markup below.
  *
  * Duplicated rather than shared, for the same reason BlogPreview is: two
  * deployments, two Tailwind setups, and a package for one page would cost more
@@ -169,36 +174,50 @@ const SectionHeading = ({
   </header>
 );
 
-const Figure = ({ image }: { image: MicromarketImage }) => (
+const Figure = ({ image }: { image: EditorialImage }) => (
   <div className="aspect-[4/3] overflow-hidden rounded-2xl border border-wareongo-blue bg-wareongo-blue/5">
     {/* eslint-disable-next-line @next/next/no-img-element */}
     <img src={image.url} alt={image.alt} className="h-full w-full object-cover" />
   </div>
 );
 
-export interface MicromarketPreviewData {
-  citySlug: string;
+/**
+ * Where the page sits and what it links to, mirroring EditorialScope in the
+ * website's loader so the preview and the real page name things identically.
+ */
+export interface PreviewScope {
+  /** Breadcrumb step between "Listings" and this page, or null when there is none. */
+  parentLabel: string | null;
+  ancestors: string[];
+  /** "Nearby markets" for a locality or city, "Other states" for a state. */
+  peersLabel: string;
+  /** The "All of X" row, or null when there is nothing above this page. */
+  up: { label: string; linkLabel: string } | null;
+}
+
+export interface EditorialPreviewData {
+  scope: PreviewScope;
   slug: string;
   name: string;
   h1: string;
   heroEyebrow: string;
   heroProse: string;
-  heroImage: MicromarketImage | null;
+  heroImage: EditorialImage | null;
   marketHeading: string;
   marketProse: string;
-  marketImage: MicromarketImage | null;
+  marketImage: EditorialImage | null;
   rentsHeading: string;
   rentsProse: string;
   specHeading: string;
   specProse: string;
   inventoryHeading: string;
-  faqs: MicromarketFaq[];
+  faqs: EditorialFaq[];
   /** What the site would publish, or null when the slugs match no page. */
-  stats: Micromarket | null;
+  stats: DerivedStats | null;
 }
 
 /** Mirrors specRowsFor on the site: a row with no data is dropped, not blanked. */
-function specRows(stats: Micromarket | null): [string, string][] {
+function specRows(stats: DerivedStats | null): [string, string][] {
   if (!stats) return [];
   const rows: [string, string][] = [];
   if (stats.clearHeight) {
@@ -215,7 +234,7 @@ function specRows(stats: Micromarket | null): [string, string][] {
 }
 
 /** Mirrors InventoryBand: zero-count tiles are dropped. */
-function bandTiles(stats: Micromarket | null) {
+function bandTiles(stats: DerivedStats | null) {
   if (!stats) return [];
   // Clamped, as the site clamps it: the counts are overridable but `measured`
   // is not, so a correction above the built total would print over 100%.
@@ -228,7 +247,7 @@ function bandTiles(stats: Micromarket | null) {
   ].filter((t) => t.value > 0);
 }
 
-export default function MicromarketPreview({ data }: { data: MicromarketPreviewData }) {
+export default function EditorialPreview({ data }: { data: EditorialPreviewData }) {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const stats = data.stats;
@@ -254,7 +273,7 @@ export default function MicromarketPreview({ data }: { data: MicromarketPreviewD
   const showing = (perPage: number, pages: number) =>
     `Showing 1–${Math.min(total, perPage)} of ${total}${pages > 1 ? ` · page 1 of ${pages}` : ''}`;
 
-  const place = data.name || 'this micromarket';
+  const place = data.name || 'this page';
   const faqs = data.faqs.filter((f) => f.q.trim() || f.a.trim());
 
   /**
@@ -291,14 +310,12 @@ export default function MicromarketPreview({ data }: { data: MicromarketPreviewD
               <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
               Listings
             </li>
-            <li className="flex items-center gap-1">
-              <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
-              {data.stats?.parentState || 'state'}
-            </li>
-            <li className="flex items-center gap-1">
-              <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
-              {data.stats?.parentCity || data.citySlug || 'city'}
-            </li>
+            {data.scope.ancestors.map((label, index) => (
+              <li key={index} className="flex items-center gap-1">
+                <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
+                {label}
+              </li>
+            ))}
             <li className="flex items-center gap-1">
               <Chevron className="h-3.5 w-3.5 text-wareongo-slate/50" />
               <span className="font-medium text-wareongo-blue">{place}</span>
@@ -437,7 +454,7 @@ export default function MicromarketPreview({ data }: { data: MicromarketPreviewD
                       {peers.map((p) => {
                         const height = Math.max(12, Math.round((p.medianRent / peerMax) * 100));
                         return (
-                          <div key={`${p.citySlug}/${p.slug}`} className="min-w-0 flex-1">
+                          <div key={p.path} className="min-w-0 flex-1">
                             <span className="flex h-32 w-full items-end sm:h-40">
                               <span
                                 style={{ height: `${height}%` }}
@@ -600,12 +617,12 @@ export default function MicromarketPreview({ data }: { data: MicromarketPreviewD
               {siblings.length > 0 && (
                 <div className="sm:flex sm:gap-6">
                   <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>
-                    Nearby markets
+                    {data.scope.peersLabel}
                   </dt>
                   <dd className="flex flex-wrap gap-2">
                     {siblings.map((p) => (
                       <span
-                        key={`${p.citySlug}/${p.slug}`}
+                        key={p.path}
                         className="inline-flex items-center gap-1.5 rounded-full border border-wareongo-blue/30 px-3 py-1.5 text-wareongo-blue"
                       >
                         {p.name}
@@ -615,12 +632,16 @@ export default function MicromarketPreview({ data }: { data: MicromarketPreviewD
                   </dd>
                 </div>
               )}
-              <div className="sm:flex sm:gap-6">
-                <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>
-                  All of {data.citySlug || 'the city'}
-                </dt>
-                <dd className="text-wareongo-blue">Warehouse for rent in {data.citySlug || 'city'} →</dd>
-              </div>
+              {/* A state has nothing above it, so the row is absent there
+                  exactly as it is on the real page. */}
+              {data.scope.up && (
+                <div className="sm:flex sm:gap-6">
+                  <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>
+                    {data.scope.up.label}
+                  </dt>
+                  <dd className="text-wareongo-blue">{data.scope.up.linkLabel}</dd>
+                </div>
+              )}
             </dl>
           </section>
 

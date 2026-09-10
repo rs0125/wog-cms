@@ -1,4 +1,4 @@
-import type { Micromarket, Spread } from './micromarkets-api';
+import type { DerivedStats, Spread } from './derived-stats';
 
 /**
  * Presentation helpers, and the one piece of arithmetic this app still does:
@@ -38,8 +38,13 @@ const mergeSpread = (computed: Spread | null, override: SpreadOverride | undefin
   return { min: low, median: Math.min(Math.max(median, low), high), max: high };
 };
 
-export function applyOverrides(
-  stats: Micromarket,
+/**
+ * Generic over the stats type rather than typed to one scope: a city's figures
+ * carry `parentState` where a micromarket's carry `citySlug`, and the caller
+ * gets its own type back instead of losing those fields to a widened return.
+ */
+export function applyOverrides<T extends DerivedStats>(
+  stats: T,
   o: {
     rent: SpreadOverride;
     size: SpreadOverride;
@@ -48,7 +53,7 @@ export function applyOverrides(
     fireNoc: number | null;
     commercialClu: number | null;
   },
-): Micromarket {
+): T {
   const rent = mergeSpread(stats.rent, o.rent);
 
   /**

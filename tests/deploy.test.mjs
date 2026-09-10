@@ -26,10 +26,12 @@ function harness(options = {}) {
     '@/lib/prisma': { prisma: {
       blog: table('blog'),
       micromarketPage: table('micromarket'),
+      locationPage: table('location'),
       $transaction: async () => { calls.transactions += 1; },
     } },
     '@/lib/staging': { contentOf: (row) => ({ title: row.title }) },
     '@/lib/micromarket-staging': { contentOf: (row) => ({ title: row.title }) },
+    '@/lib/location-staging': { contentOf: (row) => ({ title: row.title }) },
     '@/lib/auth': { requireUser: async () => {
       calls.sessions += 1;
       if (options.sessionDenied) throw new Error('login required');
@@ -102,7 +104,7 @@ test('missing or malformed hook disables deployment', async () => {
   }
 });
 
-test('valid bearer auth triggers once and snapshots both content sections', async () => {
+test('valid bearer auth triggers once and snapshots blogs, micromarkets and locations', async () => {
   const h = harness();
   const response = await h.post();
   assert.equal(response.status, 202);
@@ -116,9 +118,10 @@ test('valid bearer auth triggers once and snapshots both content sections', asyn
   assert.ok(h.calls.fetch[0][1].signal instanceof AbortSignal);
   assert.equal(h.calls.sessions, 0);
   assert.equal(h.calls.transactions, 1);
-  assert.deepEqual(h.calls.updates.map((x) => x.where.id).sort(), ['blog', 'micromarket']);
+  assert.deepEqual(h.calls.updates.map((x) => x.where.id).sort(), ['blog', 'location', 'micromarket']);
   assert.equal(h.calls.updates[0].data.deployedContent.title, 'blog content');
   assert.equal(h.calls.updates[1].data.deployedContent.title, 'micromarket content');
+  assert.equal(h.calls.updates[2].data.deployedContent.title, 'location content');
   assert.ok(!JSON.stringify(json).includes(HOOK));
   assert.equal(h.route.GET, undefined);
 });

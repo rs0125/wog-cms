@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { hasAnyOverride, type StatOverrides } from '@/lib/micromarket-schema';
 import { formatSqft } from '@/lib/micromarket-format';
-import type { Micromarket } from '@/lib/micromarkets-api';
+import type { DerivedStats } from '@/lib/derived-stats';
 
 /**
  * Corrections to the figures the page derives from live listings.
@@ -46,11 +46,14 @@ export default function StatOverridesEditor({
   value,
   computed,
   onChange,
+  scopeNoun,
 }: {
   value: StatOverrides;
   /** What the site would publish with no overrides. Null when unknown. */
-  computed: Micromarket | null;
+  computed: DerivedStats | null;
   onChange: (next: StatOverrides) => void;
+  /** "micromarket", "city" or "state" — this section names the scope several times. */
+  scopeNoun: string;
 }) {
   const [open, setOpen] = useState(() => hasAnyOverride(value));
 
@@ -178,8 +181,8 @@ export default function StatOverridesEditor({
         <div className="space-y-5 rounded-b-2xl border border-t-0 border-wareongo-blue/25 bg-white p-4">
           <div className="rounded-xl bg-wareongo-blue/[0.04] p-3.5">
             <p className="text-sm text-wareongo-charcoal">
-              These numbers come from the warehouses tagged with this micromarket, and refresh on
-              every deploy. <strong>Leave them alone unless one is wrong.</strong>
+              These numbers come from the warehouses in this {scopeNoun}, and refresh on every
+              deploy. <strong>Leave them alone unless one is wrong.</strong>
             </p>
             <p className="mt-2 text-xs text-wareongo-slate">
               Type a value only to correct bad source data — a rent recorded as a yearly figure, a
@@ -202,8 +205,8 @@ export default function StatOverridesEditor({
             )}
             {!computed && (
               <p className="mt-2 text-xs text-wareongo-sienna">
-                No live figures for this micromarket — usually because the city and micromarket slugs
-                above don&apos;t match a page the site builds.
+                No live figures for this {scopeNoun} — usually because the slug above doesn&apos;t
+                match a page the site builds.
               </p>
             )}
           </div>

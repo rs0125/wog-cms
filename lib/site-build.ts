@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { deployHookUrl } from '@/lib/deploy';
 import { contentOf as blogContentOf } from '@/lib/staging';
 import { contentOf as micromarketContentOf } from '@/lib/micromarket-staging';
+import { contentOf as locationContentOf } from '@/lib/location-staging';
 
 export type SiteBuildResult =
   | { ok: true; jobId?: string; warning?: string }
@@ -59,7 +60,7 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
     // Each select lists only what its contentOf() reads. A bare findMany() would
     // also pull every row's existing deployedContent — a second full copy of the
     // content — purely to throw it away.
-    const [blogs, micromarkets] = await Promise.all([
+    const [blogs, micromarkets, locations] = await Promise.all([
       prisma.blog.findMany({
         select: {
           id: true,
@@ -105,10 +106,36 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
           status: true,
         },
       }),
+      prisma.locationPage.findMany({
+        select: {
+          id: true,
+          kind: true,
+          slug: true,
+          name: true,
+          seoTitle: true,
+          metaDescription: true,
+          h1: true,
+          heroEyebrow: true,
+          heroProse: true,
+          heroImage: true,
+          marketHeading: true,
+          marketProse: true,
+          marketImage: true,
+          rentsHeading: true,
+          rentsProse: true,
+          specHeading: true,
+          specProse: true,
+          inventoryHeading: true,
+          faqs: true,
+          relatedBlogs: true,
+          statOverrides: true,
+          status: true,
+        },
+      }),
     ]);
 
     const now = new Date();
-    // One transaction across both tables: a half-recorded deploy would leave one
+    // One transaction across all three tables: a half-recorded deploy would leave one
     // section's badges telling the truth and the other's lying.
     await prisma.$transaction([
       ...blogs.map((g) =>
@@ -125,6 +152,15 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
           where: { id: m.id },
           data: {
             deployedContent: micromarketContentOf(m) as Prisma.InputJsonValue,
+            deployedAt: now,
+          },
+        }),
+      ),
+      ...locations.map((m) =>
+        prisma.locationPage.update({
+          where: { id: m.id },
+          data: {
+            deployedContent: locationContentOf(m) as Prisma.InputJsonValue,
             deployedAt: now,
           },
         }),

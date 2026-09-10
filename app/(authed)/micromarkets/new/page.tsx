@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import MicromarketForm from '@/components/MicromarketForm';
+import EditorialForm from '@/components/EditorialForm';
 import { createMicromarket } from '../actions';
 import { prisma } from '@/lib/prisma';
 import { NO_OVERRIDES, type MicromarketInput } from '@/lib/micromarket-schema';
@@ -85,8 +85,15 @@ export default async function NewMicromarketPage({
           ? `Writing the overview at ${path}.`
           : 'Start from the Micromarkets list to fill the city and micromarket slugs. State comes from the location data.'}
       </p>
-      <MicromarketForm
+      <EditorialForm
         page={blank}
+        identity={{
+          scope: 'micromarket',
+          citySlug,
+          slug,
+          parentLabel: null,
+        }}
+        backHref="/micromarkets"
         action={createMicromarket}
         blogOptions={blogOptions}
         deployable={isDeployConfigured()}

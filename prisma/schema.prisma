@@ -96,3 +96,52 @@ enum MicromarketPageStatus {
   DRAFT
   PUBLISHED
 }
+
+/// Which kind of location a LocationPage carries content for. Mirror of the
+/// backend enum — keep in sync by hand.
+enum LocationPageKind {
+  CITY
+  STATE
+}
+
+/// Editorial content for /overview/{state} and /overview/{state}/{city}.
+/// Published rows use the shared wireframe. Listing URLs keep their grids.
+///
+/// One table with a discriminator rather than CityPage and StatePage: "delhi",
+/// "puducherry" and "goa" are each both a city and a state in this catalogue,
+/// which is why the unique key is the pair.
+model LocationPage {
+  id               Int                   @id @default(autoincrement())
+  kind             LocationPageKind
+  slug             String
+  /// Display name, for this CMS's list view only.
+  name             String
+  seoTitle         String
+  metaDescription  String
+  h1               String
+  heroEyebrow      String?
+  heroProse        String
+  heroImage        Json?
+  marketHeading    String?
+  marketProse      String?
+  marketImage      Json?
+  rentsHeading     String?
+  rentsProse       String?
+  specHeading      String?
+  specProse        String?
+  inventoryHeading String?
+  faqs             Json
+  relatedBlogs     String[]              @default([])
+  /// Same contract as MicromarketPage.statOverrides — see the backend schema,
+  /// and lib/location-schema.ts for the validated shape.
+  statOverrides    Json?
+  status           MicromarketPageStatus @default(DRAFT)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  /// Same contract as Blog.deployedContent — see lib/staging.ts.
+  deployedAt       DateTime?
+  deployedContent  Json?
+
+  @@unique([kind, slug])
+  @@index([status])
+}

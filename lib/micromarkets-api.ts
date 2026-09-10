@@ -17,29 +17,12 @@ const API_BASE = (process.env.WAREONGO_API_BASE ?? 'https://wareongo-website-bac
   '',
 );
 
-export interface Spread {
-  min: number;
-  median: number;
-  max: number;
-}
+// The figure types are shared with cities and states — see ./derived-stats.ts —
+// because one wireframe renders all three. Re-exported for existing importers.
+export type { Spread, MixEntry, Peer, DerivedStats } from './derived-stats';
+import type { DerivedStats } from './derived-stats';
 
-export interface MixEntry {
-  label: string;
-  count: number;
-  /** Percentage of the measured set, rounded. */
-  share: number;
-}
-
-export interface Peer {
-  name: string;
-  slug: string;
-  citySlug: string | null;
-  medianRent: number;
-  /** The micromarket whose page this chart is on, highlighted in it. */
-  isSelf: boolean;
-}
-
-export interface Micromarket {
+export interface Micromarket extends DerivedStats {
   /** Display name, as the tagging data spells it. */
   name: string;
   /** The {micromarket} URL segment. */
@@ -55,29 +38,6 @@ export interface Micromarket {
    * for it would render nowhere.
    */
   hasPage: boolean;
-  /** Everything tagged with this micromarket, land and build-to-suit included. */
-  listings: number;
-  /** Built stock only — what every figure below is computed from. */
-  measured: number;
-  rent: Spread | null;
-  size: Spread | null;
-  clearHeight: Spread | null;
-  docksMedian: number | null;
-  construction: MixEntry[];
-  flooring: MixEntry[];
-  fireNoc: number;
-  commercialClu: number;
-  /**
-   * Which warehouses belong to this micromarket. The website renders its grid
-   * from this rather than re-matching tags to slugs.
-   */
-  listingIds: number[];
-  /**
-   * Bars for the nearby-market chart: the busiest priced siblings under the same
-   * city, plus this micromarket. Empty when there is nothing to compare against,
-   * and the section hides itself.
-   */
-  peers: Peer[];
 }
 
 export interface MicromarketGates {

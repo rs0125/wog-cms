@@ -1,10 +1,22 @@
 import type { MicromarketPage } from '@prisma/client';
-import { sameContent, type ContentState } from './staging';
+import type { ContentState } from './staging';
+import {
+  editorialContentOf,
+  editorialStateOf,
+  type EditorialFields,
+  type Flatten,
+} from './editorial-staging';
 
-// Whether a micromarket page's saved state has reached the live site. Identical
-// contract to blogs (see ./staging.ts for the reasoning, including why the
-// snapshot records a deploy being *triggered* rather than confirmed live) — this
-// module just names the columns that make up a micromarket page's content.
+// The content contract is shared with city and state pages — see
+// ./editorial-staging.ts. This module names the columns that address a
+// micromarket page, and re-exports the shared labels its importers use.
+export {
+  LIVE_LAYOUT_HINT,
+  PAGE_STATE_LABEL,
+  PAGE_STATE_CLASS,
+  PAGE_STATE_HINT,
+  type PageState,
+} from './editorial-staging';
 
 /**
  * The subset of the row that content is derived from, as a Pick so callers can
@@ -36,116 +48,15 @@ export type ContentSource = Pick<
   | 'status'
 >;
 
-/** Exactly the fields that reach the site. Order is fixed so the JSON compares stably. */
-export type DeployedContent = {
-  citySlug: string;
-  slug: string;
-  name: string;
-  seoTitle: string;
-  metaDescription: string;
-  h1: string;
-  heroEyebrow: string | null;
-  heroProse: string;
-  heroImage: unknown;
-  marketHeading: string | null;
-  marketProse: string | null;
-  marketImage: unknown;
-  rentsHeading: string | null;
-  rentsProse: string | null;
-  specHeading: string | null;
-  specProse: string | null;
-  inventoryHeading: string | null;
-  faqs: unknown;
-  relatedBlogs: string[];
-  statOverrides: unknown;
-  status: string;
-};
+/** Exactly the fields that reach the site. Identity first, then the shared set. */
+export type DeployedContent = Flatten<{ citySlug: string; slug: string } & EditorialFields>;
 
-/**
- * `name` is in here even though the public page never renders it: it is the
- * label this CMS lists the page under, and a rename the editor made but hasn't
- * deployed is still an unsaved-to-production difference worth showing.
- *
- * `status` is included for the reason blogs include it: flipping a live page to
- * DRAFT doesn't take it off the site until the next build, so that change is
- * staged too.
- */
 export function contentOf(m: ContentSource): DeployedContent {
-  return {
-    citySlug: m.citySlug,
-    slug: m.slug,
-    name: m.name,
-    seoTitle: m.seoTitle,
-    metaDescription: m.metaDescription,
-    h1: m.h1,
-    heroEyebrow: m.heroEyebrow,
-    heroProse: m.heroProse,
-    heroImage: m.heroImage,
-    marketHeading: m.marketHeading,
-    marketProse: m.marketProse,
-    marketImage: m.marketImage,
-    rentsHeading: m.rentsHeading,
-    rentsProse: m.rentsProse,
-    specHeading: m.specHeading,
-    specProse: m.specProse,
-    inventoryHeading: m.inventoryHeading,
-    faqs: m.faqs,
-    relatedBlogs: m.relatedBlogs,
-    statOverrides: m.statOverrides,
-    status: m.status,
-  };
+  return { citySlug: m.citySlug, slug: m.slug, ...editorialContentOf(m) };
 }
 
 export function stateOf(
   m: ContentSource & Pick<MicromarketPage, 'deployedContent'>,
 ): ContentState {
-  const snapshot = m.deployedContent as DeployedContent | null | undefined;
-  const live = Boolean(snapshot) && snapshot!.status === 'PUBLISHED';
-
-  if (!live && m.status === 'DRAFT') return 'DRAFT';
-  if (!live) return 'STAGED';
-  return sameContent(contentOf(m), snapshot) ? 'PUBLISHED' : 'STAGED';
+  return editorialStateOf(m, contentOf(m));
 }
-
-/**
- * What the *website* does with this page today, which is the thing that isn't
- * obvious from Draft/Published alone: only deployed content creates an overview
- * URL. Its separate warehouse listing page is always available.
- */
-export const LIVE_LAYOUT_HINT: Record<ContentState, string> = {
-  DRAFT: 'No overview is published. The warehouse listing page is available.',
-  PUBLISHED: 'The overview URL serves this editorial page.',
-  STAGED: 'Overview publication changes take effect on the next build.',
-};
-
-/**
- * A micromarket's state from the listing screen's point of view, which has one
- * more case than the editor does: `STUB` is a micromarket the site builds a page
- * for that nobody has written yet. Its listing page is available, and its
- * overview can be written and published separately.
- */
-export type PageState = 'STUB' | ContentState;
-
-export const PAGE_STATE_LABEL: Record<PageState, string> = {
-  // Not "Stub": in Montserrat uppercase the T/U pair renders with a gap wide
-  // enough to read as two words ("ST UB"), and no tracking value fixes it. This
-  // also says the thing plainly to a team writing copy rather than in jargon.
-  STUB: 'No content',
-  DRAFT: 'Draft',
-  PUBLISHED: 'Live',
-  STAGED: 'Staged',
-};
-
-export const PAGE_STATE_CLASS: Record<PageState, string> = {
-  STUB: 'bg-wareongo-slate/10 text-wareongo-slate',
-  DRAFT: 'bg-wareongo-purple/10 text-wareongo-purple',
-  PUBLISHED: 'bg-wareongo-green/10 text-wareongo-green',
-  STAGED: 'bg-wareongo-sienna/10 text-wareongo-sienna',
-};
-
-export const PAGE_STATE_HINT: Record<PageState, string> = {
-  STUB: 'No overview written. The warehouse listing page is available.',
-  DRAFT: 'Overview written but not marked for publication.',
-  PUBLISHED: 'This exact content was included in a deploy.',
-  STAGED: 'Saved but not deployed — the site still shows the previous version.',
-};
