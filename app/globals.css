@@ -56,6 +56,11 @@
 }
 
 @layer components {
+  .cms-nav-link {
+    @apply flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 py-2.5 font-medium transition-colors
+      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wareongo-blue;
+  }
+
   .cms-label {
     @apply block text-[11px] font-semibold uppercase tracking-[0.14em] text-wareongo-slate mb-1.5;
   }

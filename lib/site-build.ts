@@ -60,7 +60,7 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
     // Each select lists only what its contentOf() reads. A bare findMany() would
     // also pull every row's existing deployedContent — a second full copy of the
     // content — purely to throw it away.
-    const [blogs, micromarkets, locations] = await Promise.all([
+    const [blogs, micromarkets, locations, legalPages] = await Promise.all([
       prisma.blog.findMany({
         select: {
           id: true,
@@ -132,12 +132,17 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
           status: true,
         },
       }),
+      prisma.legalPage.findMany({ select: { slug: true, publishedContent: true } }),
     ]);
 
     const now = new Date();
-    // One transaction across all three tables: a half-recorded deploy would leave one
+    // One transaction across all content tables: a half-recorded deploy would leave one
     // section's badges telling the truth and the other's lying.
     await prisma.$transaction([
+      ...legalPages.map(p => prisma.legalPage.update({
+        where: { slug: p.slug },
+        data: { deployedContent: p.publishedContent as Prisma.InputJsonValue, deployedAt: now },
+      })),
       ...blogs.map((g) =>
         prisma.blog.update({
           where: { id: g.id },

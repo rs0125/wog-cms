@@ -23,9 +23,11 @@ const field = 'cms-input';
 export default function BlockEditor({
   blocks,
   onChange,
+  kinds = BLOCK_KINDS,
 }: {
   blocks: Keyed<BlogBlock>[];
   onChange: (next: Keyed<BlogBlock>[]) => void;
+  kinds?: readonly BlogBlock['kind'][];
 }) {
   return (
     <div className="space-y-3">
@@ -39,7 +41,7 @@ export default function BlockEditor({
               onChange={(e) => onChange(replaceAt(blocks, i, emptyBlock(e.target.value as BlogBlock['kind'])))}
               className="rounded-lg border border-wareongo-blue/25 bg-white px-2.5 py-1.5 text-xs text-wareongo-blue"
             >
-              {BLOCK_KINDS.map((k) => (
+              {kinds.map((k) => (
                 <option key={k} value={k}>
                   {KIND_LABEL[k]}
                 </option>
@@ -94,7 +96,7 @@ export default function BlockEditor({
       ))}
 
       <div className="flex flex-wrap gap-2">
-        {BLOCK_KINDS.map((k) => (
+        {kinds.map((k) => (
           <button key={k} type="button" className={btn} onClick={() => onChange([...blocks, keyed(emptyBlock(k))])}>
             + {KIND_LABEL[k]}
           </button>

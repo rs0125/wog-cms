@@ -27,6 +27,10 @@ function harness(options = {}) {
       blog: table('blog'),
       micromarketPage: table('micromarket'),
       locationPage: table('location'),
+      legalPage: {
+        findMany: async () => [{ slug: 'privacy-policy', publishedContent: { title: 'Approved policy' }, draftContent: { title: 'Private draft' } }],
+        update: args => { calls.updates.push(args); return args; },
+      },
       $transaction: async () => { calls.transactions += 1; },
     } },
     '@/lib/staging': { contentOf: (row) => ({ title: row.title }) },
@@ -118,10 +122,13 @@ test('valid bearer auth triggers once and snapshots blogs, micromarkets and loca
   assert.ok(h.calls.fetch[0][1].signal instanceof AbortSignal);
   assert.equal(h.calls.sessions, 0);
   assert.equal(h.calls.transactions, 1);
-  assert.deepEqual(h.calls.updates.map((x) => x.where.id).sort(), ['blog', 'location', 'micromarket']);
-  assert.equal(h.calls.updates[0].data.deployedContent.title, 'blog content');
-  assert.equal(h.calls.updates[1].data.deployedContent.title, 'micromarket content');
-  assert.equal(h.calls.updates[2].data.deployedContent.title, 'location content');
+  assert.deepEqual(h.calls.updates.map((x) => x.where.id ?? x.where.slug).sort(), ['blog', 'location', 'micromarket', 'privacy-policy']);
+  const snapshot = key => h.calls.updates.find(x => (x.where.id ?? x.where.slug) === key).data.deployedContent;
+  assert.equal(snapshot('blog').title, 'blog content');
+  assert.equal(snapshot('micromarket').title, 'micromarket content');
+  assert.equal(snapshot('location').title, 'location content');
+  assert.equal(snapshot('privacy-policy').title, 'Approved policy');
+  assert.ok(!JSON.stringify(h.calls.updates).includes('Private draft'));
   assert.ok(!JSON.stringify(json).includes(HOOK));
   assert.equal(h.route.GET, undefined);
 });

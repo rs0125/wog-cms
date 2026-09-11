@@ -628,7 +628,7 @@ export default function EditorialForm({
         </DeviceFrame>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-wareongo-blue/20 bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-wareongo-blue/20 bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <Link href={backHref} className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
             ← Back

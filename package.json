@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:deploy": "node tests/deploy.test.mjs",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:legal": "node tests/legal-actions.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1109.0",
