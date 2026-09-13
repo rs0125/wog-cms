@@ -34,7 +34,7 @@ const blogImageSchema = z.object({
   height: z.number().int().positive(),
 });
 
-const blogBlockSchema = z.discriminatedUnion('kind', [
+export const blogBlockSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('h2'), text: nonEmpty }),
   z.object({ kind: z.literal('h3'), text: nonEmpty }),
   z.object({ kind: z.literal('p'), text: nonEmpty }),
@@ -55,7 +55,7 @@ const blogFaqSchema = z.object({ q: nonEmpty, a: nonEmpty });
 
 // Every row in a table must have exactly as many cells as there are headers —
 // a short row renders a visually broken table on the live page.
-const tableRowsMatchHeaders = (blocks: BlogBlock[]) =>
+export const tableRowsMatchHeaders = (blocks: BlogBlock[]) =>
   blocks.every((b) => (b.kind === 'table' ? b.table.rows.every((r) => r.length === b.table.headers.length) : true));
 
 export const blogSchema = z.object({

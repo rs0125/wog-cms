@@ -84,6 +84,11 @@ export default async function DashboardPage() {
       detail: 'Privacy Policy & Terms of Service',
       description: 'Manage policy wording, dates and legal information.',
     },
+    services: {
+      lead: '4 pages',
+      detail: 'Warehouse Search, Build-To-Suit, Lease Negotiation & Compliance Procurement',
+      description: 'Describe your services. Only written, approved pages appear on the website.',
+    },
   };
   const descriptions: Record<string, string> = {
     content: 'Articles and resources for your readers.',

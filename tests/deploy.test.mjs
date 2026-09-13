@@ -23,12 +23,20 @@ function harness(options = {}) {
     update: (args) => { calls.updates.push(args); return args; },
   });
   const mocks = {
+    '@prisma/client': { Prisma: { DbNull: null } },
     '@/lib/prisma': { prisma: {
       blog: table('blog'),
       micromarketPage: table('micromarket'),
       locationPage: table('location'),
       legalPage: {
         findMany: async () => [{ slug: 'privacy-policy', publishedContent: { title: 'Approved policy' }, draftContent: { title: 'Private draft' } }],
+        update: args => { calls.updates.push(args); return args; },
+      },
+      servicePage: {
+        findMany: async () => [
+          { slug: 'warehouse-search', publishedContent: { title: 'Approved service' }, draftContent: { title: 'Private draft' } },
+          { slug: 'build-to-suit', publishedContent: null, draftContent: { title: 'Private draft' } },
+        ],
         update: args => { calls.updates.push(args); return args; },
       },
       $transaction: async () => { calls.transactions += 1; },
@@ -122,12 +130,14 @@ test('valid bearer auth triggers once and snapshots blogs, micromarkets and loca
   assert.ok(h.calls.fetch[0][1].signal instanceof AbortSignal);
   assert.equal(h.calls.sessions, 0);
   assert.equal(h.calls.transactions, 1);
-  assert.deepEqual(h.calls.updates.map((x) => x.where.id ?? x.where.slug).sort(), ['blog', 'location', 'micromarket', 'privacy-policy']);
+  assert.deepEqual(h.calls.updates.map((x) => x.where.id ?? x.where.slug).sort(), ['blog', 'build-to-suit', 'location', 'micromarket', 'privacy-policy', 'warehouse-search']);
   const snapshot = key => h.calls.updates.find(x => (x.where.id ?? x.where.slug) === key).data.deployedContent;
   assert.equal(snapshot('blog').title, 'blog content');
   assert.equal(snapshot('micromarket').title, 'micromarket content');
   assert.equal(snapshot('location').title, 'location content');
   assert.equal(snapshot('privacy-policy').title, 'Approved policy');
+  assert.equal(snapshot('warehouse-search').title, 'Approved service');
+  assert.equal(snapshot('build-to-suit'), null);
   assert.ok(!JSON.stringify(h.calls.updates).includes('Private draft'));
   assert.ok(!JSON.stringify(json).includes(HOOK));
   assert.equal(h.route.GET, undefined);

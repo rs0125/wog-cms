@@ -15,6 +15,12 @@ export const NAVIGATION_GROUPS: { id: string; label: string; items: NavigationIt
     { id: 'micromarkets', label: 'Micromarkets', href: '/micromarkets' },
   ] },
   { id: 'website', label: 'Website pages', items: [
+    { id: 'services', label: 'Services', href: '/services', children: [
+      { id: 'warehouse-search', label: 'Warehouse Search', href: '/services/warehouse-search' },
+      { id: 'build-to-suit', label: 'Build-To-Suit', href: '/services/build-to-suit' },
+      { id: 'lease-negotiation', label: 'Lease Negotiation', href: '/services/lease-negotiation' },
+      { id: 'compliance-procurement', label: 'Compliance Procurement', href: '/services/compliance-procurement' },
+    ] },
     { id: 'legal', label: 'Legal pages', href: '/legal', children: [
       { id: 'privacy', label: 'Privacy Policy', href: '/legal/privacy-policy' },
       { id: 'terms', label: 'Terms of Service', href: '/legal/terms-of-service' },

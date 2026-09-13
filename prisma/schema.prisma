@@ -17,6 +17,17 @@ generator client {
   provider = "prisma-client-js"
 }
 
+/// Mirror of the backend model. Missing/empty drafts never create public pages.
+model ServicePage {
+  slug             String   @id
+  draftContent     Json
+  publishedContent Json?
+  deployedContent  Json?
+  deployedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 /// Mirror of the backend model. Only the two seeded legal URLs are editable.
 model LegalPage {
   slug             String   @id

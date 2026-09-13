@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test:deploy": "node tests/deploy.test.mjs",
     "postinstall": "prisma generate",
-    "test:legal": "node tests/legal-actions.test.mjs"
+    "test:legal": "node tests/legal-actions.test.mjs",
+    "test:services": "node --test tests/service-actions.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1109.0",
