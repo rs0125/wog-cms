@@ -163,7 +163,7 @@ const SectionHeading = ({
 }) => (
   <header className="mb-4">
     <div className="mb-2 flex items-baseline gap-3">
-      <span className={`${EYEBROW} tabular-nums text-wareongo-blue/45`}>
+      <span className={`${EYEBROW} tabular-nums text-wareongo-slate`}>
         {String(index).padStart(2, '0')}
       </span>
       <span className={`${EYEBROW} text-wareongo-slate`}>{eyebrow}</span>
@@ -491,7 +491,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           <section aria-labelledby="inventory-band" className="mt-10 rounded-2xl bg-wareongo-blue px-5 py-6 text-wareongo-ivory sm:mt-14 sm:px-7 sm:py-7">
             <div className="mb-5 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-wareongo-ivory/15 pb-4">
               <h2 className={`${EYEBROW} text-wareongo-ivory/70`}>What you&apos;ll find here</h2>
-              <p className="text-xs text-wareongo-ivory/50 sm:ml-auto">
+              <p className="text-xs text-wareongo-ivory/70 sm:ml-auto">
                 {stats
                   ? `of ${stats.measured} built units${
                       stats.listings > stats.measured
@@ -520,7 +520,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                       {t.value ?? <span className="text-wareongo-ivory/40">—</span>}
                     </dd>
                     {t.value !== null && (
-                      <span className="text-xs font-semibold tabular-nums text-wareongo-ivory/50">
+                      <span className="text-xs font-semibold tabular-nums text-wareongo-ivory/70">
                         {t.share}%
                       </span>
                     )}

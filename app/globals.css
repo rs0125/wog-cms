@@ -11,7 +11,7 @@
   --color-wareongo-sienna: #b3502d;
   --color-wareongo-purple: #4a2e50;
   --color-wareongo-ivory: #f8f6f1;
-  --color-wareongo-slate: #677078;
+  --color-wareongo-slate: #47515b;
   --color-wareongo-charcoal: #343a40;
 
   /* Supplied by next/font in app/layout.tsx. Montserrat throughout — no serif. */
@@ -67,7 +67,7 @@
 
   .cms-input {
     @apply w-full rounded-xl border border-wareongo-blue/25 bg-white px-3.5 py-2.5 text-[15px] text-wareongo-charcoal
-      outline-none transition-colors placeholder:text-wareongo-slate/50
+      outline-none transition-colors placeholder:text-wareongo-slate
       focus:border-wareongo-blue focus:ring-2 focus:ring-wareongo-blue/10;
   }
 
