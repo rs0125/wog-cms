@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import BlockEditor from './BlockEditor';
+import FormattedTextarea from './FormattedTextarea';
 import DeployButton from './DeployButton';
 import { LegalBody, LegalDates } from './LegalContent';
 import { LEGAL_BLOCK_KINDS, type LegalContent } from '@/lib/legal-schema';
@@ -45,10 +46,10 @@ export default function LegalForm({ content, expectedUpdatedAt, state, action, d
       <div><label htmlFor="description" className="cms-label">Meta description</label><textarea {...bind('description')} required maxLength={1000} rows={3} className="cms-input" /></div>
       <section>
         <h2 className="cms-title text-xl mb-2">Page content</h2>
-        <p className="cms-hint mb-4">Use **bold text** or [link text](https://example.com). Email links can use mailto:. HTML is displayed as text.</p>
+        <p className="cms-hint mb-4">Select text and use Bold or Italic. Add links with [link text](https://example.com); email links can use mailto:.</p>
         <BlockEditor blocks={blocks} kinds={LEGAL_BLOCK_KINDS} onChange={next => { setBlocks(next); setEdited(true); }} />
       </section>
-      <div><label htmlFor="notice" className="cms-label">Closing notice (optional)</label><textarea {...bind('notice')} rows={4} className="cms-input" /></div>
+      <div><label htmlFor="notice" className="cms-label">Closing notice (optional)</label><FormattedTextarea {...bind('notice')} rows={4} className="cms-input" /></div>
     </div>
     {tab === 'preview' && <section aria-label="Legal page preview" className="rounded-lg bg-white p-6 sm:p-8 overflow-hidden">
       <h1 className="text-3xl font-bold mb-4 text-wareongo-charcoal break-words">{fields.title}</h1>

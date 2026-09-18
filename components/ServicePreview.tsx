@@ -1,5 +1,7 @@
 'use client';
 
+import InlineText from './InlineText';
+
 import type { ServiceContent } from '@/lib/service-schema';
 import { ContentBlock, ContentFaqAccordion } from './ContentPreview';
 
@@ -10,7 +12,7 @@ export default function ServicePreview({ content }: { content: ServiceContent })
       <header className="mb-8">
         <span className="cms-eyebrow mb-3 block">Our services</span>
         <h1 className="mb-4 text-2xl font-bold leading-tight text-wareongo-blue sm:text-3xl md:text-4xl">{content.title}</h1>
-        <p className="text-base leading-relaxed text-wareongo-slate sm:text-lg">{content.summary}</p>
+        <p className="text-base leading-relaxed text-wareongo-slate sm:text-lg"><InlineText text={content.summary} /></p>
       </header>
       {content.blocks.map((block, i) => <ContentBlock key={i} block={block} />)}
       {content.faqs.length > 0 && <section className="mt-10">

@@ -1,5 +1,7 @@
 'use client';
 
+import InlineText from './InlineText';
+
 import { useState } from 'react';
 import type { BlogBlock, BlogFaq } from '@/lib/blog-schema';
 import { COLLAGE_GRID, collageSpan } from '@/lib/collage';
@@ -7,17 +9,17 @@ import { COLLAGE_GRID, collageSpan } from '@/lib/collage';
 export const ContentBlock = ({ block }: { block: BlogBlock }) => {
   switch (block.kind) {
     case 'h2':
-      return <h2 className="text-xl sm:text-2xl font-bold text-wareongo-blue mt-10 mb-3">{block.text}</h2>;
+      return <h2 className="text-xl sm:text-2xl font-bold text-wareongo-blue mt-10 mb-3"><InlineText text={block.text} /></h2>;
     case 'h3':
-      return <h3 className="text-lg sm:text-xl font-semibold text-wareongo-charcoal mt-6 mb-2">{block.text}</h3>;
+      return <h3 className="text-lg sm:text-xl font-semibold text-wareongo-charcoal mt-6 mb-2"><InlineText text={block.text} /></h3>;
     case 'p':
-      return <p className="text-[15px] sm:text-base text-wareongo-slate leading-relaxed mb-4">{block.text}</p>;
+      return <p className="text-[15px] sm:text-base text-wareongo-slate leading-relaxed mb-4"><InlineText text={block.text} /></p>;
     case 'ul':
       return (
         <ul className="list-disc pl-5 mb-4 space-y-2">
           {block.items.map((item, i) => (
             <li key={i} className="text-[15px] sm:text-base text-wareongo-slate leading-relaxed">
-              {item}
+              <InlineText text={item} />
             </li>
           ))}
         </ul>
@@ -27,7 +29,7 @@ export const ContentBlock = ({ block }: { block: BlogBlock }) => {
         <ol className="list-decimal pl-5 mb-4 space-y-2">
           {block.items.map((item, i) => (
             <li key={i} className="text-[15px] sm:text-base text-wareongo-slate leading-relaxed">
-              {item}
+              <InlineText text={item} />
             </li>
           ))}
         </ol>
@@ -44,7 +46,7 @@ export const ContentBlock = ({ block }: { block: BlogBlock }) => {
                       key={i}
                       className="px-4 py-3 font-semibold text-wareongo-blue text-[11px] sm:text-xs uppercase tracking-[0.12em]"
                     >
-                      {h}
+                      <InlineText text={h} />
                     </th>
                   ))}
                 </tr>
@@ -64,7 +66,7 @@ export const ContentBlock = ({ block }: { block: BlogBlock }) => {
                           ci === 0 ? 'font-medium text-wareongo-charcoal' : 'text-wareongo-slate'
                         }`}
                       >
-                        {cell}
+                        <InlineText text={cell} />
                       </td>
                     ))}
                   </tr>
@@ -122,7 +124,7 @@ export const ContentBlock = ({ block }: { block: BlogBlock }) => {
             </div>
           )}
           {block.caption && (
-            <figcaption className="mt-2 text-center text-xs text-wareongo-slate sm:text-sm">{block.caption}</figcaption>
+            <figcaption className="mt-2 text-center text-xs text-wareongo-slate sm:text-sm"><InlineText text={block.caption} /></figcaption>
           )}
         </figure>
       );
@@ -168,7 +170,7 @@ export function ContentFaqAccordion({ items }: { items: BlogFaq[] }) {
             >
               <div className="overflow-hidden">
                 <p className="px-5 sm:px-6 pb-5 sm:pb-6 text-sm sm:text-base text-wareongo-slate leading-relaxed">
-                  {item.a}
+                  <InlineText text={item.a} />
                 </p>
               </div>
             </div>

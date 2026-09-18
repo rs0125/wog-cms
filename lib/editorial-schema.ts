@@ -1,3 +1,4 @@
+import { plainInlineText } from './inline-format';
 import { z } from 'zod';
 
 // The validated content shape behind every editorial listing page, whatever its
@@ -208,4 +209,4 @@ export const PROSE_BANDS: Record<string, { min: number; max: number }> = {
   specProse: { min: 45, max: 70 },
 };
 
-export const countWords = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length;
+export const countWords = (s: string): number => plainInlineText(s).trim().split(/\s+/).filter(Boolean).length;

@@ -1,5 +1,7 @@
 'use client';
 
+import FormattedTextarea from './FormattedTextarea';
+
 import { useRef, useState } from 'react';
 import { MAX_IMAGES, type BlogImage, type BlogImagesBlock } from '@/lib/blog-schema';
 import { COLLAGE_LABEL } from '@/lib/collage';
@@ -159,7 +161,8 @@ export default function ImagesEditor({
 
       {error && <p className="text-xs text-wareongo-sienna">{error}</p>}
 
-      <input
+      <FormattedTextarea
+        rows={1}
         value={caption}
         placeholder="Caption (optional) — shown under the whole group"
         onChange={(e) => onChange({ ...block, caption: e.target.value })}

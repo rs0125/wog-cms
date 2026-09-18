@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import BlockEditor from './BlockEditor';
+import FormattedTextarea from './FormattedTextarea';
 import ServicePreview from './ServicePreview';
 import DeployButton from './DeployButton';
 import type { ServiceContent } from '@/lib/service-schema';
@@ -37,7 +38,7 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
     </div>
     <div className={tab === 'edit' ? 'space-y-6' : 'hidden'}>
       <div><label htmlFor="title" className="cms-label">Page heading</label><input {...bind('title')} maxLength={300} className="cms-input" /></div>
-      <div><label htmlFor="summary" className="cms-label">Introduction</label><textarea {...bind('summary')} rows={4} maxLength={20000} className="cms-input" /></div>
+      <div><label htmlFor="summary" className="cms-label">Introduction</label><FormattedTextarea {...bind('summary')} rows={4} maxLength={20000} className="cms-input" /></div>
       <div><label htmlFor="seoTitle" className="cms-label">SEO title</label><input {...bind('seoTitle')} maxLength={300} className="cms-input" /></div>
       <div><label htmlFor="description" className="cms-label">Meta description</label><textarea {...bind('description')} maxLength={1000} rows={3} className="cms-input" /></div>
       <div><label htmlFor="keywords" className="cms-label">Keywords (optional, comma separated)</label><input id="keywords" value={keywords} onChange={e => setKeywords(e.target.value)} className="cms-input" /></div>
@@ -50,7 +51,7 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
         <div className="space-y-3">
           {faqs.map(({ key, value: faq }, i) => <div key={key} className="cms-card space-y-3">
             <label className="cms-label">Question {i + 1}<input value={faq.q} onChange={e => setFaqs(replaceAt(faqs, i, { ...faq, q: e.target.value }))} className="cms-input mt-2" /></label>
-            <label className="cms-label">Answer {i + 1}<textarea value={faq.a} onChange={e => setFaqs(replaceAt(faqs, i, { ...faq, a: e.target.value }))} rows={3} className="cms-input mt-2" /></label>
+            <div><label htmlFor={`service-answer-${key}`} className="cms-label">Answer {i + 1}</label><FormattedTextarea id={`service-answer-${key}`} value={faq.a} onChange={e => setFaqs(replaceAt(faqs, i, { ...faq, a: e.target.value }))} rows={3} className="cms-input" /></div>
             <button type="button" className="cms-btn-danger" onClick={() => { setFaqs(removeAt(faqs, i)); setEdited(true); }}>Remove question</button>
           </div>)}
         </div>

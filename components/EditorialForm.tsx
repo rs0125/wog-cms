@@ -6,6 +6,7 @@ import RelatedPicker, { type BlogOption } from './RelatedPicker';
 import SingleImagePicker from './SingleImagePicker';
 import StatOverridesEditor from './StatOverridesEditor';
 import DeviceFrame from './DeviceFrame';
+import FormattedTextarea from './FormattedTextarea';
 import { applyOverrides } from '@/lib/micromarket-format';
 import { findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
 import { findLocation, type Location } from '@/lib/locations-api';
@@ -575,7 +576,7 @@ export default function EditorialForm({
                 onChange={(e) => setFaqs(replaceAt(faqs, i, { ...faq, q: e.target.value }))}
                 className="cms-input mb-2 font-medium"
               />
-              <textarea
+              <FormattedTextarea
                 value={faq.a}
                 rows={3}
                 placeholder="Answer"
@@ -699,7 +700,7 @@ function ProseField({
           {words} / {min}–{max} words
         </span>
       </div>
-      <textarea
+      <FormattedTextarea
         id={name}
         name={name}
         rows={rows}

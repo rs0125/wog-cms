@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import BlockEditor from './BlockEditor';
+import FormattedTextarea from './FormattedTextarea';
 import BlogPreview from './BlogPreview';
 import RelatedPicker, { type BlogOption } from './RelatedPicker';
 import DeployButton from './DeployButton';
@@ -143,7 +144,7 @@ export default function BlogForm({
 
           <div className="sm:col-span-2">
             <label className="cms-label" htmlFor="summary">&ldquo;In short&rdquo; summary</label>
-            <textarea
+            <FormattedTextarea
               id="summary"
               name="summary"
               rows={4}
@@ -255,7 +256,7 @@ export default function BlogForm({
                   onChange={(e) => setFaqs(replaceAt(faqs, i, { ...faq, q: e.target.value }))}
                   className="cms-input mb-2 font-medium"
                 />
-                <textarea
+                <FormattedTextarea
                   value={faq.a}
                   rows={3}
                   placeholder="Answer"

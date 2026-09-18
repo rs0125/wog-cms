@@ -1,5 +1,7 @@
 'use client';
 
+import InlineText from './InlineText';
+
 import { useState } from 'react';
 import type { EditorialFaq, EditorialImage } from '@/lib/editorial-schema';
 import { formatRentRange, formatSqft, formatSqftRange } from '@/lib/micromarket-format';
@@ -333,7 +335,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
               {data.h1 || 'Your H1 goes here'}
             </h1>
             <p className={`max-w-2xl text-base leading-relaxed text-wareongo-slate sm:text-lg`}>
-              {data.heroProse || 'The lead paragraph goes here.'}
+              <InlineText text={data.heroProse || 'The lead paragraph goes here.'} />
             </p>
 
             <dl className="mt-7 grid grid-cols-1 border-t border-wareongo-blue/15 sm:grid-cols-3 sm:gap-3 sm:border-t-0">
@@ -431,7 +433,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                 {data.marketHeading || `Warehouse space in ${place}: where the stock sits`}
               </SectionHeading>
               <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-10">
-                <p className={`max-w-2xl ${PROSE}`}>{data.marketProse}</p>
+                <p className={`max-w-2xl ${PROSE}`}><InlineText text={data.marketProse} /></p>
                 {data.marketImage && <Figure image={data.marketImage} />}
               </div>
             </section>
@@ -482,7 +484,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                     </p>
                   )}
                 </figure>
-                <p className={`max-w-2xl ${PROSE}`}>{data.rentsProse}</p>
+                <p className={`max-w-2xl ${PROSE}`}><InlineText text={data.rentsProse} /></p>
               </div>
             </section>
           )}
@@ -568,7 +570,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                     </tbody>
                   </table>
                 </div>
-                <p className={`max-w-2xl ${PROSE}`}>{data.specProse}</p>
+                <p className={`max-w-2xl ${PROSE}`}><InlineText text={data.specProse} /></p>
               </div>
             </section>
           )}
@@ -598,7 +600,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                       </button>
                       {open && (
                         <p className="px-5 pb-5 text-sm leading-relaxed text-wareongo-slate sm:px-6 sm:pb-6 sm:text-base">
-                          {f.a || 'Answer'}
+                          <InlineText text={f.a || 'Answer'} />
                         </p>
                       )}
                     </div>

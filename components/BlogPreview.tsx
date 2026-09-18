@@ -1,5 +1,7 @@
 'use client';
 
+import InlineText from './InlineText';
+
 import type { BlogBlock, BlogFaq } from '@/lib/blog-schema';
 import { ContentBlock as Block, ContentFaqAccordion as FaqAccordion } from './ContentPreview';
 
@@ -49,7 +51,7 @@ export default function BlogPreview({ blog }: { blog: PreviewBlog }) {
           <div className="border-l-4 border-wareongo-blue/40 bg-wareongo-blue/5 rounded-r-xl px-4 py-3 mb-8">
             <p className="text-sm font-semibold text-wareongo-charcoal mb-1">In short</p>
             <p className="text-[15px] sm:text-base text-wareongo-slate leading-relaxed">
-              {blog.summary || <span className="italic text-wareongo-slate/60">No summary yet.</span>}
+              {blog.summary ? <InlineText text={blog.summary} /> : <span className="italic text-wareongo-slate/60">No summary yet.</span>}
             </p>
           </div>
 

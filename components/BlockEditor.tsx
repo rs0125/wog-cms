@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ImagesEditor from './ImagesEditor';
+import FormattedTextarea from './FormattedTextarea';
 import { BLOCK_KINDS, emptyBlock, type BlogBlock } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, swap, unkey, type Keyed } from '@/lib/keyed';
 
@@ -67,7 +68,8 @@ export default function BlockEditor({
           </div>
 
           {(block.kind === 'h2' || block.kind === 'h3' || block.kind === 'p') && (
-            <textarea
+            <FormattedTextarea
+              aria-label={`${KIND_LABEL[block.kind]} ${i + 1}`}
               value={block.text}
               rows={block.kind === 'p' ? 4 : 1}
               onChange={(e) => onChange(replaceAt(blocks, i, { ...block, text: e.target.value }))}
@@ -121,7 +123,8 @@ function ListItems({ items, onChange }: { items: string[]; onChange: (next: stri
     <div className="space-y-2">
       {keys.map(({ key, value }, i) => (
         <div key={key} className="flex gap-2">
-          <textarea
+          <FormattedTextarea
+            aria-label={`List item ${i + 1}`}
             value={value}
             rows={2}
             onChange={(e) => push(replaceAt(keys, i, e.target.value))}
@@ -167,7 +170,9 @@ function TableEditor({
             <tr>
               {headers.map((h, c) => (
                 <th key={c} className="border border-wareongo-blue/20 p-1">
-                  <input
+                  <FormattedTextarea
+                    rows={1}
+                    aria-label={`Header ${c + 1}`}
                     value={h}
                     placeholder={`Header ${c + 1}`}
                     onChange={(e) =>
@@ -192,7 +197,9 @@ function TableEditor({
               <tr key={r}>
                 {row.map((cell, c) => (
                   <td key={c} className="border border-wareongo-blue/20 p-1">
-                    <input
+                    <FormattedTextarea
+                      rows={1}
+                      aria-label={`Row ${r + 1}, column ${c + 1}`}
                       value={cell}
                       onChange={(e) =>
                         onChange({

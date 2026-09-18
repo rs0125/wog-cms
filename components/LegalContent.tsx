@@ -1,20 +1,11 @@
+import InlineText from './InlineText';
 import { Fragment } from 'react';
 import type { LegalBlock, LegalContent } from '@/lib/legal-schema';
 
-// Deliberately small inline format: bold and links, rendered as React nodes.
+// Safe links plus the same bold and italic rendering as the other CMS content.
 // HTML is always text; a pasted script or unsafe link cannot execute.
 export function LegalInline({ text }: { text: string }) {
-  return <>{text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) return <strong key={i}>{part.slice(2, -2)}</strong>;
-    const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
-    if (link) {
-      const safe = /^(https?:\/\/|mailto:|tel:|\/(?!\/))/i.test(link[2]) && !/[\s\\]/.test(link[2]) && !Array.from(link[2]).some(c => c.charCodeAt(0) < 32);
-      return safe
-        ? <a key={i} href={link[2]} className="text-wareongo-blue hover:underline break-words">{link[1]}</a>
-        : <Fragment key={i}>{link[1]}</Fragment>;
-    }
-    return <Fragment key={i}>{part}</Fragment>;
-  })}</>;
+  return <InlineText text={text} links />;
 }
 
 function displayDate(iso: string, comma: boolean) {
