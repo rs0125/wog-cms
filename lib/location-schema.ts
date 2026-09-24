@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { editorialFields, slug } from './editorial-schema';
+import { editorialFields, slug, optionalProse } from './editorial-schema';
 
 // The twin of ./micromarket-schema.ts one and two levels up, over the same
 // shared content fields (./editorial-schema.ts).
@@ -32,6 +32,12 @@ export const locationSchema = z.object({
   kind: locationKindSchema,
   slug,
   ...editorialFields,
+  corridorHeading: optionalProse.optional().default(null),
+  corridorProse: optionalProse.optional().default(null),
+  complianceHeading: optionalProse.optional().default(null),
+  complianceProse: optionalProse.optional().default(null),
+}).transform(page => page.kind === 'CITY' ? page : {
+  ...page, corridorHeading: null, corridorProse: null, complianceHeading: null, complianceProse: null,
 });
 
 export type LocationInput = z.infer<typeof locationSchema>;

@@ -11,6 +11,7 @@
  */
 
 import type { DerivedStats } from './derived-stats';
+import type { CityOverviewStats } from './city-overview';
 import type { LocationKind } from './location-schema';
 
 const API_BASE = (process.env.WAREONGO_API_BASE ?? 'https://wareongo-website-backend.onrender.com').replace(
@@ -19,6 +20,7 @@ const API_BASE = (process.env.WAREONGO_API_BASE ?? 'https://wareongo-website-bac
 );
 
 export interface Location extends DerivedStats {
+  cityOverview?: CityOverviewStats;
   kind: LocationKind;
   /** Canonical display name, aliases resolved ("Bangalore" → "Bengaluru"). */
   name: string;

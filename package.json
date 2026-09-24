@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:deploy": "node tests/deploy.test.mjs",
+    "test:locations": "node tests/location-actions.test.mjs",
     "postinstall": "prisma generate",
     "test:legal": "node tests/legal-actions.test.mjs",
     "test:services": "node --test tests/service-actions.test.mjs"

@@ -152,6 +152,11 @@ model LocationPage {
   specHeading      String?
   specProse        String?
   inventoryHeading String?
+  /// City overview sections; mirror the backend schema.
+  corridorHeading  String?
+  corridorProse    String?
+  complianceHeading String?
+  complianceProse  String?
   faqs             Json
   relatedBlogs     String[]              @default([])
   /// Same contract as MicromarketPage.statOverrides — see the backend schema,

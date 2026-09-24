@@ -11,6 +11,7 @@ import { applyOverrides } from '@/lib/micromarket-format';
 import { findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
 import { findLocation, type Location } from '@/lib/locations-api';
 import EditorialPreview, { type PreviewScope } from './EditorialPreview';
+import type { CityOverviewContent } from '@/lib/city-overview';
 import DeployButton from './DeployButton';
 import {
   PROSE_BANDS,
@@ -51,7 +52,7 @@ export type FormIdentity =
   | { scope: 'city'; slug: string; parentLabel: string | null }
   | { scope: 'state'; slug: string };
 
-export interface EditorialFormPage {
+export interface EditorialFormPage extends CityOverviewContent {
   name: string;
   seoTitle: string;
   metaDescription: string;
@@ -124,11 +125,15 @@ export default function EditorialForm({
   const [slug, setSlug] = useState(identity.slug);
   const market = identity.scope === 'micromarket' ? findMicromarket(inventory, citySlug, slug) : null;
   const location = identity.scope !== 'micromarket' ? findLocation(locationInventory, slug) : null;
-  const stats = market ?? location ?? null;
+  const stats = identity.scope === 'city' && location?.cityOverview
+    ? { ...location, ...location.cityOverview.summary, peers: location.cityOverview.comparisonCities }
+    : market ?? location ?? null;
   const [heroProse, setHeroProse] = useState(page.heroProse);
   const [marketProse, setMarketProse] = useState(page.marketProse ?? '');
   const [rentsProse, setRentsProse] = useState(page.rentsProse ?? '');
   const [specProse, setSpecProse] = useState(page.specProse ?? '');
+  const [corridorProse, setCorridorProse] = useState(page.corridorProse ?? '');
+  const [complianceProse, setComplianceProse] = useState(page.complianceProse ?? '');
   const [heroImage, setHeroImage] = useState<EditorialImage | null>(page.heroImage);
   const [marketImage, setMarketImage] = useState<EditorialImage | null>(page.marketImage);
   const [faqs, setFaqs] = useState<Keyed<EditorialFaq>[]>(() => keyAll(page.faqs));
@@ -157,6 +162,8 @@ export default function EditorialForm({
     rentsHeading: page.rentsHeading ?? '',
     specHeading: page.specHeading ?? '',
     inventoryHeading: page.inventoryHeading ?? '',
+    corridorHeading: page.corridorHeading ?? '',
+    complianceHeading: page.complianceHeading ?? '',
   });
   const bind = (key: keyof typeof text) => ({
     value: text[key],
@@ -175,6 +182,7 @@ export default function EditorialForm({
   const previewStats = stats ? applyOverrides(stats, statOverrides) : null;
 
   const isMicromarket = identity.scope === 'micromarket';
+  const isCity = identity.scope === 'city';
   const parentLabel = isMicromarket ? market?.parentCity ?? null : location?.parentState ?? null;
   /** The URL the site will serve this content at, shown back to the editor. */
   const pagePath = isMicromarket
@@ -429,9 +437,7 @@ export default function EditorialForm({
             Market <span className="ml-1 text-xs font-normal text-wareongo-slate">optional section</span>
           </h2>
           <p className="mt-1 text-xs text-wareongo-slate">
-            Where the stock actually sits: the sub-localities and estates inside this belt. Don&apos;t
-            name another micromarket that has its own page — the page already links to those in its
-            nearby-markets row.
+            {isCity ? 'Why this city works for an occupier: routes, industries and demand. Mention three to five relevant localities; the corridor section below handles the detailed comparison.' : 'Where the stock actually sits: the sub-localities and estates inside this belt.'}
           </p>
         </div>
 
@@ -442,7 +448,7 @@ export default function EditorialForm({
           label="Market paragraph"
           value={marketProse}
           onChange={setMarketProse}
-          band="marketProse"
+          band={isCity ? 'cityMarketProse' : 'marketProse'}
           rows={5}
         />
 
@@ -459,15 +465,20 @@ export default function EditorialForm({
         </div>
       </section>
 
+      {isCity && <section className="space-y-5">
+        <div><h2 className="text-base font-semibold text-wareongo-blue">Corridors <span className="ml-1 text-xs font-normal text-wareongo-slate">optional paragraph</span></h2>
+          <p className="mt-1 text-xs text-wareongo-slate">Explain which locations suit different requirements. The corridor table and size comparison come from the inventory.</p></div>
+        <HeadingField name="corridorHeading" placeholder="Where warehouse stock sits in {place}" {...bind('corridorHeading')} />
+        <ProseField name="corridorProse" label="Corridor paragraph" value={corridorProse} onChange={setCorridorProse} band="corridorProse" rows={5} />
+      </section>}
+
       <section className="space-y-5">
         <div>
           <h2 className="text-base font-semibold text-wareongo-blue">
             Pricing <span className="ml-1 text-xs font-normal text-wareongo-slate">optional section</span>
           </h2>
           <p className="mt-1 text-xs text-wareongo-slate">
-            What rent tracks here — grade, compliance, access. A chart of this belt against its
-            neighbours is drawn next to this text, so writing the medians out again duplicates them
-            and will eventually contradict them.
+            {isCity ? 'Explain how unit size and location affect rent. The page adds rent by size and a comparison with other cities automatically.' : 'What rent tracks here: grade, compliance and access. The chart compares this location with its neighbours.'} Keep changing inventory figures in the data sections.
           </p>
         </div>
 
@@ -507,12 +518,18 @@ export default function EditorialForm({
         />
       </section>
 
+      {isCity && <section className="space-y-5">
+        <div><h2 className="text-base font-semibold text-wareongo-blue">Compliance <span className="ml-1 text-xs font-normal text-wareongo-slate">optional paragraph</span></h2>
+          <p className="mt-1 text-xs text-wareongo-slate">Local and state context for approvals and the documents an occupier should check. Recorded inventory counts appear separately.</p></div>
+        <HeadingField name="complianceHeading" placeholder="Compliance and approvals in {place}" {...bind('complianceHeading')} />
+        <ProseField name="complianceProse" label="Compliance paragraph" value={complianceProse} onChange={setComplianceProse} band="complianceProse" rows={6} />
+      </section>}
+
       <section className="space-y-5">
         <div className="border-b border-wareongo-blue/15 pb-2.5">
           <h2 className="text-base font-semibold text-wareongo-blue">Listings heading &amp; links</h2>
           <p className="mt-1 text-xs text-wareongo-slate">
-            The warehouse grid is built for you and leads the page. This just titles it, and adds any
-            blogs worth linking at the foot.
+            The warehouse grid is built for you and leads the page. Add a heading and any blogs worth linking at the foot.
           </p>
         </div>
 
@@ -548,10 +565,7 @@ export default function EditorialForm({
             Questions <span className="ml-1 text-xs font-normal text-wareongo-slate">optional section</span>
           </h2>
           <p className="mt-1 text-xs text-wareongo-slate">
-            Shown as an accordion at the foot of the page, and handed to Google as FAQ markup — which
-            is why both come from here and have to match. Four is the shape the template expects:
-            rent, best pockets, sizes, compliance. Remove any you don&apos;t want; a half-filled one
-            will block saving.
+            Shown as an accordion and in matching FAQ markup. {isCity ? 'Suggested six: rent, best locations, sizes, compliance, owner or broker, and getting a shortlist.' : 'Suggested questions: rent, best pockets, sizes and compliance.'} Remove any you do not need; a half-filled question will block saving.
           </p>
         </div>
         <div className="space-y-3">
@@ -607,6 +621,7 @@ export default function EditorialForm({
         <DeviceFrame width={device === 'mobile' ? 390 : 1280}>
           <EditorialPreview
             data={{
+              isCity,
               scope: previewScope,
               slug,
               name: stats?.name || text.name,
@@ -622,6 +637,11 @@ export default function EditorialForm({
               specHeading: text.specHeading,
               specProse,
               inventoryHeading: text.inventoryHeading,
+              corridorHeading: text.corridorHeading,
+              corridorProse,
+              complianceHeading: text.complianceHeading,
+              complianceProse,
+              cityOverview: isCity ? location?.cityOverview : undefined,
               faqs: plainFaqs,
               stats: previewStats,
             }}

@@ -1,8 +1,10 @@
 'use client';
 
 import InlineText from './InlineText';
+import { CorridorPanel, RentBySize, SpecSizeComparison } from './city/CityPanels';
 
 import { useState } from 'react';
+import type { CityOverviewContent, CityOverviewStats } from '@/lib/city-overview';
 import type { EditorialFaq, EditorialImage } from '@/lib/editorial-schema';
 import { formatRentRange, formatSqft, formatSqftRange } from '@/lib/micromarket-format';
 import type { DerivedStats } from '@/lib/derived-stats';
@@ -13,9 +15,8 @@ import type { DerivedStats } from '@/lib/derived-stats';
  * src/components/micromarket/.
  *
  * One wireframe serves micromarkets, cities and states, so one preview does
- * too. Everything that differs between the scopes arrives in `scope` — the same
- * shape the website's loader resolves for the real template — which is why
- * there are no scope conditionals in the markup below.
+ * too. Cities add corridor, size-band and compliance content within the same
+ * hero, paginated grid and numbered sections used by the other scopes.
  *
  * Duplicated rather than shared, for the same reason BlogPreview is: two
  * deployments, two Tailwind setups, and a package for one page would cost more
@@ -197,7 +198,9 @@ export interface PreviewScope {
   up: { label: string; linkLabel: string } | null;
 }
 
-export interface EditorialPreviewData {
+export interface EditorialPreviewData extends CityOverviewContent {
+  isCity?: boolean;
+  cityOverview?: CityOverviewStats;
   scope: PreviewScope;
   slug: string;
   name: string;
@@ -253,8 +256,9 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const stats = data.stats;
+  const city = data.isCity ? data.cityOverview : undefined;
   const peers = stats?.peers ?? [];
-  const siblings = peers.filter((p) => !p.isSelf);
+  const siblings = city?.nearbyCities ?? peers.filter((p) => !p.isSelf);
   const peerMax = peers.length > 0 ? Math.max(...peers.map((p) => p.medianRent)) : 1;
   const rows = specRows(stats);
   const tiles = bandTiles(stats);
@@ -287,21 +291,25 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
    * very page it was previewing.
    */
   const hasMarket = Boolean(data.marketProse);
-  const hasRents = Boolean(data.rentsProse) || peers.length > 0;
+  const hasCorridors = data.isCity && (Boolean(data.corridorProse) || Boolean(city?.corridors.length));
+  const hasRents = Boolean(data.rentsProse) || peers.length > 0 || Boolean(city?.rentBySize.length);
   const hasSpec = Boolean(data.specProse) || rows.length > 0;
+  const hasCompliance = data.isCity && Boolean(data.complianceProse);
 
   // Numbered as rendered, exactly as the page does it.
   const numbered = [
     'listings',
     ...(hasMarket ? ['market'] : []),
+    ...(hasCorridors ? ['corridors'] : []),
     ...(hasRents ? ['rents'] : []),
     ...(hasSpec ? ['specification'] : []),
+    ...(hasCompliance ? ['compliance'] : []),
     ...(faqs.length > 0 ? ['faq'] : []),
   ];
   const indexOf = (id: string) => numbered.indexOf(id) + 1;
 
   return (
-    <div className="flex flex-col bg-wareongo-ivory">
+    <div className="flex flex-col bg-wareongo-ivory font-sans">
       <Navbar />
       <main>
         <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -368,9 +376,9 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
               <span className="inline-flex h-11 items-center justify-center rounded-xl bg-wareongo-blue px-5 text-sm font-semibold text-white">
                 Get a shortlist in 4 hours →
               </span>
-              <span className="inline-flex h-11 items-center justify-center rounded-xl border border-wareongo-blue/30 px-5 text-sm font-medium text-wareongo-blue">
+              {!data.isCity && <span className="inline-flex h-11 items-center justify-center rounded-xl border border-wareongo-blue/30 px-5 text-sm font-medium text-wareongo-blue">
                 Browse the listings ↓
-              </span>
+              </span>}
             </div>
           </div>
           {data.heroImage && <Figure image={data.heroImage} />}
@@ -439,6 +447,18 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
             </section>
           )}
 
+          {hasCorridors && (
+            <section id="corridors" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+              <SectionHeading index={indexOf('corridors')} eyebrow="Locations">
+                {data.corridorHeading || `Where to rent in ${place}`}
+              </SectionHeading>
+              {city && city.corridors.length > 0 && <CorridorPanel data={city} />}
+              {data.corridorProse && (
+                <p className={`mt-6 ${PROSE}`}><InlineText text={data.corridorProse} /></p>
+              )}
+            </section>
+          )}
+
           {hasRents && (
             <section id="rents" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
               <SectionHeading index={indexOf('rents')} eyebrow="Pricing">
@@ -486,6 +506,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                 </figure>
                 <p className={`max-w-2xl ${PROSE}`}><InlineText text={data.rentsProse} /></p>
               </div>
+              {city && city.rentBySize.length > 0 && <div className="mt-6"><RentBySize bands={city.rentBySize} /></div>}
             </section>
           )}
 
@@ -497,7 +518,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                 {stats
                   ? `of ${stats.measured} built units${
                       stats.listings > stats.measured
-                        ? ` · ${stats.listings - stats.measured} land or build-to-suit excluded`
+                        ? ` · ${stats.listings - stats.measured} ${city ? 'land, build-to-suit or under construction' : 'land or build-to-suit'} excluded`
                         : ''
                     }`
                   : 'computed at build'}
@@ -572,6 +593,19 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                 </div>
                 <p className={`max-w-2xl ${PROSE}`}><InlineText text={data.specProse} /></p>
               </div>
+              {city && <>
+                <SpecSizeComparison cohorts={city.specsBySize} />
+                <p className="mt-4 text-xs leading-relaxed text-wareongo-slate">Based on {stats?.measured} existing warehouse listings. Each measure uses listings that record it; construction and flooring shares use recorded, recognised types.</p>
+              </>}
+            </section>
+          )}
+
+          {hasCompliance && (
+            <section id="compliance" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+              <SectionHeading index={indexOf('compliance')} eyebrow="Compliance">
+                {data.complianceHeading || `Warehouse compliance in ${place}`}
+              </SectionHeading>
+              <p className={PROSE}><InlineText text={data.complianceProse ?? ''} /></p>
             </section>
           )}
 
@@ -616,10 +650,22 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                 <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>All listings</dt>
                 <dd className="text-wareongo-blue">Browse all warehouses in {data.name || 'this micromarket'} →</dd>
               </div>
+              {city && city.micromarkets.length > 0 && (
+                <div className="sm:flex sm:gap-6">
+                  <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>Micromarkets</dt>
+                  <dd className="flex flex-wrap gap-2">
+                    {city.micromarkets.map((market) => (
+                      <span key={market.slug} className={`inline-flex items-center gap-1.5 rounded-full border border-wareongo-blue/30 px-3 py-1.5 ${market.path ? 'text-wareongo-blue' : 'text-wareongo-slate'}`}>
+                        {market.name}<span className="text-xs tabular-nums text-wareongo-slate">{market.listings}</span>
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              )}
               {siblings.length > 0 && (
                 <div className="sm:flex sm:gap-6">
                   <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>
-                    {data.scope.peersLabel}
+                    {city?.nearbyLabel ?? data.scope.peersLabel}
                   </dt>
                   <dd className="flex flex-wrap gap-2">
                     {siblings.map((p) => (
@@ -628,7 +674,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                         className="inline-flex items-center gap-1.5 rounded-full border border-wareongo-blue/30 px-3 py-1.5 text-wareongo-blue"
                       >
                         {p.name}
-                        <span className="text-xs tabular-nums text-wareongo-slate">₹{p.medianRent}</span>
+                        {'medianRent' in p && typeof p.medianRent === 'number' && <span className="text-xs tabular-nums text-wareongo-slate">₹{p.medianRent}</span>}
                       </span>
                     ))}
                   </dd>

@@ -205,6 +205,9 @@ export type EditorialFaq = z.infer<typeof faqSchema>;
 export const PROSE_BANDS: Record<string, { min: number; max: number }> = {
   heroProse: { min: 55, max: 80 },
   marketProse: { min: 66, max: 112 },
+  cityMarketProse: { min: 130, max: 160 },
+  corridorProse: { min: 90, max: 120 },
+  complianceProse: { min: 110, max: 160 },
   rentsProse: { min: 84, max: 118 },
   specProse: { min: 45, max: 70 },
 };

@@ -36,6 +36,10 @@ export type ContentSource = Pick<
   | 'specHeading'
   | 'specProse'
   | 'inventoryHeading'
+  | 'corridorHeading'
+  | 'corridorProse'
+  | 'complianceHeading'
+  | 'complianceProse'
   | 'faqs'
   | 'relatedBlogs'
   | 'statOverrides'
@@ -43,14 +47,25 @@ export type ContentSource = Pick<
 >;
 
 /** `kind` is part of the identity, so a page moved between kinds reads as changed. */
-export type DeployedContent = Flatten<{ kind: string; slug: string } & EditorialFields>;
+type CityFields = { corridorHeading?: string | null; corridorProse?: string | null;
+  complianceHeading?: string | null; complianceProse?: string | null };
+export type DeployedContent = Flatten<{ kind: string; slug: string } & EditorialFields & CityFields>;
+
+const cityFields = (l: CityFields) => ({
+  corridorHeading: l.corridorHeading ?? null, corridorProse: l.corridorProse ?? null,
+  complianceHeading: l.complianceHeading ?? null, complianceProse: l.complianceProse ?? null,
+});
 
 export function contentOf(l: ContentSource): DeployedContent {
-  return { kind: l.kind, slug: l.slug, ...editorialContentOf(l) };
+  return { kind: l.kind, slug: l.slug, ...editorialContentOf(l), ...(l.kind === 'CITY' ? cityFields(l) : {}) };
 }
 
 export function stateOf(
   l: ContentSource & Pick<LocationPage, 'deployedContent'>,
 ): ContentState {
-  return editorialStateOf(l, contentOf(l));
+  const snapshot = l.deployedContent as DeployedContent | null;
+  // Old deployed snapshots predate the nullable city fields. An empty addition
+  // must not mark every existing city as having an unpublished edit.
+  return editorialStateOf({ ...l, deployedContent: snapshot?.kind === 'CITY'
+    ? { ...snapshot, ...cityFields(snapshot) } : snapshot }, contentOf(l));
 }

@@ -65,12 +65,7 @@ export default async function NewLocationPage({
     // The four the template was designed around. Prefilled as questions so the
     // shape is obvious; an unanswered one won't save, and removing them is one
     // click each.
-    faqs: [
-      { q: '', a: '' },
-      { q: '', a: '' },
-      { q: '', a: '' },
-      { q: '', a: '' },
-    ],
+    faqs: Array.from({ length: kind === 'CITY' ? 6 : 4 }, () => ({ q: '', a: '' })),
     relatedBlogs: [],
     statOverrides: NO_OVERRIDES,
     status: 'DRAFT',
