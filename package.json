@@ -12,7 +12,8 @@
     "test:locations": "node tests/location-actions.test.mjs",
     "postinstall": "prisma generate",
     "test:legal": "node tests/legal-actions.test.mjs",
-    "test:services": "node --test tests/service-actions.test.mjs"
+    "test:services": "node --test tests/service-actions.test.mjs",
+    "test:ad-pages": "node --test tests/ad-page-actions.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1109.0",

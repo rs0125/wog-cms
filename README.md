@@ -4,6 +4,29 @@ Admin app for wareongo.com content. Next.js on Vercel, reading and writing the
 same Supabase Postgres the backend uses. The public site is untouched by this
 app — it stays a `vite-react-ssg` static build.
 
+## Ad pages
+
+**Ad pages → Bangalore** (`/ad-pages/bangalore`) contains the existing `/bangalore`
+campaign copy, figures, area recommendations, card text, CTA labels and photos.
+Use **Preview** to review content, **Save draft** to keep it private, and **Save
+for next build** when it is ready. The existing Deploy button or nightly build
+then updates the website. Saving a draft never changes approved website content.
+Failed requests leave unsaved edits in the editor. If a save committed before
+its response was lost, retrying the same content acknowledges that save without
+rewriting it. Build bookkeeping does not invalidate an open ad-page editor.
+
+Listing facts, micromarket counts, map positions, shared logos and the page layout
+remain connected to the website's existing data and components. The original
+placeholders remain editable. The preview is a content review, not a replacement
+for the website's responsive layout.
+
+Initialize the new table using the backend-owned
+`scripts/sql/20260926_ad_pages.sql`, then deploy the backend's `/ad-pages` endpoint
+before the website build. See `WareOnGo-Website-Backend/AD_PAGES.md` in the shared
+workspace for the rollout order and contract. Never apply the CMS's partial
+Prisma schema to the database. Run `npm run test:ad-pages` and `npm run test:deploy`
+to verify private drafts, validation, concurrent edits and build snapshots.
+
 ## How content reaches the site
 
 ```

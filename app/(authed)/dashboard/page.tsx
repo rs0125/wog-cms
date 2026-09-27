@@ -59,6 +59,11 @@ export default async function DashboardPage() {
   const stateStats = locationCard('STATE');
 
   const cards: Record<string, { lead: string; detail: string; description: string }> = {
+    'ad-pages': {
+      lead: '1 page',
+      detail: 'Bangalore',
+      description: 'Manage campaign landing page copy, images and enquiry buttons.',
+    },
     blogs: {
       lead: `${blogs.length} ${blogs.length === 1 ? 'article' : 'articles'}`,
       detail: `${blogLive} published${blogStaged > 0 ? ` · ${blogStaged} staged` : ''}`,

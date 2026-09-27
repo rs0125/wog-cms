@@ -18,10 +18,13 @@ export default function SingleImagePicker({
   onChange,
   /** The crop the page will apply, so the editor knows what will survive. */
   ratio,
+  onUploadStateChange,
 }: {
   value: MicromarketImage | null;
   onChange: (next: MicromarketImage | null) => void;
   ratio: string;
+  /** Lets a surrounding editor wait for pending uploads before saving. */
+  onUploadStateChange?: (uploading: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +33,14 @@ export default function SingleImagePicker({
   async function pick(file: File) {
     setError(null);
     setBusy(true);
+    onUploadStateChange?.(true);
     try {
       onChange(await uploadImage(file));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'That image could not be uploaded.');
     } finally {
       setBusy(false);
+      onUploadStateChange?.(false);
       // Cleared so re-picking the same file fires a change event again.
       if (fileInput.current) fileInput.current.value = '';
     }

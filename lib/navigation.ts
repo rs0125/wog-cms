@@ -15,6 +15,9 @@ export const NAVIGATION_GROUPS: { id: string; label: string; items: NavigationIt
     { id: 'micromarkets', label: 'Micromarkets', href: '/micromarkets' },
   ] },
   { id: 'website', label: 'Website pages', items: [
+    { id: 'ad-pages', label: 'Ad pages', href: '/ad-pages', children: [
+      { id: 'ad-bangalore', label: 'Bangalore', href: '/ad-pages/bangalore' },
+    ] },
     { id: 'services', label: 'Services', href: '/services', children: [
       { id: 'warehouse-search', label: 'Warehouse Search', href: '/services/warehouse-search' },
       { id: 'build-to-suit', label: 'Build-To-Suit', href: '/services/build-to-suit' },

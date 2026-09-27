@@ -12,7 +12,7 @@ export default function AuthedError({ reset }: { error: Error & { digest?: strin
       <span className="cms-eyebrow mb-2 block">Something broke</span>
       <h1 className="cms-title mb-3 text-3xl">This page didn&apos;t load</h1>
       <p className="mb-6 max-w-prose text-sm text-wareongo-slate">
-        The error is in the server logs. Retrying is safe — nothing was saved unless you saw a confirmation.
+        This request could not finish. If you were saving changes, check the saved content before retrying.
       </p>
       <div className="flex gap-2">
         <button onClick={reset} className="cms-btn-primary">

@@ -10,11 +10,12 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const BACKEND = 'https://backend.example/maintenance/webp';
 const R2_SECRET = 'test-storage-secret';
 const HOOK = 'https://api.vercel.com/v1/integrations/deploy/prj_test/test-credential';
+const AD_REVISION = '2026-09-27T00:00:00.000Z';
 
 // Run the actual route, service and action with isolated env, fetch and Prisma.
 // No .env is loaded and every unexpected dependency fails closed.
 function harness(options = {}) {
-  const calls = { fetch: [], updates: [], transactions: 0, sessions: 0, logs: [] };
+  const calls = { fetch: [], updates: [], adPageReads: [], transactions: 0, sessions: 0, logs: [] };
   const table = (name) => ({
     findMany: async () => {
       if (options.snapshotFailure) throw new Error('snapshot unavailable');
@@ -38,6 +39,10 @@ function harness(options = {}) {
           { slug: 'build-to-suit', publishedContent: null, draftContent: { title: 'Private draft' } },
         ],
         update: args => { calls.updates.push(args); return args; },
+      },
+      adPage: {
+        findMany: async args => { calls.adPageReads.push(args); return [{ slug: 'bangalore', publishedContent: { title: 'Approved ad page' }, draftContent: { title: 'Private draft' }, updatedAt: new Date(AD_REVISION) }]; },
+        updateMany: args => { calls.updates.push(args); return args; },
       },
       $transaction: async () => { calls.transactions += 1; },
     } },
@@ -130,13 +135,14 @@ test('valid bearer auth triggers once and snapshots blogs, micromarkets and loca
   assert.ok(h.calls.fetch[0][1].signal instanceof AbortSignal);
   assert.equal(h.calls.sessions, 0);
   assert.equal(h.calls.transactions, 1);
-  assert.deepEqual(h.calls.updates.map((x) => x.where.id ?? x.where.slug).sort(), ['blog', 'build-to-suit', 'location', 'micromarket', 'privacy-policy', 'warehouse-search']);
+  assert.deepEqual(h.calls.updates.map((x) => x.where.id ?? x.where.slug).sort(), ['bangalore', 'blog', 'build-to-suit', 'location', 'micromarket', 'privacy-policy', 'warehouse-search']);
   const snapshot = key => h.calls.updates.find(x => (x.where.id ?? x.where.slug) === key).data.deployedContent;
   assert.equal(snapshot('blog').title, 'blog content');
   assert.equal(snapshot('micromarket').title, 'micromarket content');
   assert.equal(snapshot('location').title, 'location content');
   assert.equal(snapshot('privacy-policy').title, 'Approved policy');
   assert.equal(snapshot('warehouse-search').title, 'Approved service');
+  assert.equal(snapshot('bangalore').title, 'Approved ad page');
   assert.equal(snapshot('build-to-suit'), null);
   assert.ok(!JSON.stringify(h.calls.updates).includes('Private draft'));
   assert.ok(!JSON.stringify(json).includes(HOOK));
@@ -146,6 +152,16 @@ test('valid bearer auth triggers once and snapshots blogs, micromarkets and loca
 test('accepts the case-insensitive Bearer scheme', async () => {
   const h = harness();
   assert.equal((await h.post(`bearer ${HOOK}`)).status, 202);
+});
+
+test('ad-page build bookkeeping preserves the editor revision and checks for concurrent edits', async () => {
+  const h = harness();
+  assert.equal((await h.post()).status, 202);
+  assert.equal(h.calls.adPageReads[0].select.updatedAt, true);
+  const update = h.calls.updates.find(item => item.where.slug === 'bangalore');
+  assert.equal(update.where.updatedAt.toISOString(), AD_REVISION);
+  assert.equal(update.data.updatedAt.toISOString(), AD_REVISION);
+  assert.ok(update.data.deployedAt instanceof Date || Number.isFinite(Date.parse(update.data.deployedAt)));
 });
 
 for (const [upstreamStatus, expectedStatus] of [[429, 429], [500, 502], [403, 502]]) {

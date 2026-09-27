@@ -60,7 +60,7 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
     // Each select lists only what its contentOf() reads. A bare findMany() would
     // also pull every row's existing deployedContent — a second full copy of the
     // content — purely to throw it away.
-    const [blogs, micromarkets, locations, legalPages, servicePages] = await Promise.all([
+    const [blogs, micromarkets, locations, legalPages, servicePages, adPages] = await Promise.all([
       prisma.blog.findMany({
         select: {
           id: true,
@@ -138,12 +138,19 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
       }),
       prisma.legalPage.findMany({ select: { slug: true, publishedContent: true } }),
       prisma.servicePage.findMany({ select: { slug: true, publishedContent: true } }),
+      prisma.adPage.findMany({ select: { slug: true, publishedContent: true, updatedAt: true } }),
     ]);
 
     const now = new Date();
     // One transaction across all content tables: a half-recorded deploy would leave one
     // section's badges telling the truth and the other's lying.
     await prisma.$transaction([
+      // Build metadata must not invalidate an open editor's content revision.
+      // Skip a row edited since the read instead of restoring its old timestamp.
+      ...adPages.map(p => prisma.adPage.updateMany({
+        where: { slug: p.slug, updatedAt: p.updatedAt },
+        data: { deployedContent: p.publishedContent as Prisma.InputJsonValue, deployedAt: now, updatedAt: p.updatedAt },
+      })),
       ...servicePages.map(p => prisma.servicePage.update({
         where: { slug: p.slug },
         data: { deployedContent: p.publishedContent === null ? Prisma.DbNull : p.publishedContent as Prisma.InputJsonValue, deployedAt: now },
