@@ -40,7 +40,7 @@ export default function BlockEditor({
             <select
               value={block.kind}
               onChange={(e) => onChange(replaceAt(blocks, i, emptyBlock(e.target.value as BlogBlock['kind'])))}
-              className="rounded-lg border border-wareongo-blue/25 bg-white px-2.5 py-1.5 text-xs text-wareongo-blue"
+              className="rounded-lg border border-ui-outline bg-ui-surface px-2.5 py-1.5 text-xs text-wareongo-blue"
             >
               {kinds.map((k) => (
                 <option key={k} value={k}>
@@ -169,7 +169,7 @@ function TableEditor({
           <thead>
             <tr>
               {headers.map((h, c) => (
-                <th key={c} className="border border-wareongo-blue/20 p-1">
+                <th key={c} className="border border-ui-line p-1">
                   <FormattedTextarea
                     rows={1}
                     aria-label={`Header ${c + 1}`}
@@ -182,7 +182,7 @@ function TableEditor({
                   />
                   <button
                     type="button"
-                    className="text-[10px] text-wareongo-sienna disabled:opacity-30"
+                    className="text-xs text-wareongo-sienna disabled:opacity-30"
                     onClick={() => removeColumn(c)}
                     disabled={headers.length === 1}
                   >
@@ -196,7 +196,7 @@ function TableEditor({
             {rows.map((row, r) => (
               <tr key={r}>
                 {row.map((cell, c) => (
-                  <td key={c} className="border border-wareongo-blue/20 p-1">
+                  <td key={c} className="border border-ui-line p-1">
                     <FormattedTextarea
                       rows={1}
                       aria-label={`Row ${r + 1}, column ${c + 1}`}
@@ -214,7 +214,7 @@ function TableEditor({
                 <td className="p-1">
                   <button
                     type="button"
-                    className="text-[10px] text-wareongo-sienna disabled:opacity-30"
+                    className="text-xs text-wareongo-sienna disabled:opacity-30"
                     onClick={() => onChange({ ...table, rows: rows.filter((_, j) => j !== r) })}
                     disabled={rows.length === 1}
                   >

@@ -106,7 +106,7 @@ export default async function DashboardPage() {
       <header className="mb-10 flex flex-wrap items-end justify-between gap-5">
         <div>
           <p className="cms-eyebrow mb-3">Your workspace</p>
-          <h1 className="cms-title text-3xl sm:text-4xl">Content menu</h1>
+          <h1 className="cms-title">Content menu</h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-wareongo-slate">
             Choose a category to create, edit or publish your website content.
           </p>
@@ -118,29 +118,29 @@ export default async function DashboardPage() {
         {NAVIGATION_GROUPS.map(group => (
           <section key={group.id} id={group.id} aria-labelledby={`category-${group.id}`}>
             <div className="mb-4">
-              <h2 id={`category-${group.id}`} className="cms-title text-lg">{group.label}</h2>
+              <h2 id={`category-${group.id}`} className="ui-card-title text-ui-ink">{group.label}</h2>
               <p className="mt-1 text-xs leading-relaxed text-wareongo-slate">{descriptions[group.id]}</p>
             </div>
             <div className={`grid gap-4 ${group.items.length > 1 ? 'xl:grid-cols-3' : ''}`}>
               {group.items.map(item => {
                 const card = cards[item.id];
-                return <article key={item.id} className="group overflow-hidden rounded-2xl border border-wareongo-blue/15 bg-white transition-colors hover:border-wareongo-blue/35">
-                  <Link href={item.href} className={`block rounded-2xl p-5 outline-offset-[-3px] focus-visible:outline-2 focus-visible:outline-wareongo-blue sm:p-6 ${group.items.length === 1 ? 'sm:flex sm:items-center sm:justify-between sm:gap-8' : ''}`}>
+                return <article key={item.id} className="group overflow-hidden rounded-xl border border-ui-line bg-ui-surface transition-colors hover:border-ui-accent">
+                  <Link href={item.href} className={`block rounded-xl p-5 outline-offset-[-3px] focus-visible:outline-2 focus-visible:outline-wareongo-blue sm:p-6 ${group.items.length === 1 ? 'sm:flex sm:items-center sm:justify-between sm:gap-8' : ''}`}>
                     <div>
                       <div className="flex items-center justify-between gap-3">
-                        <h3 className="cms-title text-xl">{item.label}</h3>
+                        <h3 className="ui-panel-title text-ui-ink">{item.label}</h3>
                         <span aria-hidden="true" className="text-wareongo-slate transition-transform group-hover:translate-x-1">→</span>
                       </div>
                       <p className="mt-2 max-w-lg text-sm leading-relaxed text-wareongo-slate">{card.description}</p>
                     </div>
-                    <div className={`mt-5 ${group.items.length === 1 ? 'sm:mt-0 sm:shrink-0 sm:text-right' : 'border-t border-wareongo-blue/10 pt-4'}`}>
+                    <div className={`mt-5 ${group.items.length === 1 ? 'sm:mt-0 sm:shrink-0 sm:text-right' : 'border-t border-ui-line pt-4'}`}>
                       <p className="text-lg font-semibold tabular-nums text-wareongo-blue">{card.lead}</p>
                       <p className="mt-1 text-xs text-wareongo-slate">{card.detail}</p>
                     </div>
                   </Link>
-                  {item.children && <ul className="grid border-t border-wareongo-blue/10 bg-wareongo-ivory/40 sm:grid-cols-2">
-                    {item.children.map(child => <li key={child.id} className="border-wareongo-blue/10 last:border-t sm:last:border-l sm:last:border-t-0">
-                      <Link href={child.href} className="flex min-h-14 items-center justify-between gap-3 px-5 py-3 text-sm font-medium text-wareongo-blue hover:bg-wareongo-blue/5 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-wareongo-blue sm:px-6">
+                  {item.children && <ul className="grid border-t border-ui-line bg-wareongo-ivory/40 sm:grid-cols-2">
+                    {item.children.map(child => <li key={child.id} className="border-ui-line last:border-t sm:last:border-l sm:last:border-t-0">
+                      <Link href={child.href} className="flex min-h-14 items-center justify-between gap-3 px-5 py-3 text-sm font-medium text-wareongo-blue hover:bg-ui-tint focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-wareongo-blue sm:px-6">
                         {child.label}<span aria-hidden="true">→</span>
                       </Link>
                     </li>)}

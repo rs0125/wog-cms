@@ -112,7 +112,7 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
       </details>)}
     </fieldset>
     {tab === 'preview' && <AdPagePreview content={fields} url={previewUrl} />}
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-wareongo-blue/20 bg-wareongo-ivory p-4 lg:left-64">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ui-line bg-wareongo-ivory p-4 lg:left-64">
       <div className="mx-auto max-w-5xl space-y-2">
         {(clientError || result?.ok === false) && <p role="alert" className="text-sm text-red-700">{clientError || (result?.ok === false ? result.error : '')}</p>}
         {uploading && <p role="status" className="text-sm text-wareongo-slate">Uploading photos… Wait for uploads to finish before saving.</p>}

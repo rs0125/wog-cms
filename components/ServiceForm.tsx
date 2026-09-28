@@ -43,11 +43,11 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
       <div><label htmlFor="description" className="cms-label">Meta description</label><textarea {...bind('description')} maxLength={1000} rows={3} className="cms-input" /></div>
       <div><label htmlFor="keywords" className="cms-label">Keywords (optional, comma separated)</label><input id="keywords" value={keywords} onChange={e => setKeywords(e.target.value)} className="cms-input" /></div>
       <section aria-labelledby="service-content-heading">
-        <h2 id="service-content-heading" className="cms-title mb-4 text-xl">Page content</h2>
+        <h2 id="service-content-heading" className="ui-panel-title text-ui-ink mb-4">Page content</h2>
         <BlockEditor blocks={blocks} onChange={next => { setBlocks(next); setEdited(true); }} />
       </section>
       <section aria-labelledby="service-faq-heading">
-        <h2 id="service-faq-heading" className="cms-title mb-4 text-xl">Frequently asked questions (optional)</h2>
+        <h2 id="service-faq-heading" className="ui-panel-title text-ui-ink mb-4">Frequently asked questions (optional)</h2>
         <div className="space-y-3">
           {faqs.map(({ key, value: faq }, i) => <div key={key} className="cms-card space-y-3">
             <label className="cms-label">Question {i + 1}<input value={faq.q} onChange={e => setFaqs(replaceAt(faqs, i, { ...faq, q: e.target.value }))} className="cms-input mt-2" /></label>
@@ -59,7 +59,7 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
       </section>
     </div>
     {tab === 'preview' && <ServicePreview content={preview} />}
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-wareongo-blue/20 bg-wareongo-ivory p-4 lg:left-64">
+    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ui-line bg-wareongo-ivory p-4 lg:left-64">
       <div className="mx-auto max-w-4xl space-y-2">
         {result?.ok === false && <p role="alert" className="text-sm text-red-700">{result.error}</p>}
         <p className="text-xs text-wareongo-slate">{edited ? 'Unsaved changes' : state.hasDraft ? 'Draft saved privately' : 'No unsaved changes'}{state.staged ? ' · Changes ready for next build' : ''}</p>

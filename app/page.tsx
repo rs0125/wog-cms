@@ -33,12 +33,12 @@ export default async function SignInPage({
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm rounded-2xl border border-wareongo-blue/20 bg-white p-8">
+      <div className="w-full max-w-sm rounded-xl border border-ui-line bg-ui-surface p-8">
         <div className="mb-4 flex items-center gap-2.5">
           <Image src="/wareongo-logo.webp" alt="WareOnGo" width={120} height={85} priority className="h-7 w-auto" />
           <span className="text-sm font-bold tracking-widest text-wareongo-blue">WAREONGO</span>
         </div>
-        <h1 className="cms-title text-3xl">Content Studio</h1>
+        <h1 className="cms-title">Content Studio</h1>
         <p className="mt-2 mb-7 text-sm text-wareongo-slate">
           Sign in with your WareOnGo Google account to manage site content.
         </p>
@@ -51,7 +51,7 @@ export default async function SignInPage({
 
         <a
           href="/api/auth/google"
-          className="flex w-full items-center justify-center gap-3 rounded-xl border border-wareongo-blue/25 bg-white px-5 py-3 text-sm font-semibold text-wareongo-charcoal transition-colors hover:bg-wareongo-blue/5"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-ui-outline bg-ui-surface px-5 py-3 text-sm font-semibold text-wareongo-charcoal transition-colors hover:bg-ui-tint"
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
             <path

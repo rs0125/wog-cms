@@ -83,7 +83,7 @@ export default async function MicromarketsPage({
           <Link href="/dashboard" className="cms-eyebrow mb-1 block hover:text-wareongo-blue">
             ← Menu
           </Link>
-          <h1 className="cms-title text-4xl">Micromarkets</h1>
+          <h1 className="cms-title">Micromarkets</h1>
           <p className="mt-1 text-sm text-wareongo-slate">
             {pages.length > 0
               ? `${done} of ${pages.length} written · ${live} live`
@@ -100,7 +100,7 @@ export default async function MicromarketsPage({
         </div>
       </header>
 
-      <p className="mb-7 rounded-2xl border border-wareongo-blue/20 bg-white p-4 text-sm text-wareongo-slate">
+      <p className="mb-7 rounded-xl border border-ui-line bg-ui-surface p-4 text-sm text-wareongo-slate">
         Publish prose, FAQs and market context at <strong>/overview/&#123;state&#125;/&#123;city&#125;/&#123;micromarket&#125;</strong>.
         The state comes from the city&apos;s location data. Existing micromarket listing URLs
         continue to show the plain warehouse grid. Deleting or delisting content removes its

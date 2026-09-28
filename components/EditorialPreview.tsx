@@ -1,6 +1,8 @@
 'use client';
 
 import InlineText from './InlineText';
+import { PreviewListingPlaceholder } from './PreviewListingPlaceholder';
+import { PreviewNavbar as Navbar, PreviewFooter as Footer } from './PreviewChrome';
 import { CorridorPanel, RentBySize, SpecSizeComparison } from './city/CityPanels';
 
 import { useState } from 'react';
@@ -41,72 +43,9 @@ import type { DerivedStats } from '@/lib/derived-stats';
 // package, this app draws the handful of icons it needs (see Toast, the Google
 // button) the same way.
 const Chevron = ({ className = '' }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true" className={className}>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true" className={className}>
     <path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
-);
-
-/**
- * The site's chrome, in outline.
- *
- * Included because leaving it out was most of why the preview "looked very
- * different": the real page opens under a floating logo pill and closes on a
- * navy footer, and a bare column of prose between neither reads like the same
- * document. These are simplified — the real navbar has working links and a
- * mobile drawer — but they occupy the right space in the right colours, which is
- * what a layout preview is for.
- */
-const Navbar = () => (
-  <nav className="sticky top-0 z-50 px-4 pt-4">
-    <div className="container mx-auto flex items-center justify-between gap-4">
-      <span className="flex items-center justify-center gap-2.5 rounded-xl border border-wareongo-blue/15 bg-white/80 px-5 py-3 backdrop-blur">
-        <span className="text-sm font-bold tracking-widest text-wareongo-blue md:text-base">WAREONGO</span>
-      </span>
-      <span className="hidden items-center gap-1 rounded-xl border border-wareongo-blue/15 bg-white/80 p-2 backdrop-blur md:flex">
-        {['Request a Warehouse', 'Listings', 'About Us'].map((l) => (
-          <span key={l} className="whitespace-nowrap rounded-lg px-4 py-3 text-sm font-medium text-wareongo-charcoal">
-            {l}
-          </span>
-        ))}
-        <span className="whitespace-nowrap rounded-lg bg-wareongo-blue px-4 py-3 text-sm font-medium text-white">
-          Contact Us
-        </span>
-      </span>
-      <span className="rounded-xl border border-wareongo-blue/15 bg-white/80 px-4 py-3 text-wareongo-blue backdrop-blur md:hidden">
-        ☰
-      </span>
-    </div>
-  </nav>
-);
-
-const FOOTER_COLUMNS: [string, string[]][] = [
-  ['Quick Links', ['Home', 'How It Works', 'Listings', 'Request a Warehouse', 'About Us']],
-  ['Services', ['Warehouse Search', 'Build-To-Suit', 'Lease Negotiation', 'Compliance Procurement']],
-  ['Contact Us', ['+91 74001-84225', 'sales@wareongo.com']],
-];
-
-const Footer = () => (
-  <footer className="mt-auto bg-wareongo-blue px-4 py-12 text-wareongo-ivory">
-    <div className="container mx-auto grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-      <div>
-        <p className="text-lg font-bold tracking-widest">WareOnGo</p>
-        <p className="mt-1 text-sm text-wareongo-ivory/70">Find the Right Warehouse, Faster</p>
-      </div>
-      {FOOTER_COLUMNS.map(([heading, items]) => (
-        <div key={heading}>
-          <p className="mb-3 text-sm font-semibold">{heading}</p>
-          <ul className="space-y-1.5 text-sm text-wareongo-ivory/70">
-            {items.map((i) => (
-              <li key={i}>{i}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-    <div className="container mx-auto mt-10 border-t border-wareongo-ivory/15 pt-6 text-center text-xs text-wareongo-ivory/50">
-      © {new Date().getFullYear()} Neuroware Technologies Private Limited. All rights reserved.
-    </div>
-  </footer>
 );
 
 /**
@@ -120,7 +59,7 @@ function PagerRow({ pages, className = '' }: { pages: number; className?: string
     // fight the `hidden` in the breakpoint variants, and losing that fight is
     // what stacked the mobile pager vertically.
     <nav aria-label="Pagination" className={`justify-center gap-2 ${className}`}>
-      <span className="flex h-9 items-center rounded-lg border border-wareongo-blue/30 px-4 text-sm font-medium text-wareongo-blue opacity-40">
+      <span className="flex h-9 items-center rounded-lg border border-ui-outline px-4 text-sm font-medium text-wareongo-blue opacity-40">
         Previous
       </span>
       <span className="flex gap-1.5">
@@ -129,24 +68,24 @@ function PagerRow({ pages, className = '' }: { pages: number; className?: string
             key={n}
             className={`grid h-9 w-9 place-items-center rounded-lg border text-sm font-medium ${
               n === 1
-                ? 'border-wareongo-blue bg-wareongo-blue text-white'
-                : 'border-wareongo-blue/30 text-wareongo-blue'
+                ? 'border-wareongo-blue bg-wareongo-blue text-ui-surface'
+                : 'border-ui-outline text-wareongo-blue'
             }`}
           >
             {n}
           </span>
         ))}
       </span>
-      <span className="flex h-9 items-center rounded-lg border border-wareongo-blue/30 px-4 text-sm font-medium text-wareongo-blue">
+      <span className="flex h-9 items-center rounded-lg border border-ui-outline px-4 text-sm font-medium text-wareongo-blue">
         Next
       </span>
     </nav>
   );
 }
 
-const EYEBROW = 'text-[10px] font-semibold uppercase tracking-[0.2em]';
-const PROSE = 'text-[15px] leading-relaxed text-wareongo-slate sm:text-base';
-const PANEL = 'rounded-2xl border border-wareongo-blue';
+const EYEBROW = 'ui-eyebrow';
+const PROSE = 'ui-prose';
+const PANEL = 'ui-panel';
 
 /** Stands in for the few values that genuinely cannot be known here. */
 const Pending = ({ label }: { label?: string }) => (
@@ -171,14 +110,14 @@ const SectionHeading = ({
       </span>
       <span className={`${EYEBROW} text-wareongo-slate`}>{eyebrow}</span>
     </div>
-    <h2 className="text-xl font-bold leading-tight text-wareongo-blue sm:text-2xl md:text-[1.75rem]">
+    <h2 className="ui-section-title text-wareongo-blue">
       {children}
     </h2>
   </header>
 );
 
 const Figure = ({ image }: { image: EditorialImage }) => (
-  <div className="aspect-[4/3] overflow-hidden rounded-2xl border border-wareongo-blue bg-wareongo-blue/5">
+  <div className="aspect-[4/3] overflow-hidden rounded-xl border border-ui-line bg-ui-tint">
     {/* eslint-disable-next-line @next/next/no-img-element */}
     <img src={image.url} alt={image.alt} className="h-full w-full object-cover" />
   </div>
@@ -312,7 +251,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
     <div className="flex flex-col bg-wareongo-ivory font-sans">
       <Navbar />
       <main>
-        <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        <div className="section-container page-content pb-6 sm:pb-10">
         <nav aria-label="Breadcrumb" className="mb-4 sm:mb-6">
           <ol className="flex flex-wrap items-center gap-1 text-xs text-wareongo-slate sm:text-sm">
             <li>Home</li>
@@ -339,14 +278,14 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
             <span className={`mb-3 block ${EYEBROW} text-wareongo-slate`}>
               {data.heroEyebrow || `Warehouses and godowns · ${place}`}
             </span>
-            <h1 className="mb-4 text-3xl font-bold leading-tight text-wareongo-blue sm:text-4xl md:text-5xl">
+            <h1 className="ui-page-title mb-4 text-wareongo-blue">
               {data.h1 || 'Your H1 goes here'}
             </h1>
-            <p className={`max-w-2xl text-base leading-relaxed text-wareongo-slate sm:text-lg`}>
+            <p className={`max-w-2xl ui-prose`}>
               <InlineText text={data.heroProse || 'The lead paragraph goes here.'} />
             </p>
 
-            <dl className="mt-7 grid grid-cols-1 border-t border-wareongo-blue/15 sm:grid-cols-3 sm:gap-3 sm:border-t-0">
+            <dl className="mt-7 grid grid-cols-1 border-t border-ui-line sm:grid-cols-3 sm:gap-3 sm:border-t-0">
               {[
                 { label: 'Verified spaces', value: stats ? String(stats.listings) : null },
                 { label: 'Sq ft range', value: stats?.size ? formatSqftRange(stats.size) : null },
@@ -358,11 +297,11 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
               ].map((t) => (
                 <div
                   key={t.label}
-                  className="flex flex-row-reverse items-baseline justify-between gap-3 border-b border-wareongo-blue/15 py-2.5 sm:block sm:gap-0 sm:rounded-xl sm:border sm:border-wareongo-blue/20 sm:px-3.5 sm:py-2.5"
+                  className="flex flex-row-reverse items-baseline justify-between gap-3 border-b border-ui-line py-2.5 sm:block sm:gap-0 sm:rounded-xl sm:border sm:border-ui-line sm:bg-ui-surface sm:px-3.5 sm:py-2.5"
                 >
                   <dd
-                    className={`text-[17px] font-semibold tabular-nums leading-none ${
-                      t.accent ? 'text-wareongo-green' : 'text-wareongo-blue'
+                    className={`text-lg font-semibold tabular-nums leading-none ${
+                      t.accent ? 'text-ui-accent' : 'text-wareongo-blue'
                     }`}
                   >
                     {t.value ?? <Pending />}
@@ -373,10 +312,10 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
             </dl>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <span className="inline-flex h-11 items-center justify-center rounded-xl bg-wareongo-blue px-5 text-sm font-semibold text-white">
+              <span className="ui-button">
                 Get a shortlist in 4 hours →
               </span>
-              {!data.isCity && <span className="inline-flex h-11 items-center justify-center rounded-xl border border-wareongo-blue/30 px-5 text-sm font-medium text-wareongo-blue">
+              {!data.isCity && <span className="ui-button ui-button--secondary">
                 Browse the listings ↓
               </span>}
             </div>
@@ -386,7 +325,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
 
         <div>
           {/* Inventory leads, as on the site */}
-          <section id="listings" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+          <section id="listings" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
             <SectionHeading index={indexOf('listings')} eyebrow="Inventory">
               {data.inventoryHeading || `Warehouses for rent in ${place}`}
             </SectionHeading>
@@ -405,18 +344,9 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
               {Array.from({ length: cards }).map((_, i) => (
                 <div
                   key={i}
-                  className={`overflow-hidden rounded-2xl border border-wareongo-blue ${
-                    i >= 12 ? 'hidden lg:block' : i >= 6 ? 'hidden md:block' : ''
-                  }`}
+                  className={i >= 12 ? 'hidden lg:block' : i >= 6 ? 'hidden md:block' : ''}
                 >
-                  <div className="flex h-40 items-center justify-center border-b border-wareongo-blue bg-wareongo-blue/5">
-                    <span className={`${EYEBROW} text-wareongo-slate`}>Listing card</span>
-                  </div>
-                  <div className="space-y-2 p-4">
-                    <div className="h-3.5 w-3/4 rounded bg-wareongo-blue/10" />
-                    <div className="h-3 w-1/2 rounded bg-wareongo-blue/[0.07]" />
-                    <div className="h-3 w-2/3 rounded bg-wareongo-blue/[0.07]" />
-                  </div>
+                  <PreviewListingPlaceholder />
                 </div>
               ))}
             </div>
@@ -436,7 +366,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           </section>
 
           {hasMarket && (
-            <section id="market" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+            <section id="market" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
               <SectionHeading index={indexOf('market')} eyebrow="Market">
                 {data.marketHeading || `Warehouse space in ${place}: where the stock sits`}
               </SectionHeading>
@@ -448,7 +378,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           )}
 
           {hasCorridors && (
-            <section id="corridors" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+            <section id="corridors" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
               <SectionHeading index={indexOf('corridors')} eyebrow="Locations">
                 {data.corridorHeading || `Where to rent in ${place}`}
               </SectionHeading>
@@ -460,7 +390,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           )}
 
           {hasRents && (
-            <section id="rents" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+            <section id="rents" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
               <SectionHeading index={indexOf('rents')} eyebrow="Pricing">
                 {data.rentsHeading || `Warehouse rent in ${place}`}
               </SectionHeading>
@@ -472,7 +402,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                     </span>
                   </figcaption>
                   {peers.length > 0 ? (
-                    <div className="flex items-end gap-2 border-b border-wareongo-blue/15 sm:gap-3">
+                    <div className="flex items-end gap-2 border-b border-ui-line sm:gap-3">
                       {peers.map((p) => {
                         const height = Math.max(12, Math.round((p.medianRent / peerMax) * 100));
                         return (
@@ -480,7 +410,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                             <span className="flex h-32 w-full items-end sm:h-40">
                               <span
                                 style={{ height: `${height}%` }}
-                                className={`mx-auto flex w-full max-w-[4.5rem] items-start justify-center rounded-t-md pt-1 text-[11px] font-semibold tabular-nums text-white ${
+                                className={`mx-auto flex w-full max-w-[4.5rem] items-start justify-center rounded-t-md pt-1 text-xs font-semibold tabular-nums text-ui-surface ${
                                   p.isSelf ? 'bg-wareongo-green' : 'bg-wareongo-blue'
                                 }`}
                               >
@@ -488,7 +418,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                               </span>
                             </span>
                             <span
-                              className={`mt-2 block text-center text-[10px] leading-tight ${
+                              className={`mt-2 block text-center text-xs leading-tight ${
                                 p.isSelf ? 'font-semibold text-wareongo-blue' : 'text-wareongo-slate'
                               }`}
                             >
@@ -499,7 +429,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                       })}
                     </div>
                   ) : (
-                    <p className="py-8 text-center text-[11px] text-wareongo-slate/60">
+                    <p className="py-8 text-center text-xs text-wareongo-slate/60">
                       No priced neighbours to compare against, so the page hides this chart.
                     </p>
                   )}
@@ -511,7 +441,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           )}
 
           {/* The navy band always renders on the site when any count is non-zero */}
-          <section aria-labelledby="inventory-band" className="mt-10 rounded-2xl bg-wareongo-blue px-5 py-6 text-wareongo-ivory sm:mt-14 sm:px-7 sm:py-7">
+          <section aria-labelledby="inventory-band" className="mt-10 rounded-xl bg-wareongo-blue px-5 py-6 text-wareongo-ivory sm:mt-14 sm:px-7 sm:py-7">
             <div className="mb-5 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-wareongo-ivory/15 pb-4">
               <h2 className={`${EYEBROW} text-wareongo-ivory/70`}>What you&apos;ll find here</h2>
               <p className="text-xs text-wareongo-ivory/70 sm:ml-auto">
@@ -539,7 +469,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                   className="rounded-xl border border-wareongo-ivory/10 bg-wareongo-ivory/[0.06] px-4 py-3.5"
                 >
                   <div className="flex items-baseline gap-1.5">
-                    <dd className="text-2xl font-bold leading-none sm:text-[1.75rem]">
+                    <dd className="ui-metric">
                       {t.value ?? <span className="text-wareongo-ivory/40">—</span>}
                     </dd>
                     {t.value !== null && (
@@ -561,13 +491,13 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           </section>
 
           {hasSpec && (
-            <section id="specification" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+            <section id="specification" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
               <SectionHeading index={indexOf('specification')} eyebrow="Specification">
                 {data.specHeading || `Typical specification in ${place}`}
               </SectionHeading>
               <div className="grid items-start gap-6 lg:grid-cols-2 lg:gap-10">
                 <div className={`overflow-hidden ${PANEL}`}>
-                  <table className="w-full text-left text-[13px] sm:text-sm">
+                  <table className="ui-table text-left">
                     <tbody>
                       {(rows.length > 0
                         ? rows
@@ -579,7 +509,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                             ['Median unit size', ''],
                           ] as [string, string][])
                       ).map(([label, val], i) => (
-                        <tr key={label} className={i > 0 ? 'border-t border-wareongo-blue/20' : ''}>
+                        <tr key={label} className={i > 0 ? 'border-t border-ui-line' : ''}>
                           <th scope="row" className="px-4 py-3 text-left font-medium text-wareongo-slate">
                             {label}
                           </th>
@@ -601,7 +531,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           )}
 
           {hasCompliance && (
-            <section id="compliance" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+            <section id="compliance" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
               <SectionHeading index={indexOf('compliance')} eyebrow="Compliance">
                 {data.complianceHeading || `Warehouse compliance in ${place}`}
               </SectionHeading>
@@ -610,21 +540,21 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
           )}
 
           {faqs.length > 0 && (
-            <section id="faq" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+            <section id="faq" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
               <SectionHeading index={indexOf('faq')} eyebrow="FAQ">
                 Frequently asked questions
               </SectionHeading>
-              <div className="overflow-hidden rounded-2xl border border-wareongo-blue bg-transparent">
+              <div className="overflow-hidden rounded-xl border border-ui-outline bg-transparent">
                 {faqs.map((f, i) => {
                   const open = openFaq === i;
                   return (
-                    <div key={i} className="border-t border-wareongo-blue first:border-t-0">
+                    <div key={i} className="border-t border-ui-outline first:border-t-0 hover:bg-ui-tint">
                       <button
                         type="button"
                         onClick={() => setOpenFaq(open ? null : i)}
                         className="flex w-full items-center justify-between gap-4 p-5 text-left sm:p-6"
                       >
-                        <h3 className="text-base font-semibold text-wareongo-blue sm:text-lg">
+                        <h3 className="ui-card-title text-wareongo-blue">
                           {f.q || 'Question'}
                         </h3>
                         <Chevron
@@ -644,7 +574,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
             </section>
           )}
 
-          <section aria-label="Related pages" className="mt-10 border-t border-wareongo-blue/15 pt-10 sm:mt-14 sm:pt-14">
+          <section aria-label="Related pages" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
             <dl className="space-y-5 text-sm">
               <div className="sm:flex sm:gap-6">
                 <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>All listings</dt>
@@ -655,7 +585,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                   <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>Micromarkets</dt>
                   <dd className="flex flex-wrap gap-2">
                     {city.micromarkets.map((market) => (
-                      <span key={market.slug} className={`inline-flex items-center gap-1.5 rounded-full border border-wareongo-blue/30 px-3 py-1.5 ${market.path ? 'text-wareongo-blue' : 'text-wareongo-slate'}`}>
+                      <span key={market.slug} className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border border-ui-outline px-3 py-1.5 ${market.path ? 'text-wareongo-blue' : 'text-wareongo-slate'}`}>
                         {market.name}<span className="text-xs tabular-nums text-wareongo-slate">{market.listings}</span>
                       </span>
                     ))}
@@ -671,7 +601,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                     {siblings.map((p) => (
                       <span
                         key={p.path}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-wareongo-blue/30 px-3 py-1.5 text-wareongo-blue"
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-ui-outline px-3 py-1.5 text-wareongo-blue"
                       >
                         {p.name}
                         {'medianRent' in p && typeof p.medianRent === 'number' && <span className="text-xs tabular-nums text-wareongo-slate">₹{p.medianRent}</span>}
@@ -698,7 +628,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
             <p className="mb-4 text-sm text-wareongo-slate">
               Tell us the size, the compliance you need and when you want to move in.
             </p>
-            <span className="inline-flex h-10 items-center rounded-xl bg-wareongo-blue px-5 text-sm font-medium text-white">
+            <span className="ui-button">
               Request a warehouse
             </span>
           </div>

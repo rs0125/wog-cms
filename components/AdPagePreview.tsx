@@ -68,7 +68,7 @@ export default function AdPagePreview({ content, url }: { content: AdPageContent
   const { width, height } = VIEWPORTS[viewport];
   const scale = Math.min(1, (availableWidth || width) / width, fullscreen ? fullscreenHeight / height : 1);
 
-  return <section ref={container} aria-label="Ad page preview" className="rounded-xl border border-wareongo-blue/20 bg-wareongo-ivory p-3 sm:p-4 [&:fullscreen]:overflow-auto [&:fullscreen]:rounded-none [&:fullscreen]:p-6">
+  return <section ref={container} aria-label="Ad page preview" className="rounded-xl border border-ui-line bg-wareongo-ivory p-3 sm:p-4 [&:fullscreen]:overflow-auto [&:fullscreen]:rounded-none [&:fullscreen]:p-6">
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2" role="group" aria-label="Preview screen size">
         {(['desktop', 'mobile'] as const).map(value => <button type="button" key={value} aria-pressed={viewport === value} onClick={() => setViewport(value)} className={viewport === value ? 'cms-btn-primary' : 'cms-btn'}>
@@ -85,7 +85,7 @@ export default function AdPagePreview({ content, url }: { content: AdPageContent
     <p className="mb-4 text-xs leading-5 text-wareongo-slate">Your current edits in the website layout. Scroll inside to explore. Links and form submissions are disabled.</p>
     {error && status === 'ready' && <p role="status" className="mb-3 text-sm text-wareongo-slate">{error}</p>}
     <div ref={stage} className="w-full overflow-hidden">
-      <div className="relative mx-auto overflow-hidden rounded-lg border border-wareongo-blue/15 bg-white" style={{ width: width * scale, height: height * scale }}>
+      <div className="relative mx-auto overflow-hidden rounded-lg border border-ui-line bg-ui-surface" style={{ width: width * scale, height: height * scale }}>
         <iframe
           key={attempt}
           ref={frame}

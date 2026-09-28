@@ -45,7 +45,7 @@ export default async function EditMicromarketPage({
   if (!parsed.success) {
     return (
       <main className="mx-auto max-w-4xl p-6">
-        <h1 className="mb-2 text-2xl font-semibold">{row.name}</h1>
+        <h1 className="cms-title mb-2">{row.name}</h1>
         <p className="mb-4 text-sm text-red-600">
           This page&apos;s stored content doesn&apos;t match the expected shape, so the editor
           can&apos;t open it safely.
@@ -67,7 +67,7 @@ export default async function EditMicromarketPage({
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <div className="min-w-0">
           <span className="cms-eyebrow mb-2 block">Editing micromarket page</span>
-          <h1 className="cms-title text-3xl leading-tight sm:text-4xl">{page.name}</h1>
+          <h1 className="cms-title">{page.name}</h1>
           {path ? (
             <a
               href={`https://wareongo.com${path}`}

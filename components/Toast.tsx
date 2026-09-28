@@ -108,7 +108,7 @@ export default function Toast({
         // action inside it stay clickable.
         onClick={(e) => e.stopPropagation()}
         onTransitionEnd={() => phase === 'out' && setGone(true)}
-        className={`relative w-full max-w-sm rounded-3xl border bg-white px-7 py-8 text-center transition-all duration-200 motion-reduce:transition-none ${border} ${
+        className={`relative w-full max-w-sm rounded-3xl border bg-ui-surface px-7 py-8 text-center transition-all duration-200 motion-reduce:transition-none ${border} ${
           shown ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >

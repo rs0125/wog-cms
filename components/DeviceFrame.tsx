@@ -138,8 +138,8 @@ export default function DeviceFrame({
    *   - The width lands on the iframe, because the iframe's content box *is* the
    *     viewport the media queries read. Putting 390px on a bordered wrapper
    *     left the frame at 388.
-   *   - `box-content`, because Tailwind sets border-box globally, which would
-   *     take those 2px back off the inside.
+   *   - The border belongs to the outer panel; the iframe itself has none,
+   *     keeping the viewport and its scaled footprint exactly the same width.
    *   - And the frame renders at its full nominal width and is *scaled* to fit,
    *     rather than being given whatever room the panel has. The editor sits in
    *     a max-w-4xl column, so "fit the panel" produced a 782px viewport — the
@@ -149,7 +149,7 @@ export default function DeviceFrame({
   const scale = avail > 0 ? Math.min(1, avail / width) : 1;
 
   return (
-    <div className="rounded-2xl border border-wareongo-blue/20 bg-wareongo-blue/[0.03] p-4">
+    <div className="rounded-xl border border-ui-line bg-ui-paper p-4">
       <div
         // Measured here, not on the padded panel outside it: clientWidth
         // *includes* padding, so measuring the panel overstated the available
@@ -165,7 +165,7 @@ export default function DeviceFrame({
         <iframe
           ref={attach}
           title="Page preview"
-          className="box-content block rounded-xl border border-wareongo-blue/15 bg-wareongo-ivory"
+          className="box-content block border-0 bg-ui-paper"
           style={{
             width,
             height,

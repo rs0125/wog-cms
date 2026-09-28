@@ -49,14 +49,14 @@ export default function SingleImagePicker({
   return (
     <div className="space-y-2">
       {value ? (
-        <div className="flex gap-3 rounded-xl border border-wareongo-blue/15 bg-white p-2">
+        <div className="flex gap-3 rounded-xl border border-ui-line bg-ui-surface p-2">
           {/* Straight from R2 — this app runs with next/image unoptimized
               (see next.config.ts), so a plain img is the honest choice. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={value.url}
             alt=""
-            className="h-20 w-20 shrink-0 rounded-lg border border-wareongo-blue/15 bg-wareongo-blue/5 object-cover"
+            className="h-20 w-20 shrink-0 rounded-lg border border-ui-line bg-ui-tint object-cover"
           />
           <div className="min-w-0 flex-1">
             <input
@@ -66,7 +66,7 @@ export default function SingleImagePicker({
               className="cms-input mb-1.5 py-1.5 text-sm"
             />
             <div className="flex items-center gap-2">
-              <span className="text-[11px] text-wareongo-slate">
+              <span className="text-xs text-wareongo-slate">
                 {value.width}×{value.height} · shown at {ratio}
               </span>
               {/* The object stays in R2. Deleting it here would break any

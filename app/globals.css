@@ -1,108 +1,89 @@
 @import 'tailwindcss';
+@import '../styles/ui.tokens.css';
+@import '../styles/ui.css';
+@import '../styles/navigation.css';
+@import '../styles/WarehouseCard.css';
 
-/* Design tokens ported from the website's tailwind.config.ts so the CMS and the
-   live site share one palette, and so the blog preview can reuse the public
-   renderer's exact class names (text-wareongo-blue, bg-wareongo-blue/5, …).
-   Tailwind 4 has no JS config — @theme is the equivalent.
-   Keep in sync with wareongo-website/tailwind.config.ts. */
-@theme {
-  --color-wareongo-blue: #0a2239;
+/* Versioned website styles; see scripts/sync-ui-styles.mjs. Both apps deploy
+   independently, so the CMS never imports the neighbouring repo at runtime. */
+@theme inline {
+  --color-ui-ink: var(--ui-ink);
+  --color-ui-accent: var(--ui-accent);
+  --color-ui-paper: var(--ui-paper);
+  --color-ui-surface: var(--ui-surface);
+  --color-ui-muted: var(--ui-muted);
+  --color-ui-tint: var(--ui-tint);
+  --color-ui-line: var(--ui-line);
+  --color-ui-outline: var(--ui-outline);
+  --color-wareongo-blue: var(--ui-ink);
   --color-wareongo-green: #3d5a4a;
   --color-wareongo-sienna: #b3502d;
   --color-wareongo-purple: #4a2e50;
-  --color-wareongo-ivory: #f8f6f1;
-  --color-wareongo-slate: #47515b;
+  --color-wareongo-ivory: var(--ui-paper);
+  --color-wareongo-slate: var(--ui-muted);
   --color-wareongo-charcoal: #343a40;
-
-  /* Supplied by next/font in app/layout.tsx. Montserrat throughout — no serif. */
   --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
 }
 
+:root { --ui-font: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif; }
+
 @layer base {
   body {
-    background-color: var(--color-wareongo-ivory);
-    color: var(--color-wareongo-charcoal);
-    font-family: var(--font-sans);
+    background: var(--ui-paper);
+    color: var(--ui-ink);
     -webkit-font-smoothing: antialiased;
   }
 }
 
-/* Shared form idiom, matching the site's flat stroked treatment: full-strength
-   borders, generous radii, no shadows. Defined once here rather than repeated
-   as long class strings across every field. */
-/* The public site's container config (tailwind.config.ts), which Tailwind 4 has
-   no equivalent for out of the box. Only the preview needs it — it uses the
-   site's own `container` class — but a mismatch here silently changed the page
-   width the editor was shown. Keep in sync with wareongo-website. */
+/* The legacy public container is still used by legal pages and the footer. */
 @utility container {
   margin-inline: auto;
   padding-inline: 2rem;
   max-width: 100%;
-  @media (width >= 640px) {
-    max-width: 640px;
-  }
-  @media (width >= 768px) {
-    max-width: 768px;
-  }
-  @media (width >= 1024px) {
-    max-width: 1024px;
-  }
-  @media (width >= 1280px) {
-    max-width: 1280px;
-  }
-  @media (width >= 1400px) {
-    max-width: 1400px;
-  }
+  @media (width >= 640px) { max-width: 640px; }
+  @media (width >= 768px) { max-width: 768px; }
+  @media (width >= 1024px) { max-width: 1024px; }
+  @media (width >= 1280px) { max-width: 1280px; }
+  @media (width >= 1400px) { max-width: 1400px; }
 }
 
 @layer components {
+  .section-container {
+    width: 100%;
+    max-width: calc(var(--ui-content-width) + 2 * var(--ui-gutter));
+    margin-inline: auto;
+    padding: var(--ui-section-space) var(--ui-gutter);
+  }
+  .page-content { padding-top: 24px; }
+  @media (min-width: 768px) { .page-content { padding-top: 32px; } }
+
+  #cms-content { min-width: 0; overflow-wrap: anywhere; }
+
   .cms-nav-link {
-    @apply flex min-h-11 items-center justify-between gap-2 rounded-xl px-3 py-2.5 font-medium transition-colors
-      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wareongo-blue;
+    @apply flex min-h-11 items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors;
   }
-
   .cms-label {
-    @apply block text-[11px] font-semibold uppercase tracking-[0.14em] text-wareongo-slate mb-1.5;
+    @apply mb-1.5 block text-sm font-medium text-ui-muted;
   }
-
   .cms-input {
-    @apply w-full rounded-xl border border-wareongo-blue/25 bg-white px-3.5 py-2.5 text-[15px] text-wareongo-charcoal
-      outline-none transition-colors placeholder:text-wareongo-slate
-      focus:border-wareongo-blue focus:ring-2 focus:ring-wareongo-blue/10;
+    @apply w-full min-h-12 rounded-lg border border-ui-outline bg-ui-surface px-3.5 py-2.5 text-base text-ui-ink
+      transition-colors placeholder:text-ui-muted focus:border-ui-accent;
+    line-height: var(--ui-leading-ui);
   }
-
-  .cms-hint {
-    @apply mt-1.5 text-xs text-wareongo-slate;
+  .cms-hint { @apply mt-1.5 text-xs leading-relaxed text-ui-muted; }
+  .cms-card { @apply min-w-0 rounded-xl border border-ui-line bg-ui-surface p-4; }
+  .cms-btn, .cms-btn-danger {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-ui-outline bg-ui-surface px-3 py-2
+      text-sm font-semibold text-ui-ink transition-colors hover:bg-ui-tint
+      disabled:pointer-events-none disabled:opacity-50;
+    line-height: var(--ui-leading-ui);
   }
-
-  .cms-card {
-    @apply rounded-2xl border border-wareongo-blue/20 bg-white p-4;
-  }
-
-  .cms-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-wareongo-blue/25 bg-white px-3 py-1.5
-      text-xs font-medium text-wareongo-blue transition-colors hover:bg-wareongo-blue/5
-      disabled:pointer-events-none disabled:opacity-30;
-  }
-
   .cms-btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-wareongo-blue px-5 py-2.5 text-sm font-semibold
-      text-white transition-colors hover:bg-wareongo-blue/90 disabled:opacity-50;
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-ui-ink bg-ui-ink px-5 py-3 text-sm font-semibold
+      text-ui-surface transition-colors hover:border-ui-accent hover:bg-ui-accent disabled:opacity-50;
+    line-height: var(--ui-leading-ui);
   }
-
-  .cms-btn-danger {
-    @apply inline-flex items-center justify-center rounded-xl border border-wareongo-sienna/40 bg-white px-3 py-1.5
-      text-xs font-medium text-wareongo-sienna transition-colors hover:bg-wareongo-sienna/5
-      disabled:pointer-events-none disabled:opacity-30;
-  }
-
-  /* Page/section heading. Montserrat at a tight tracking, which is how the
-     public site sets its bold headings. */
-  .cms-title {
-    @apply font-bold tracking-tight text-wareongo-blue;
-  }
-
-  .cms-eyebrow {
-    @apply text-[10px] uppercase tracking-[0.2em] text-wareongo-slate sm:text-xs;
-  }
+  .cms-btn-danger { @apply border-wareongo-sienna/40 text-wareongo-sienna hover:bg-wareongo-sienna/5; }
+  .cms-title { font-size: var(--ui-text-section); font-weight: 600; line-height: var(--ui-leading-heading); letter-spacing: -.025em; color: var(--ui-ink); }
+  .cms-eyebrow { font-size: var(--ui-text-xs); font-weight: 600; line-height: var(--ui-leading-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--ui-muted); }
 }

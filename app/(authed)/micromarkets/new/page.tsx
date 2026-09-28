@@ -79,7 +79,7 @@ export default async function NewMicromarketPage({
       <Link href="/micromarkets" className="cms-eyebrow mb-1 block hover:text-wareongo-blue">
         ← Micromarkets
       </Link>
-      <h1 className="cms-title text-4xl">{name || 'Micromarket page'}</h1>
+      <h1 className="cms-title">{name || 'Micromarket page'}</h1>
       <p className="mt-1 mb-6 text-sm text-wareongo-slate">
         {path
           ? `Writing the overview at ${path}.`

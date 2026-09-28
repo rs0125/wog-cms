@@ -38,7 +38,7 @@ export default async function NewBlogPage() {
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
       <span className="cms-eyebrow mb-2 block">New</span>
-      <h1 className="cms-title mb-6 text-4xl">Blog</h1>
+      <h1 className="cms-title mb-6">Blog</h1>
       <BlogForm
         blog={blank}
         action={createBlog}

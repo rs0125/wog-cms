@@ -99,7 +99,7 @@ export default function DeployButton({
       {confirm && (
         <dialog
           ref={dialog}
-          className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-2xl border border-wareongo-blue/20 bg-white p-0 backdrop:bg-wareongo-blue/40 backdrop:backdrop-blur-sm"
+          className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-xl border border-ui-line bg-ui-surface p-0 backdrop:bg-wareongo-blue/40 backdrop:backdrop-blur-sm"
         >
           <div className="p-6">
             <h2 className="cms-title mb-2 text-xl">Deploy to production?</h2>

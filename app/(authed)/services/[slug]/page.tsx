@@ -19,7 +19,7 @@ export default async function EditServicePage({ params, searchParams }: {
   const state = row ? serviceStateOf(row) : { hasDraft: false, staged: false, published: false, deployed: false };
   return <main className="mx-auto max-w-4xl p-6 sm:p-10">
     <Link href="/services" className="text-sm text-wareongo-slate hover:underline">← Services</Link>
-    <h1 className="cms-title mt-4 mb-2 text-3xl sm:text-4xl">{SERVICE_PAGES[slug]}</h1>
+    <h1 className="cms-title mt-4 mb-2">{SERVICE_PAGES[slug]}</h1>
     <p className="text-sm text-wareongo-slate">wareongo.com/services/{slug}</p>
     {saved && <p role="status" className="cms-card my-5 text-sm text-wareongo-green">{saved === 'publish'
       ? 'Saved for the next build. Deploy now or wait for the nightly build.'

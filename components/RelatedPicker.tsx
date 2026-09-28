@@ -63,7 +63,7 @@ export default function RelatedPicker({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth={2}
+          strokeWidth={1.5}
           className={`h-4 w-4 shrink-0 text-wareongo-blue transition-transform ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
         >
@@ -81,7 +81,7 @@ export default function RelatedPicker({
                 type="button"
                 onClick={() => toggle(slug)}
                 title={`Remove ${slug}`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-wareongo-blue/25 bg-white px-2.5 py-1 text-xs text-wareongo-blue transition-colors hover:bg-wareongo-blue/5"
+                className="inline-flex items-center gap-1.5 rounded-full border border-ui-outline bg-ui-surface px-2.5 py-1 text-xs text-wareongo-blue transition-colors hover:bg-ui-tint"
               >
                 <span className="max-w-[18rem] truncate">{titleFor(slug)}</span>
                 <span aria-hidden="true">×</span>
@@ -95,7 +95,7 @@ export default function RelatedPicker({
         <div
           role="listbox"
           aria-multiselectable="true"
-          className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-wareongo-blue/25 bg-white p-1 shadow-lg"
+          className="absolute z-20 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-ui-outline bg-ui-surface p-1 shadow-lg"
         >
           {options.length === 0 ? (
             <p className="px-3 py-2 text-xs text-wareongo-slate">
@@ -109,7 +109,7 @@ export default function RelatedPicker({
                   key={o.slug}
                   role="option"
                   aria-selected={checked}
-                  className="flex cursor-pointer items-start gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-wareongo-blue/5"
+                  className="flex cursor-pointer items-start gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-ui-tint"
                 >
                   <input
                     type="checkbox"

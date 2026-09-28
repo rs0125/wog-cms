@@ -109,10 +109,10 @@ export default function BlogList({ blogs }: { blogs: BlogRow[] }) {
                 transform: shift ? `translateY(${shift}px)` : undefined,
                 transition: committing ? 'none' : EASE,
               }}
-              className={`flex items-center gap-3 rounded-2xl border bg-white p-4 ${
+              className={`flex flex-wrap items-center gap-3 rounded-xl border bg-ui-surface sm:flex-nowrap p-4 ${
                 isDragged
                   ? 'border-wareongo-blue opacity-40'
-                  : 'border-wareongo-blue/20 hover:bg-wareongo-blue/5'
+                  : 'border-ui-line hover:bg-ui-tint'
               }`}
             >
               <span
@@ -126,7 +126,7 @@ export default function BlogList({ blogs }: { blogs: BlogRow[] }) {
               <span className="w-5 shrink-0 text-xs text-wareongo-slate">{i + 1}</span>
 
               {/* draggable={false} so dragging a row doesn't become a link drag. */}
-              <Link href={`/blogs/${g.id}`} draggable={false} className="min-w-0 flex-1">
+              <Link href={`/blogs/${g.id}`} draggable={false} className="min-w-[60%] flex-1 sm:min-w-0">
                 <span className="block truncate font-semibold text-wareongo-blue">{g.title}</span>
                 <span className="block truncate text-xs text-wareongo-slate">
                   /blogs/{g.slug} · updated {g.dateModified}
@@ -135,7 +135,7 @@ export default function BlogList({ blogs }: { blogs: BlogRow[] }) {
 
               <span
                 title={STATE_HINT[g.state]}
-                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${STATE_CLASS[g.state]}`}
+                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATE_CLASS[g.state]}`}
               >
                 {STATE_LABEL[g.state]}
               </span>
@@ -149,7 +149,7 @@ export default function BlogList({ blogs }: { blogs: BlogRow[] }) {
       </ul>
 
       {hasTies && !dirty && (
-        <p className="mt-4 rounded-2xl border border-wareongo-sienna/30 bg-wareongo-sienna/5 p-4 text-xs text-wareongo-sienna">
+        <p className="mt-4 rounded-xl border border-wareongo-sienna/30 bg-wareongo-sienna/5 p-4 text-xs text-wareongo-sienna">
           Two or more blogs share the same stored sort order, so their sequence falls back to creation order. Drag them
           into the order you want and save to fix it for good.
         </p>
@@ -158,7 +158,7 @@ export default function BlogList({ blogs }: { blogs: BlogRow[] }) {
       {dirty && (
         <form
           action={saveAction}
-          className="sticky bottom-4 mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-wareongo-blue/25 bg-white/95 p-4 backdrop-blur"
+          className="sticky bottom-4 mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-ui-outline bg-ui-surface/95 p-4 backdrop-blur"
         >
           <input type="hidden" name="ids" value={JSON.stringify(order.map((g) => g.id))} />
           <p className="text-sm text-wareongo-charcoal">Order changed.</p>
@@ -199,14 +199,14 @@ function ResetBlog({ id }: { id: number }) {
   return (
     <form action={action} className="flex shrink-0 items-center gap-1.5">
       <input type="hidden" name="id" value={id} />
-      <span className="text-[11px] text-wareongo-slate">Discard edits?</span>
+      <span className="text-xs text-wareongo-slate">Discard edits?</span>
       <button type="submit" disabled={pending} className="cms-btn-danger">
         {pending ? '…' : 'Reset'}
       </button>
       <button type="button" onClick={() => setArmed(false)} className="cms-btn">
         No
       </button>
-      {error && <span className="text-[11px] text-wareongo-sienna">{error}</span>}
+      {error && <span className="text-xs text-wareongo-sienna">{error}</span>}
     </form>
   );
 }

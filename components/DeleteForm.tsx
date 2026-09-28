@@ -37,7 +37,7 @@ export default function DeleteForm({
   }
 
   return (
-    <form action={formAction} className="rounded-2xl border border-wareongo-sienna/30 bg-wareongo-sienna/5 p-4">
+    <form action={formAction} className="rounded-xl border border-wareongo-sienna/30 bg-wareongo-sienna/5 p-4">
       <input type="hidden" name="id" value={id} />
       <p className="mb-2 text-xs text-wareongo-charcoal">
         This cannot be undone. Type <code className="font-semibold">{slug}</code> to confirm.

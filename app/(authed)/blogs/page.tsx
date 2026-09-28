@@ -38,7 +38,7 @@ export default async function BlogsPage({
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
       <header className="mb-8 flex flex-wrap items-end gap-3">
         <div>
-          <h1 className="cms-title text-4xl">Blogs</h1>
+          <h1 className="cms-title">Blogs</h1>
           <p className="mt-1 text-sm text-wareongo-slate">
             {rows.length} total · {live} live{staged > 0 ? ` · ${staged} staged` : ''}
           </p>

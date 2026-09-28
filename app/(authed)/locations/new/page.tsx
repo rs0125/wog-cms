@@ -79,7 +79,7 @@ export default async function NewLocationPage({
       <Link href={backHref} className="cms-eyebrow mb-1 block hover:text-wareongo-blue">
         ← {KIND_PLURAL[kind]}
       </Link>
-      <h1 className="cms-title text-4xl">{name || `${KIND_LABEL[kind]} page`}</h1>
+      <h1 className="cms-title">{name || `${KIND_LABEL[kind]} page`}</h1>
       <p className="mt-1 mb-6 text-sm text-wareongo-slate">
         {slug
           ? `Writing an overview at ${path ?? (kind === 'CITY' ? `/overview/{state}/${slug}` : `/overview/${slug}`)}.`

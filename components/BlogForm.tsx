@@ -88,14 +88,14 @@ export default function BlogForm({
       <input type="hidden" name="keywords" value={JSON.stringify(csv(keywords))} />
       <input type="hidden" name="related" value={JSON.stringify(related)} />
 
-      <div className="mb-6 inline-flex rounded-xl border border-wareongo-blue/25 bg-white p-1">
+      <div className="mb-6 inline-flex rounded-xl border border-ui-outline bg-ui-surface p-1">
         {(['edit', 'preview'] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`rounded-lg px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
-              tab === t ? 'bg-wareongo-blue text-white' : 'text-wareongo-slate hover:text-wareongo-blue'
+            className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-colors ${
+              tab === t ? 'bg-wareongo-blue text-ui-surface' : 'text-wareongo-slate hover:text-wareongo-blue'
             }`}
           >
             {t}
@@ -284,7 +284,7 @@ export default function BlogForm({
         />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-wareongo-blue/20 bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <Link href="/blogs" className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
             ← Back

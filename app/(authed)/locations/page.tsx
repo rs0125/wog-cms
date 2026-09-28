@@ -87,7 +87,7 @@ export default async function LocationsPage({
           <Link href="/dashboard" className="cms-eyebrow mb-1 block hover:text-wareongo-blue">
             ← Menu
           </Link>
-          <h1 className="cms-title text-4xl">{KIND_PLURAL[kind]}</h1>
+          <h1 className="cms-title">{KIND_PLURAL[kind]}</h1>
           <p className="mt-1 text-sm text-wareongo-slate">
             {pages.length > 0
               ? `${done} of ${pages.length} written · ${live} live`
@@ -107,7 +107,7 @@ export default async function LocationsPage({
         </div>
       </header>
 
-      <p className="mb-7 rounded-2xl border border-wareongo-blue/20 bg-white p-4 text-sm text-wareongo-slate">
+      <p className="mb-7 rounded-xl border border-ui-line bg-ui-surface p-4 text-sm text-wareongo-slate">
         Publish a {kind === 'CITY' ? 'city overview at /overview/{state}/{city}' : 'state overview at /overview/{state}'}
         {' '}using the shared wireframe: prose, images, FAQs and live inventory statistics.
         The existing listing pages keep their warehouse grids. Deleting or delisting content

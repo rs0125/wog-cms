@@ -9,7 +9,7 @@ export default async function ServicePages() {
   const rows = await prisma.servicePage.findMany();
   return <main className="mx-auto max-w-4xl p-6 sm:p-10">
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-      <h1 className="cms-title text-4xl">Services</h1>
+      <h1 className="cms-title">Services</h1>
       <DeployButton configured={isDeployConfigured()} />
     </div>
     <p className="mb-8 text-sm text-wareongo-slate">Write your service pages here. Empty pages and drafts stay private. Use “Save for next build” when the content is ready.</p>
@@ -18,7 +18,7 @@ export default async function ServicePages() {
         const row = rows.find(r => r.slug === slug);
         const state = row ? serviceStateOf(row) : null;
         return <div key={slug} className="cms-card">
-          <h2 className="cms-title text-xl"><Link href={`/services/${slug}`} className="hover:underline">{name}</Link></h2>
+          <h2 className="ui-panel-title text-ui-ink"><Link href={`/services/${slug}`} className="hover:underline">{name}</Link></h2>
           <p className="mt-1 text-sm text-wareongo-slate">/services/{slug}</p>
           <p className="mt-3 text-sm">
             {!state ? 'Not written' : state.staged

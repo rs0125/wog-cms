@@ -114,7 +114,7 @@ export default function StatOverridesEditor({
             </button>
           )}
         </div>
-        <p className="mt-1 text-[11px] tabular-nums text-wareongo-slate/80">
+        <p className="mt-1 text-xs tabular-nums text-wareongo-slate/80">
           {current !== null ? (
             <span className="text-wareongo-sienna">overriding {shown ?? 'nothing'}</span>
           ) : (
@@ -122,7 +122,7 @@ export default function StatOverridesEditor({
           )}
         </p>
         {overCount !== undefined && current !== null && current > overCount && (
-          <p className="mt-1 text-[11px] text-wareongo-sienna">
+          <p className="mt-1 text-xs text-wareongo-sienna">
             More than the {overCount} built {overCount === 1 ? 'unit' : 'units'} this is counted
             from — the page shows it as {Math.round((current / overCount) * 100)}% capped to 100%.
           </p>
@@ -140,8 +140,8 @@ export default function StatOverridesEditor({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className={`flex w-full items-center gap-3 border border-wareongo-blue/25 bg-white p-4 text-left transition-colors hover:border-wareongo-blue/50 hover:bg-wareongo-blue/[0.03] ${
-          open ? 'rounded-t-2xl border-b-0' : 'rounded-2xl'
+        className={`flex w-full items-center gap-3 border border-ui-outline bg-ui-surface p-4 text-left transition-colors hover:border-ui-accent hover:bg-ui-tint ${
+          open ? 'rounded-t-2xl border-b-0' : 'rounded-xl'
         }`}
       >
         <span
@@ -167,7 +167,7 @@ export default function StatOverridesEditor({
         </span>
 
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.1em] ${
             set > 0
               ? 'bg-wareongo-sienna/10 text-wareongo-sienna'
               : 'bg-wareongo-green/10 text-wareongo-green'
@@ -178,7 +178,7 @@ export default function StatOverridesEditor({
       </button>
 
       {open && (
-        <div className="space-y-5 rounded-b-2xl border border-t-0 border-wareongo-blue/25 bg-white p-4">
+        <div className="space-y-5 rounded-b-2xl border border-t-0 border-ui-outline bg-ui-surface p-4">
           <div className="rounded-xl bg-wareongo-blue/[0.04] p-3.5">
             <p className="text-sm text-wareongo-charcoal">
               These numbers come from the warehouses in this {scopeNoun}, and refresh on every
@@ -215,12 +215,12 @@ export default function StatOverridesEditor({
             <div key={key}>
               <div className="mb-1.5 flex items-baseline gap-2">
                 <span className="text-sm font-medium text-wareongo-charcoal">{label}</span>
-                <span className="text-[11px] text-wareongo-slate">{unit}</span>
+                <span className="text-xs text-wareongo-slate">{unit}</span>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {(['min', 'median', 'max'] as Bound[]).map((bound) => (
                   <label key={bound} className="block">
-                    <span className="mb-1 block text-[10px] uppercase tracking-[0.14em] text-wareongo-slate">
+                    <span className="mb-1 block text-xs uppercase tracking-[0.1em] text-wareongo-slate">
                       {bound}
                     </span>
                     <Field
@@ -242,7 +242,7 @@ export default function StatOverridesEditor({
             {SCALARS.map(({ key, label, unit }) => (
               <label key={key} className="block">
                 <span className="mb-1.5 block text-sm font-medium text-wareongo-charcoal">{label}</span>
-                <span className="mb-1 block text-[11px] text-wareongo-slate">{unit}</span>
+                <span className="mb-1 block text-xs text-wareongo-slate">{unit}</span>
                 <Field
                   name={label}
                   current={value[key]}
@@ -258,7 +258,7 @@ export default function StatOverridesEditor({
 
           {/* Always shown, not gated on there being figures: this is the
               explanation someone needs most when the numbers are missing. */}
-          <div className="border-t border-wareongo-blue/15 pt-4">
+          <div className="border-t border-ui-line pt-4">
             <p className="cms-label mb-2">Not overridable</p>
             <p className="mb-2 text-xs text-wareongo-slate">
               The construction and flooring mixes are counted listing by listing from the same rows

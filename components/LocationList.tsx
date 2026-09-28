@@ -58,7 +58,7 @@ export default function LocationList({
 
   if (pages.length === 0 && orphans.length === 0) {
     return (
-      <p className="rounded-2xl border border-wareongo-blue/20 bg-white p-6 text-sm text-wareongo-slate">
+      <p className="rounded-xl border border-ui-line bg-ui-surface p-6 text-sm text-wareongo-slate">
         No {plural} found in the live inventory. That usually means the warehouse query failed rather
         than that there are none — check the server logs.
       </p>
@@ -75,7 +75,7 @@ export default function LocationList({
   return (
     <div className="space-y-8">
       {orphans.length > 0 && (
-        <section className="rounded-2xl border border-wareongo-sienna/40 bg-wareongo-sienna/5 p-4">
+        <section className="rounded-xl border border-wareongo-sienna/40 bg-wareongo-sienna/5 p-4">
           <h2 className="mb-1 text-sm font-semibold text-wareongo-sienna">
             {orphans.length} saved overview{orphans.length === 1 ? '' : 's'} need attention
           </h2>
@@ -102,7 +102,7 @@ export default function LocationList({
           <section key={group ?? 'all'}>
             <div className="mb-2.5 flex items-baseline gap-2">
               <h2 className="cms-eyebrow">{group ?? `All ${plural}`}</h2>
-              <span className="text-[11px] text-wareongo-slate">
+              <span className="text-xs text-wareongo-slate">
                 {rows.length} {rows.length === 1 ? noun : plural} · {written} written
               </span>
             </div>
@@ -110,9 +110,9 @@ export default function LocationList({
               {rows.map((r) => (
                 <li
                   key={r.slug}
-                  className="flex items-center gap-3 rounded-2xl border border-wareongo-blue/20 bg-white p-3.5 hover:bg-wareongo-blue/5"
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-ui-line bg-ui-surface p-4 sm:flex-nowrap hover:bg-ui-tint"
                 >
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
                     <span className="block truncate font-semibold text-wareongo-blue">{r.name}</span>
                     <span className="block truncate text-xs text-wareongo-slate">{r.path ?? "Overview URL unavailable"}</span>
                   </div>
@@ -126,7 +126,7 @@ export default function LocationList({
 
                   <span
                     title={PAGE_STATE_HINT[r.state]}
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${PAGE_STATE_CLASS[r.state]}`}
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${PAGE_STATE_CLASS[r.state]}`}
                   >
                     {PAGE_STATE_LABEL[r.state]}
                   </span>
@@ -160,7 +160,7 @@ export default function LocationList({
             type="button"
             onClick={() => setShowThin((v) => !v)}
             aria-expanded={showThin}
-            className="flex w-full items-center gap-3 rounded-2xl border border-wareongo-blue/25 bg-white p-3.5 text-left transition-colors hover:border-wareongo-blue/50 hover:bg-wareongo-blue/[0.03]"
+            className="flex w-full items-center gap-3 rounded-xl border border-ui-outline bg-ui-surface p-3.5 text-left transition-colors hover:border-ui-accent hover:bg-ui-tint"
           >
             <span
               aria-hidden="true"
@@ -180,7 +180,7 @@ export default function LocationList({
             </span>
           </button>
           {showThin && (
-            <div className="mt-2.5 rounded-2xl border border-wareongo-blue/20 bg-white p-4">
+            <div className="mt-2.5 rounded-xl border border-ui-line bg-ui-surface p-4">
               <p className="mb-3 text-xs text-wareongo-slate">
                 These URLs all work — they serve the plain listing grid. What they don&apos;t have is
                 enough inventory for the computed figures to mean anything: a median over three
@@ -220,16 +220,16 @@ function ResetPage({ id }: { id: number }) {
   }
 
   return (
-    <form action={action} className="flex shrink-0 items-center gap-1.5">
+    <form action={action} className="flex flex-wrap items-center gap-1.5">
       <input type="hidden" name="id" value={id} />
-      <span className="text-[11px] text-wareongo-slate">Discard edits?</span>
+      <span className="text-xs text-wareongo-slate">Discard edits?</span>
       <button type="submit" disabled={pending} className="cms-btn-danger">
         {pending ? '…' : 'Reset'}
       </button>
       <button type="button" onClick={() => setArmed(false)} className="cms-btn">
         No
       </button>
-      {error && <span className="text-[11px] text-wareongo-sienna">{error}</span>}
+      {error && <span className="text-xs text-wareongo-sienna">{error}</span>}
     </form>
   );
 }

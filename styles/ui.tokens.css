@@ -1,0 +1,70 @@
+/* Shared WareOnGo visual roles, promoted from the approved Bangalore page.
+   Layouts belong to their pages; portals inherit these roles from :root. */
+:root {
+  --ui-ink-rgb: 10 34 57;
+  --ui-accent-rgb: 23 62 90;
+  --ui-paper-rgb: 250 249 245;
+  --ui-surface-rgb: 255 254 250;
+  --ui-muted-rgb: 71 81 91;
+  --ui-tint-rgb: 237 242 247;
+  --ui-line-rgb: 213 221 229;
+  --ui-outline-rgb: 174 189 202;
+  --ui-ink: rgb(var(--ui-ink-rgb));
+  --ui-accent: rgb(var(--ui-accent-rgb));
+  --ui-paper: rgb(var(--ui-paper-rgb));
+  --ui-surface: rgb(var(--ui-surface-rgb));
+  --ui-muted: rgb(var(--ui-muted-rgb));
+  --ui-tint: rgb(var(--ui-tint-rgb));
+  --ui-line: rgb(var(--ui-line-rgb));
+  --ui-outline: rgb(var(--ui-outline-rgb));
+  --ui-listing-hover: #f6f4ee;
+  --ui-table-header: #f3f2ee;
+  --ui-table-stripe: #fcfbf8;
+  --ui-error: #913c21;
+  --ui-font: Montserrat, ui-sans-serif, system-ui, sans-serif;
+  --ui-text-xs: 12px;
+  --ui-text-sm: 14px;
+  --ui-text-base: 16px;
+  --ui-text-card: 18px;
+  --ui-text-panel: 24px;
+  --ui-text-section: 32px;
+  --ui-text-hero: clamp(38px, 4vw, 52px);
+  --ui-text-metric: 24px;
+  --ui-leading-heading: 1.25;
+  --ui-leading-title: 1.4;
+  --ui-leading-ui: 1.5;
+  --ui-leading-body: 1.6;
+  --ui-radius: 12px;
+  --ui-control-radius: 8px;
+  --ui-tag-radius: 4px;
+  --ui-control-height: 48px;
+  --ui-large-control-height: 56px;
+  --ui-compact-height: 44px;
+  --ui-icon-box: 40px;
+  --ui-icon-size: 20px;
+  --ui-icon-stroke: 1.5;
+  --ui-focus-width: 2px;
+  --ui-motion: 160ms;
+  --ui-card-padding: 24px;
+  --ui-compact-padding: 16px;
+  --ui-nested-gap: 16px;
+  --ui-section-space: 64px;
+  --ui-grid-gap: 24px;
+  --ui-content-width: 1400px;
+  --ui-gutter: 32px;
+}
+@media (max-width: 767px) {
+  :root {
+    --ui-text-hero: clamp(30px, 8.2vw, 40px);
+    --ui-text-section: 24px;
+    --ui-text-card: 16px;
+    --ui-text-metric: 20px;
+    --ui-icon-box: 32px;
+    --ui-compact-padding: 12px;
+    --ui-nested-gap: 12px;
+    --ui-section-space: 48px;
+    --ui-grid-gap: 16px;
+    --ui-gutter: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) { :root { --ui-motion: 0ms; } }

@@ -10,7 +10,7 @@ export default function AuthedError({ reset }: { error: Error & { digest?: strin
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
       <span className="cms-eyebrow mb-2 block">Something broke</span>
-      <h1 className="cms-title mb-3 text-3xl">This page didn&apos;t load</h1>
+      <h1 className="cms-title mb-3">This page didn&apos;t load</h1>
       <p className="mb-6 max-w-prose text-sm text-wareongo-slate">
         This request could not finish. If you were saving changes, check the saved content before retrying.
       </p>

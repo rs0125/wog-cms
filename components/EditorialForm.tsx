@@ -214,7 +214,7 @@ export default function EditorialForm({
       <input type="hidden" name="heroImage" value={heroImage ? JSON.stringify(heroImage) : ''} />
       <input type="hidden" name="marketImage" value={marketImage ? JSON.stringify(marketImage) : ''} />
 
-      <div className="rounded-2xl border border-wareongo-blue/20 bg-white p-4 text-sm">
+      <div className="rounded-xl border border-ui-line bg-ui-surface p-4 text-sm">
         <p className="text-wareongo-charcoal">
           <strong>You write the words. The site counts the warehouses.</strong>
         </p>
@@ -235,14 +235,14 @@ export default function EditorialForm({
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-xl border border-wareongo-blue/25 bg-white p-1">
+        <div className="inline-flex rounded-xl border border-ui-outline bg-ui-surface p-1">
           {(['edit', 'preview'] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`rounded-lg px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
-                tab === t ? 'bg-wareongo-blue text-white' : 'text-wareongo-slate hover:text-wareongo-blue'
+              className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-colors ${
+                tab === t ? 'bg-wareongo-blue text-ui-surface' : 'text-wareongo-slate hover:text-wareongo-blue'
               }`}
             >
               {t}
@@ -251,7 +251,7 @@ export default function EditorialForm({
         </div>
 
         {tab === 'preview' && (
-          <div className="inline-flex rounded-xl border border-wareongo-blue/25 bg-white p-1">
+          <div className="inline-flex rounded-xl border border-ui-outline bg-ui-surface p-1">
             {(
               [
                 ['desktop', 'Desktop'],
@@ -262,8 +262,8 @@ export default function EditorialForm({
                 key={value}
                 type="button"
                 onClick={() => setDevice(value)}
-                className={`rounded-lg px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors ${
-                  device === value ? 'bg-wareongo-blue text-white' : 'text-wareongo-slate hover:text-wareongo-blue'
+                className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-colors ${
+                  device === value ? 'bg-wareongo-blue text-ui-surface' : 'text-wareongo-slate hover:text-wareongo-blue'
                 }`}
               >
                 {label}
@@ -274,8 +274,8 @@ export default function EditorialForm({
 
         {tab === 'preview' && (
           <p className="text-xs text-wareongo-slate">
-            Rendered with the site&apos;s own components at a real{' '}
-            {device === 'mobile' ? '390px phone' : '1280px desktop'} viewport, scaled to fit. Dashes
+            Preview of the website layout at a real{' '}
+            {device === 'mobile' ? '390px phone' : '1440px desktop'} viewport, scaled to fit. Dashes
             are figures the build computes from live listings.
           </p>
         )}
@@ -283,7 +283,7 @@ export default function EditorialForm({
 
       <div className={tab === 'preview' ? 'hidden' : 'space-y-8'}>
       <section className="grid gap-5 sm:grid-cols-2">
-        <div className="sm:col-span-2 rounded-2xl border border-wareongo-blue/20 bg-white p-4">
+        <div className="sm:col-span-2 rounded-xl border border-ui-line bg-ui-surface p-4">
           <p className="cms-label mb-1">Page URL</p>
           <p className="break-all font-mono text-sm text-wareongo-charcoal" data-testid="overview-url">{pagePath}</p>
           <p className="cms-hint">
@@ -354,7 +354,7 @@ export default function EditorialForm({
       </section>
 
       <section className="grid gap-5 sm:grid-cols-2">
-        <div className="sm:col-span-2 border-b border-wareongo-blue/15 pb-2.5">
+        <div className="sm:col-span-2 border-b border-ui-line pb-2.5">
           <h2 className="text-base font-semibold text-wareongo-blue">Search listing</h2>
           <p className="mt-1 text-xs text-wareongo-slate">
             What Google shows: the browser tab title, the grey line under it in results, and the big
@@ -526,7 +526,7 @@ export default function EditorialForm({
       </section>}
 
       <section className="space-y-5">
-        <div className="border-b border-wareongo-blue/15 pb-2.5">
+        <div className="border-b border-ui-line pb-2.5">
           <h2 className="text-base font-semibold text-wareongo-blue">Listings heading &amp; links</h2>
           <p className="mt-1 text-xs text-wareongo-slate">
             The warehouse grid is built for you and leads the page. Add a heading and any blogs worth linking at the foot.
@@ -560,7 +560,7 @@ export default function EditorialForm({
       />
 
       <section>
-        <div className="mb-3 border-b border-wareongo-blue/15 pb-2.5">
+        <div className="mb-3 border-b border-ui-line pb-2.5">
           <h2 className="text-base font-semibold text-wareongo-blue">
             Questions <span className="ml-1 text-xs font-normal text-wareongo-slate">optional section</span>
           </h2>
@@ -618,7 +618,7 @@ export default function EditorialForm({
           fit the editor column rather than rendering at whatever width happens
           to be free. */}
       {tab === 'preview' && (
-        <DeviceFrame width={device === 'mobile' ? 390 : 1280}>
+        <DeviceFrame width={device === 'mobile' ? 390 : 1440}>
           <EditorialPreview
             data={{
               isCity,
@@ -649,7 +649,7 @@ export default function EditorialForm({
         </DeviceFrame>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-wareongo-blue/20 bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3">
           <Link href={backHref} className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
             ← Back
@@ -709,7 +709,7 @@ function ProseField({
           {!required && <span className="ml-1.5 normal-case tracking-normal opacity-70">optional</span>}
         </label>
         <span
-          className={`mb-1.5 text-[11px] tabular-nums ${
+          className={`mb-1.5 text-xs tabular-nums ${
             words === 0
               ? 'text-wareongo-slate/60'
               : inBand
