@@ -7,6 +7,9 @@ import FormattedTextarea from './FormattedTextarea';
 import BlogPreview from './BlogPreview';
 import RelatedPicker, { type BlogOption } from './RelatedPicker';
 import DeployButton from './DeployButton';
+import WordCountSummary, { WordCount } from './WordCount';
+import { articleWordSections } from '@/lib/page-word-counts';
+import { countFaqWords, totalWords } from '@/lib/word-count';
 import type { BlogBlock, BlogFaq, BlogInput } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
 import type { SaveResult } from '@/app/(authed)/blogs/actions';
@@ -78,9 +81,10 @@ export default function BlogForm({
   const csv = (s: string) => s.split(',').map((v) => v.trim()).filter(Boolean);
   const plainBlocks = unkey(blocks);
   const plainFaqs = unkey(faqs);
+  const wordCounts = articleWordSections({ title, summary, blocks: plainBlocks, faqs: plainFaqs });
 
   return (
-    <form action={formAction} onInput={() => setEdited(true)} className="pb-28">
+    <form action={formAction} onInput={() => setEdited(true)} className="pb-48">
       {id !== undefined && <input type="hidden" name="id" value={id} />}
       {expectedUpdatedAt && <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />}
       <input type="hidden" name="blocks" value={JSON.stringify(plainBlocks)} />
@@ -88,7 +92,7 @@ export default function BlogForm({
       <input type="hidden" name="keywords" value={JSON.stringify(csv(keywords))} />
       <input type="hidden" name="related" value={JSON.stringify(related)} />
 
-      <div className="mb-6 inline-flex rounded-xl border border-ui-outline bg-ui-surface p-1">
+      <div className="mb-6 inline-flex max-w-full flex-wrap rounded-xl border border-ui-outline bg-ui-surface p-1">
         {(['edit', 'preview'] as const).map((t) => (
           <button
             key={t}
@@ -103,10 +107,12 @@ export default function BlogForm({
         ))}
       </div>
 
+      <WordCountSummary sections={wordCounts} />
+
       {/* Kept mounted and hidden rather than unmounted, so switching tabs never
           discards in-progress edits or collapses the block editor's state. */}
       <div className={tab === 'preview' ? 'hidden' : 'space-y-8'}>
-        <section className="grid gap-5 sm:grid-cols-2">
+        <section className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="cms-label" htmlFor="title">On-page H1</label>
             <input id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} required className="cms-input" />
@@ -237,8 +243,9 @@ export default function BlogForm({
           <div className="space-y-3">
             {faqs.map(({ key, value: faq }, i) => (
               <div key={key} className="cms-card">
-                <div className="mb-2 flex items-center">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span className="text-xs text-wareongo-slate">#{i + 1}</span>
+                  <WordCount count={countFaqWords([faq])} />
                   <button
                     type="button"
                     className="cms-btn-danger ml-auto"
@@ -284,11 +291,12 @@ export default function BlogForm({
         />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center gap-3">
+      <div className="fixed inset-x-0 bottom-0 z-20 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3">
           <Link href="/blogs" className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
             ← Back
           </Link>
+          <WordCount count={totalWords(wordCounts)} label="Total" variant="total" />
           {result && !result.ok && <p className="text-sm text-wareongo-sienna">{result.error}</p>}
           <div className="ml-auto">
             {/* Nothing edited and nothing waiting to go out → neither action

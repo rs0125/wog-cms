@@ -8,6 +8,9 @@ import type { SaveResult } from '@/lib/action-results';
 import SingleImagePicker from './SingleImagePicker';
 import DeployButton from './DeployButton';
 import AdPagePreview from './AdPagePreview';
+import WordCountSummary, { WordCount } from './WordCount';
+import { adPageWordSections } from '@/lib/page-word-counts';
+import { totalWords } from '@/lib/word-count';
 
 function Field({ id, label, value, onChange, multiline = false }: {
   id: string; label: string; value: string; onChange: (value: string) => void; multiline?: boolean;
@@ -39,6 +42,7 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
   const [uploadingImages, setUploadingImages] = useState<AdPageImageKey[]>([]);
   const uploading = uploadingImages.length > 0;
   const serialized = JSON.stringify(fields);
+  const wordCounts = adPageWordSections(fields);
   const change = <K extends keyof AdPageContent>(key: K, value: AdPageContent[K]) => { setFields(current => ({ ...current, [key]: value })); setEdited(true); };
   // An upload may finish after a different image was edited. Merge into the
   // latest state rather than the render in which the upload started.
@@ -73,9 +77,12 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
     <div className="mb-6 flex gap-2" role="group" aria-label="Ad page editor">
       {(['edit', 'preview'] as const).map(value => <button key={value} type="button" aria-pressed={tab === value} className={tab === value ? 'cms-btn-primary' : 'cms-btn'} onClick={() => setTab(value)}>{value === 'edit' ? 'Edit content' : 'Preview'}</button>)}
     </div>
+    <WordCountSummary sections={wordCounts} />
     <fieldset disabled={pending} aria-label="Ad page content" className={tab === 'edit' ? 'min-w-0 space-y-4' : 'hidden'}>
       {AD_COPY_GROUPS.map(group => <details key={group.id} open={group.id === 'hero'} className="cms-card" id={`ad-section-${group.id}`}>
-        <summary className="cms-title cursor-pointer text-lg">{group.title}</summary>
+        <summary className="cms-title cursor-pointer text-lg">{group.title}
+          {group.id !== 'settings' && <WordCount count={wordCounts.find(section => section.id === group.id)!.words} className="ml-3 inline-block" />}
+        </summary>
         <div className="mt-5 space-y-5">
           {group.fields.map(field => <Field key={field.key} id={`copy-${field.key}`} label={field.label} multiline={field.multiline} value={fields.copy[field.key]} onChange={value => change('copy', { ...fields.copy, [field.key]: value })} />)}
           {group.id === 'settings' && <p className="text-xs text-wareongo-slate">This campaign page keeps its /bangalore URL and stays excluded from search indexing.</p>}
@@ -116,7 +123,10 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
       <div className="mx-auto max-w-5xl space-y-2">
         {(clientError || result?.ok === false) && <p role="alert" className="text-sm text-red-700">{clientError || (result?.ok === false ? result.error : '')}</p>}
         {uploading && <p role="status" className="text-sm text-wareongo-slate">Uploading photos… Wait for uploads to finish before saving.</p>}
-        <p className="text-xs text-wareongo-slate">{edited ? 'Unsaved changes' : state.hasDraft ? 'Draft saved privately' : 'No unsaved changes'}{state.staged ? ' · Changes ready for next build' : ''}</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-xs text-wareongo-slate">{edited ? 'Unsaved changes' : state.hasDraft ? 'Draft saved privately' : 'No unsaved changes'}{state.staged ? ' · Changes ready for next build' : ''}</p>
+          <WordCount count={totalWords(wordCounts)} label="Total" variant="total" />
+        </div>
         <div className="flex flex-wrap gap-2">
           <button type="submit" name="intent" value="draft" disabled={pending || uploading} className="cms-btn">{pending ? 'Saving…' : 'Save draft'}</button>
           <button type="submit" name="intent" value="publish" disabled={pending || uploading} className="cms-btn-primary">Save for next build</button>

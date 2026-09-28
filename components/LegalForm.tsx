@@ -4,6 +4,9 @@ import { useActionState, useState } from 'react';
 import BlockEditor from './BlockEditor';
 import FormattedTextarea from './FormattedTextarea';
 import DeployButton from './DeployButton';
+import WordCountSummary, { WordCount } from './WordCount';
+import { legalWordSections } from '@/lib/page-word-counts';
+import { totalWords } from '@/lib/word-count';
 import LegalPreview from './LegalPreview';
 import { LEGAL_BLOCK_KINDS, type LegalContent } from '@/lib/legal-schema';
 import type { BlogBlock } from '@/lib/blog-schema';
@@ -22,6 +25,7 @@ export default function LegalForm({ content, expectedUpdatedAt, state, action, d
   const [blocks, setBlocks] = useState<Keyed<BlogBlock>[]>(() => keyAll(content.blocks));
   const plainBlocks = unkey(blocks) as LegalContent['blocks'];
   const preview = { ...fields, blocks: plainBlocks };
+  const wordCounts = legalWordSections(preview);
   const bind = (key: 'title' | 'seoTitle' | 'description' | 'effectiveDate' | 'updated' | 'notice') => ({
     id: key, name: key, value: fields[key],
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setFields(f => ({ ...f, [key]: e.target.value })),
@@ -35,6 +39,7 @@ export default function LegalForm({ content, expectedUpdatedAt, state, action, d
       {(['edit', 'preview'] as const).map(t => <button key={t} type="button" role="tab" aria-selected={tab === t}
         className={tab === t ? 'cms-btn-primary' : 'cms-btn'} onClick={() => setTab(t)}>{t === 'edit' ? 'Edit' : 'Preview'}</button>)}
     </div>
+    <WordCountSummary sections={wordCounts} />
     {/* Keep fields mounted so preview and failed saves preserve all typed input. */}
     <div className={tab === 'edit' ? 'space-y-6' : 'hidden'}>
       <div><label htmlFor="title" className="cms-label">Page heading</label><input {...bind('title')} required maxLength={300} className="cms-input" /></div>
@@ -47,7 +52,7 @@ export default function LegalForm({ content, expectedUpdatedAt, state, action, d
       <section>
         <h2 className="ui-panel-title text-ui-ink mb-2">Page content</h2>
         <p className="cms-hint mb-4">Select text and use Bold or Italic. Add links with [link text](https://example.com); email links can use mailto:.</p>
-        <BlockEditor blocks={blocks} kinds={LEGAL_BLOCK_KINDS} onChange={next => { setBlocks(next); setEdited(true); }} />
+        <BlockEditor blocks={blocks} kinds={LEGAL_BLOCK_KINDS} links onChange={next => { setBlocks(next); setEdited(true); }} />
       </section>
       <div><label htmlFor="notice" className="cms-label">Closing notice (optional)</label><FormattedTextarea {...bind('notice')} rows={4} className="cms-input" /></div>
     </div>
@@ -55,7 +60,10 @@ export default function LegalForm({ content, expectedUpdatedAt, state, action, d
     <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-ui-line bg-wareongo-ivory p-4 z-20">
       <div className="mx-auto max-w-4xl space-y-2">
         {result?.ok === false && <p role="alert" className="text-sm text-red-700">{result.error}</p>}
-        <p className="text-xs text-wareongo-slate">{edited ? 'Unsaved changes' : state.hasDraft ? 'Draft changes saved' : 'No draft changes'}{state.staged ? ' · Approved copy ready for next build' : ''}</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-xs text-wareongo-slate">{edited ? 'Unsaved changes' : state.hasDraft ? 'Draft changes saved' : 'No draft changes'}{state.staged ? ' · Approved copy ready for next build' : ''}</p>
+          <WordCount count={totalWords(wordCounts)} label="Total" variant="total" />
+        </div>
         <div className="flex flex-wrap gap-2">
           <button type="submit" name="intent" value="draft" disabled={pending} className="cms-btn">{pending ? 'Saving…' : 'Save draft'}</button>
           <button type="submit" name="intent" value="publish" disabled={pending} className="cms-btn-primary">Save for next build</button>

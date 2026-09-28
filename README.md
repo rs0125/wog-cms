@@ -4,6 +4,24 @@ Admin app for wareongo.com content. Next.js on Vercel, reading and writing the
 same Supabase Postgres the backend uses. The public site is untouched by this
 app — it stays a `vite-react-ssg` static build.
 
+## Word counts
+
+Every editor shows a live section breakdown and total above the content, with
+the total also in the fixed save bar. Counts reflect unsaved edits in both Edit
+and Preview. Blocks and FAQs have individual counts, with a section total at the
+start of each content section. Collapsed ad-page sections also show their counts.
+Location prose counts and suggested targets are shown separately.
+
+Counts include authored headings, prose, lists, table cells, captions and FAQ
+questions/answers. SEO fields, image alt text, URLs stored as image metadata,
+dates, bylines, related-page references and automatically generated copy are
+excluded. Legal links count their visible labels. Words and numbers are separated
+by whitespace; formatting markers and standalone punctuation do not add words.
+Blog, service and legal sections start at H2 headings and include their H3
+subsections; pages with only H3 headings use those as sections instead.
+
+Run `npm run test:word-count` for counting and section aggregation checks.
+
 ## Ad pages
 
 **Ad pages → Bangalore** (`/ad-pages/bangalore`) contains the existing `/bangalore`

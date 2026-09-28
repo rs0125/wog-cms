@@ -13,6 +13,9 @@ import { findLocation, type Location } from '@/lib/locations-api';
 import EditorialPreview, { type PreviewScope } from './EditorialPreview';
 import type { CityOverviewContent } from '@/lib/city-overview';
 import DeployButton from './DeployButton';
+import WordCountSummary, { WordCount } from './WordCount';
+import { editorialWordSections } from '@/lib/page-word-counts';
+import { countFaqWords, totalWords } from '@/lib/word-count';
 import {
   PROSE_BANDS,
   countWords,
@@ -183,6 +186,9 @@ export default function EditorialForm({
 
   const isMicromarket = identity.scope === 'micromarket';
   const isCity = identity.scope === 'city';
+  const wordCounts = editorialWordSections({
+    ...text, heroProse, marketProse, rentsProse, specProse, corridorProse, complianceProse, faqs: plainFaqs,
+  }, isCity);
   const parentLabel = isMicromarket ? market?.parentCity ?? null : location?.parentState ?? null;
   /** The URL the site will serve this content at, shown back to the editor. */
   const pagePath = isMicromarket
@@ -203,7 +209,7 @@ export default function EditorialForm({
   };
 
   return (
-    <form action={formAction} onInput={touch} className="space-y-8 pb-28">
+    <form action={formAction} onInput={touch} className="space-y-8 pb-40">
       {id !== undefined && <input type="hidden" name="id" value={id} />}
       {expectedUpdatedAt && <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />}
       <input type="hidden" name="faqs" value={JSON.stringify(plainFaqs)} />
@@ -280,6 +286,8 @@ export default function EditorialForm({
           </p>
         )}
       </div>
+
+      <WordCountSummary sections={wordCounts} />
 
       <div className={tab === 'preview' ? 'hidden' : 'space-y-8'}>
       <section className="grid gap-5 sm:grid-cols-2">
@@ -571,8 +579,9 @@ export default function EditorialForm({
         <div className="space-y-3">
           {faqs.map(({ key, value: faq }, i) => (
             <div key={key} className="cms-card">
-              <div className="mb-2 flex items-center">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-wareongo-slate">#{i + 1}</span>
+                <WordCount count={countFaqWords([faq])} />
                 <button
                   type="button"
                   className="cms-btn-danger ml-auto"
@@ -649,11 +658,12 @@ export default function EditorialForm({
         </DeviceFrame>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center gap-3">
+      <div className="fixed inset-x-0 bottom-0 z-20 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3">
           <Link href={backHref} className="text-sm text-wareongo-slate transition-colors hover:text-wareongo-blue">
             ← Back
           </Link>
+          <WordCount count={totalWords(wordCounts)} label="Total" variant="total" />
           {result && !result.ok && <p className="text-sm text-wareongo-sienna">{result.error}</p>}
           <div className="ml-auto">
             {/* Nothing edited and nothing waiting to go out → neither action
@@ -676,9 +686,8 @@ export default function EditorialForm({
 /**
  * A prose slot with a live word count against its editorial band.
  *
- * The band is guidance, not validation — it colours the counter and nothing
- * else. A belt with genuinely little to say should be allowed to say less rather
- * than be padded up to a floor, which is the failure mode a hard minimum causes.
+ * The band is guidance, not validation. Show it separately from the current
+ * count so an editorial target cannot be mistaken for a required minimum.
  */
 function ProseField({
   name,
@@ -699,30 +708,23 @@ function ProseField({
 }) {
   const { min, max } = PROSE_BANDS[band];
   const words = countWords(value);
-  const inBand = words >= min && words <= max;
 
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <label className="cms-label" htmlFor={name}>
           {label}
           {!required && <span className="ml-1.5 normal-case tracking-normal opacity-70">optional</span>}
         </label>
-        <span
-          className={`mb-1.5 text-xs tabular-nums ${
-            words === 0
-              ? 'text-wareongo-slate/60'
-              : inBand
-                ? 'text-wareongo-green'
-                : 'text-wareongo-sienna'
-          }`}
-        >
-          {words} / {min}–{max} words
-        </span>
+        <div id={`${name}-word-count`} className="mb-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <WordCount count={words} />
+          <span className="text-xs text-wareongo-slate">Target: {min}–{max} words</span>
+        </div>
       </div>
       <FormattedTextarea
         id={name}
         name={name}
+        aria-describedby={`${name}-word-count`}
         rows={rows}
         value={value}
         onChange={(e) => onChange(e.target.value)}

@@ -5,6 +5,9 @@ import BlockEditor from './BlockEditor';
 import FormattedTextarea from './FormattedTextarea';
 import ServicePreview from './ServicePreview';
 import DeployButton from './DeployButton';
+import WordCountSummary, { WordCount } from './WordCount';
+import { articleWordSections } from '@/lib/page-word-counts';
+import { countFaqWords, totalWords } from '@/lib/word-count';
 import type { ServiceContent } from '@/lib/service-schema';
 import type { BlogBlock, BlogFaq } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
@@ -23,6 +26,7 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
   const [blocks, setBlocks] = useState<Keyed<BlogBlock>[]>(() => keyAll(content.blocks));
   const [faqs, setFaqs] = useState<Keyed<BlogFaq>[]>(() => keyAll(content.faqs));
   const preview = { ...fields, blocks: unkey(blocks), faqs: unkey(faqs), keywords: keywords.split(',').map(s => s.trim()).filter(Boolean) };
+  const wordCounts = articleWordSections(preview, 'Introduction');
   const bind = (key: 'title' | 'seoTitle' | 'description' | 'summary') => ({
     id: key, name: key, value: fields[key],
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setFields(f => ({ ...f, [key]: e.target.value })),
@@ -36,6 +40,7 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
       {(['edit', 'preview'] as const).map(t => <button key={t} type="button" role="tab" aria-selected={tab === t}
         className={tab === t ? 'cms-btn-primary' : 'cms-btn'} onClick={() => setTab(t)}>{t === 'edit' ? 'Edit' : 'Preview'}</button>)}
     </div>
+    <WordCountSummary sections={wordCounts} />
     <div className={tab === 'edit' ? 'space-y-6' : 'hidden'}>
       <div><label htmlFor="title" className="cms-label">Page heading</label><input {...bind('title')} maxLength={300} className="cms-input" /></div>
       <div><label htmlFor="summary" className="cms-label">Introduction</label><FormattedTextarea {...bind('summary')} rows={4} maxLength={20000} className="cms-input" /></div>
@@ -50,6 +55,7 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
         <h2 id="service-faq-heading" className="ui-panel-title text-ui-ink mb-4">Frequently asked questions (optional)</h2>
         <div className="space-y-3">
           {faqs.map(({ key, value: faq }, i) => <div key={key} className="cms-card space-y-3">
+            <WordCount count={countFaqWords([faq])} />
             <label className="cms-label">Question {i + 1}<input value={faq.q} onChange={e => setFaqs(replaceAt(faqs, i, { ...faq, q: e.target.value }))} className="cms-input mt-2" /></label>
             <div><label htmlFor={`service-answer-${key}`} className="cms-label">Answer {i + 1}</label><FormattedTextarea id={`service-answer-${key}`} value={faq.a} onChange={e => setFaqs(replaceAt(faqs, i, { ...faq, a: e.target.value }))} rows={3} className="cms-input" /></div>
             <button type="button" className="cms-btn-danger" onClick={() => { setFaqs(removeAt(faqs, i)); setEdited(true); }}>Remove question</button>
@@ -62,7 +68,10 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
     <div className="fixed inset-x-0 bottom-0 z-20 border-t border-ui-line bg-wareongo-ivory p-4 lg:left-64">
       <div className="mx-auto max-w-4xl space-y-2">
         {result?.ok === false && <p role="alert" className="text-sm text-red-700">{result.error}</p>}
-        <p className="text-xs text-wareongo-slate">{edited ? 'Unsaved changes' : state.hasDraft ? 'Draft saved privately' : 'No unsaved changes'}{state.staged ? ' · Changes ready for next build' : ''}</p>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-xs text-wareongo-slate">{edited ? 'Unsaved changes' : state.hasDraft ? 'Draft saved privately' : 'No unsaved changes'}{state.staged ? ' · Changes ready for next build' : ''}</p>
+          <WordCount count={totalWords(wordCounts)} label="Total" variant="total" />
+        </div>
         <div className="flex flex-wrap gap-2">
           <button type="submit" name="intent" value="draft" disabled={pending} className="cms-btn">{pending ? 'Saving…' : 'Save draft'}</button>
           <button type="submit" name="intent" value="publish" disabled={pending} className="cms-btn-primary">Save for next build</button>

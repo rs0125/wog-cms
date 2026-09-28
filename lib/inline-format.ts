@@ -31,4 +31,5 @@ const plainParts = (parts: InlinePart[]): string => parts.map(part =>
 ).join('');
 
 /** Plain text for structured data and word counts, matching the visible copy. */
-export const plainInlineText = (text: string): string => plainParts(parseInlineText(text));
+export const plainInlineText = (text: string, options: { links?: boolean } = {}): string =>
+  plainParts(parseInlineText(text, options));

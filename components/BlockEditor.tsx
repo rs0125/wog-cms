@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import ImagesEditor from './ImagesEditor';
 import FormattedTextarea from './FormattedTextarea';
+import { WordCount } from './WordCount';
+import { blockWordSections, countBlockWords } from '@/lib/word-count';
 import { BLOCK_KINDS, emptyBlock, type BlogBlock } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, swap, unkey, type Keyed } from '@/lib/keyed';
 
@@ -25,22 +27,28 @@ export default function BlockEditor({
   blocks,
   onChange,
   kinds = BLOCK_KINDS,
+  links = false,
 }: {
   blocks: Keyed<BlogBlock>[];
   onChange: (next: Keyed<BlogBlock>[]) => void;
   kinds?: readonly BlogBlock['kind'][];
+  links?: boolean;
 }) {
+  const sectionCounts = new Map(blockWordSections(unkey(blocks), { links }).map(section => [section.id, section.words]));
   return (
     <div className="space-y-3">
       {blocks.map(({ key, value: block }, i) => (
         // key comes from the item, not its position, so reordering moves the
         // DOM node with the block instead of leaving focus behind.
         <div key={key} className="cms-card">
-          <div className="mb-2 flex items-center gap-2">
+          {sectionCounts.has(`content-${i}`) && <div className="mb-3 border-b border-wareongo-blue/15 pb-2">
+            <WordCount count={sectionCounts.get(`content-${i}`)!} label="Section total" />
+          </div>}
+          <div className="mb-2 flex flex-wrap items-center gap-2">
             <select
               value={block.kind}
               onChange={(e) => onChange(replaceAt(blocks, i, emptyBlock(e.target.value as BlogBlock['kind'])))}
-              className="rounded-lg border border-ui-outline bg-ui-surface px-2.5 py-1.5 text-xs text-wareongo-blue"
+              className="max-w-full rounded-lg border border-ui-outline bg-ui-surface px-2.5 py-1.5 text-xs text-wareongo-blue"
             >
               {kinds.map((k) => (
                 <option key={k} value={k}>
@@ -49,7 +57,8 @@ export default function BlockEditor({
               ))}
             </select>
             <span className="text-xs text-wareongo-slate">#{i + 1}</span>
-            <div className="ml-auto flex gap-1">
+            <WordCount count={countBlockWords(block, { links })} label="Block" />
+            <div className="ml-auto flex max-w-full flex-wrap gap-1">
               <button type="button" className={btn} onClick={() => onChange(swap(blocks, i, i - 1))} disabled={i === 0}>
                 ↑
               </button>
