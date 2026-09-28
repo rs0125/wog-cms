@@ -15,10 +15,10 @@ export const AD_COPY_GROUPS: { id: string; title: string; fields: { key: AdPageC
     { key: 'seoTitle', label: 'Browser title' }, { key: 'metaDescription', label: 'Page description', multiline: true },
   ] },
   { id: 'hero', title: 'Hero', fields: [
-    { key: 'heroHeading', label: 'Heading' }, { key: 'heroAccent', label: 'Heading, second line' }, { key: 'heroIntro', label: 'Introduction', multiline: true },
+    { key: 'heroHeading', label: 'Heading' }, { key: 'heroAccent', label: 'Heading, second line' },
   ] },
   { id: 'enquiry', title: 'Contact forms', fields: [
-    { key: 'enquiryEyebrow', label: 'Hero form eyebrow' }, { key: 'enquiryHeading', label: 'Hero form heading' }, { key: 'enquiryDescription', label: 'Hero form description', multiline: true }, { key: 'enquirySubmit', label: 'Submit button' },
+    { key: 'enquiryHeading', label: 'Hero form heading' }, { key: 'enquiryDescription', label: 'Hero form description', multiline: true }, { key: 'enquirySubmit', label: 'Submit button' },
     { key: 'enquirySuccessHeading', label: 'Thank-you heading' }, { key: 'enquirySuccessDescription', label: 'Thank-you message', multiline: true }, { key: 'enquirySuccessCta', label: 'Thank-you link' },
     { key: 'contactHeading', label: 'Contact modal heading' }, { key: 'contactDescription', label: 'Contact modal description', multiline: true }, { key: 'contactSuccess', label: 'Contact modal thank-you message' },
   ] },

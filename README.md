@@ -16,9 +16,22 @@ its response was lost, retrying the same content acknowledges that save without
 rewriting it. Build bookkeeping does not invalidate an open ad-page editor.
 
 Listing facts, micromarket counts, map positions, shared logos and the page layout
-remain connected to the website's existing data and components. The original
-placeholders remain editable. The preview is a content review, not a replacement
-for the website's responsive layout.
+remain connected to the website's existing data and components. The remaining
+overview placeholders stay editable. The hero uses four editable
+process steps. “Why choose WareOnGo” has six editable benefit cards and a section
+image. Older saved revisions gain the new slots when read, preserving existing
+copy without a database rewrite. Preview embeds the website's actual Bangalore renderer with the current,
+unsaved draft. Desktop (1440px), mobile (390px) and
+full-screen views retain the real typography, cards, map, forms and market tables.
+Links and form submissions are disabled, and preview traffic sends no analytics.
+Draft content passes directly from the authenticated editor to the website frame
+in browser memory; it is never put in a URL, public endpoint or browser storage.
+
+Deploy the website preview route before deploying this CMS version. Preview uses
+`https://wareongo.com` by default; set `WEBSITE_PREVIEW_ORIGIN` to a local website
+server for development. The website accepts drafts from `cms.wareongo.com` and
+`wog-cms.vercel.app`; a local website also accepts a local CMS. If the website is
+unavailable, the editor retains your changes and offers a preview retry.
 
 Initialize the new table using the backend-owned
 `scripts/sql/20260926_ad_pages.sql`, then deploy the backend's `/ad-pages` endpoint

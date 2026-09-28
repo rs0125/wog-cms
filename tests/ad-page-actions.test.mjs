@@ -50,11 +50,11 @@ test('direct ad-page actions require a CMS session', async () => {
 test('unfinished drafts never overwrite approved content', async () => {
   const h = harness();
   const draft = structuredClone(content);
-  draft.copy.heroIntro = '';
+  draft.heroSteps[0] = '';
   draft.images.services.url = '';
   await assert.rejects(h.save(undefined, form({}, draft)), saved('draft'));
   assert.equal(h.writes[0].data.publishedContent, undefined);
-  assert.equal(h.writes[0].data.draftContent.copy.heroIntro, '');
+  assert.equal(h.writes[0].data.draftContent.heroSteps[0], '');
   assert.equal(h.writes[0].where.updatedAt.toISOString(), stamp);
 });
 test('approval stores the complete page and omits unknown private fields', async () => {

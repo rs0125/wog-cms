@@ -17,8 +17,9 @@ function Field({ id, label, value, onChange, multiline = false }: {
     : <input id={id} value={value} onChange={event => onChange(event.target.value)} maxLength={20000} className="cms-input" />}</div>;
 }
 
-export default function AdPageForm({ content, expectedUpdatedAt, state, action, deployable }: {
+export default function AdPageForm({ content, expectedUpdatedAt, state, action, deployable, previewUrl }: {
   content: AdPageContent; expectedUpdatedAt: string; state: { hasDraft: boolean; staged: boolean }; deployable: boolean;
+  previewUrl: string;
   action: (previous: SaveResult | undefined, form: FormData) => Promise<SaveResult>;
 }) {
   const [result, formAction, pending] = useActionState(async (previous: SaveResult | undefined, form: FormData): Promise<SaveResult> => {
@@ -45,7 +46,7 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
     setFields(current => ({ ...current, images: { ...current.images, [key]: value ?? { ...current.images[key], url: '', alt: '' } } }));
     setEdited(true);
   }
-  const figures = (key: 'heroPoints' | 'overviewStats') => <div className="space-y-3">
+  const figures = (key: 'overviewStats') => <div className="space-y-3">
     {fields[key].map((figure, index) => <div key={index} className="cms-card grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
       <Field id={`${key}-${index}-value`} label={`Figure ${index + 1}`} value={figure.value} onChange={value => change(key, fields[key].map((item, i) => i === index ? { ...item, value } : item))} />
       <Field id={`${key}-${index}-label`} label="Description" value={figure.label} onChange={label => change(key, fields[key].map((item, i) => i === index ? { ...item, label } : item))} />
@@ -54,7 +55,7 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
     <button type="button" disabled={fields[key].length >= 8} className="cms-btn" onClick={() => change(key, [...fields[key], { value: '', label: '' }])}>+ Figure</button>
   </div>;
   const imageSlots = (group: string) => (Object.keys(fields.images) as AdPageImageKey[]).filter(key =>
-    group === 'featured' ? key.startsWith('featured-') : group === 'available' ? key.startsWith('warehouse-') : group === 'locations' ? key.startsWith('micromarket-') : group === 'services' ? key === 'services' : false,
+    group === 'featured' ? key.startsWith('featured-') : group === 'available' ? key.startsWith('warehouse-') : group === 'locations' ? key.startsWith('micromarket-') : group === 'services' ? key === 'services' : group === 'why' ? key === 'why' : false,
   );
 
   return <form action={formAction} onSubmit={event => {
@@ -78,7 +79,9 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
         <div className="mt-5 space-y-5">
           {group.fields.map(field => <Field key={field.key} id={`copy-${field.key}`} label={field.label} multiline={field.multiline} value={fields.copy[field.key]} onChange={value => change('copy', { ...fields.copy, [field.key]: value })} />)}
           {group.id === 'settings' && <p className="text-xs text-wareongo-slate">This campaign page keeps its /bangalore URL and stays excluded from search indexing.</p>}
-          {group.id === 'hero' && <div><h3 className="cms-label mb-3">Hero bullet points</h3>{figures('heroPoints')}</div>}
+          {group.id === 'hero' && <div className="grid gap-3 sm:grid-cols-2">
+            {fields.heroSteps.map((step, index) => <Field key={index} id={`hero-step-${index}`} label={`Step ${index + 1}`} value={step} onChange={text => change('heroSteps', fields.heroSteps.map((value, i) => i === index ? text : value))} />)}
+          </div>}
           {group.id === 'why' && fields.benefits.map((item, index) => <div key={item.id} className="cms-card space-y-3">
             <Field id={`benefit-${item.id}-title`} label={`Benefit ${index + 1}`} value={item.title} onChange={title => change('benefits', fields.benefits.map((value, i) => i === index ? { ...value, title } : value))} />
             <Field id={`benefit-${item.id}-body`} label="Supporting copy (optional)" value={item.body} multiline onChange={body => change('benefits', fields.benefits.map((value, i) => i === index ? { ...value, body } : value))} />
@@ -101,14 +104,14 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
           {imageSlots(group.id).length > 0 && <section className="space-y-4" aria-label={`${group.title} images`}>
             <h3 className="cms-title text-base">Images</h3>
             {imageSlots(group.id).map(key => <div key={key} className="space-y-2">
-              <p className="text-sm font-medium">{key.startsWith('warehouse-') || key.startsWith('featured-') ? `Warehouse #${key.split('-')[1]}` : key === 'services' ? 'Services image' : key.slice('micromarket-'.length).replace(/^./, letter => letter.toUpperCase())}</p>
+              <p className="text-sm font-medium">{key.startsWith('warehouse-') || key.startsWith('featured-') ? `Warehouse #${key.split('-')[1]}` : key === 'services' ? 'Services image' : key === 'why' ? 'Why choose WareOnGo image' : key.slice('micromarket-'.length).replace(/^./, letter => letter.toUpperCase())}</p>
               <SingleImagePicker value={fields.images[key].url ? fields.images[key] : null} ratio="16:9" onChange={value => changeImage(key, value)} onUploadStateChange={busy => setUploadingImages(current => busy ? [...current, key] : current.filter(item => item !== key))} />
             </div>)}
           </section>}
         </div>
       </details>)}
     </fieldset>
-    {tab === 'preview' && <AdPagePreview content={fields} />}
+    {tab === 'preview' && <AdPagePreview content={fields} url={previewUrl} />}
     <div className="fixed inset-x-0 bottom-0 z-20 border-t border-wareongo-blue/20 bg-wareongo-ivory p-4 lg:left-64">
       <div className="mx-auto max-w-5xl space-y-2">
         {(clientError || result?.ok === false) && <p role="alert" className="text-sm text-red-700">{clientError || (result?.ok === false ? result.error : '')}</p>}
