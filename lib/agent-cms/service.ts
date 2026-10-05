@@ -152,7 +152,17 @@ async function knownTargets(type: PageType, deps: Dependencies) {
       'Inventory exceeds the import discovery limit.',
       503,
     );
-  return new Map(values.map((value) => [pageRef(value), value]));
+  // Geography inventory can contain legacy, noncanonical slugs. They cannot
+  // be addressed by the import protocol and must not break every valid page.
+  // Preserve canonical identities exactly; never invent a replacement slug.
+  const valid = values.filter((value) =>
+    targetSchema.safeParse({
+      page_type: value.page_type,
+      slug: value.slug,
+      ...(value.city_slug ? { city_slug: value.city_slug } : {}),
+    }).success,
+  );
+  return new Map(valid.map((value) => [pageRef(value), value]));
 }
 function assertTarget(target: Target, known: Map<string, unknown>) {
   if (target.page_type !== 'blog' && !known.has(pageRef(target)))

@@ -20,6 +20,28 @@ const write = (p) => ({
 });
 const code = (name) => (error) => error.code === name;
 
+for (const type of ['city', 'state', 'micromarket'])
+  test(`${type}: invalid geography slugs do not block valid discovery or imports`, async () => {
+    const h = memory(), fixture = fixtures[type], inventory = h.deps.inventory;
+    h.deps.inventory = async (requested) => [
+      ...(await inventory(requested)),
+      { ...fixture.target, slug: 'legacy--slug', name: 'Legacy' },
+      ...(type === 'micromarket'
+        ? [{ ...fixture.target, city_slug: 'legacy--city', name: 'Legacy city' }]
+        : []),
+    ];
+    const listed = await h.call('list_pages', { page_type: type });
+    assert.deepEqual(listed.items.map((item) => item.target), [fixture.target]);
+    assert.equal((await h.prepare(type)).valid, true);
+    await assert.rejects(h.call('read_page', { ...fixture.target, slug: 'legacy--slug' }));
+    await assert.rejects(h.prepare(type, [row({ ...fixture.target, slug: 'legacy--slug' }, fixture.content)]));
+    // Discovery must not turn a malformed source identity into an invented URL.
+    const invented = await h.prepare(type, [row({ ...fixture.target, slug: 'legacy-slug' }, fixture.content)]);
+    assert.equal(invented.valid, false);
+    assert.equal(invented.saved_drafts, 0);
+    assert.match(invented.errors[0].message, /Unknown CMS target/);
+  });
+
 for (const [type, fixture] of Object.entries(fixtures))
   test(`${type}: schema, CSV, private draft and CMS approval round trip`, async () => {
     const h = memory(),
