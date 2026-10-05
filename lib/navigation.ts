@@ -8,6 +8,7 @@ export type NavigationItem = {
 export const NAVIGATION_GROUPS: { id: string; label: string; items: NavigationItem[] }[] = [
   { id: 'content', label: 'Content', items: [
     { id: 'blogs', label: 'Blogs', href: '/blogs' },
+    { id: 'imports', label: 'Content imports', href: '/imports' },
   ] },
   { id: 'overviews', label: 'Overview pages', items: [
     { id: 'states', label: 'States', href: '/locations?kind=STATE' },

@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:agent-cms": "node tests/agent-cms.test.mjs",
+    "test:agent-cms:postgres": "node tests/agent-cms-postgres.test.mjs",
     "test:formatting": "node tests/formatting.test.mjs",
     "test:word-count": "node tests/word-count.test.mjs",
     "dev": "next dev",
