@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { refresh } from 'next/cache';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { blogSchema } from '@/lib/blog-schema';
 import { requireUser } from '@/lib/auth';
 import type { DeployedContent } from '@/lib/staging';
@@ -55,6 +56,7 @@ function parseForm(formData: FormData) {
     blocks: json('blocks'),
     faqs: json('faqs'),
     author: author === '' ? null : author,
+    thumbnail: formData.has('thumbnail') ? json('thumbnail') : null,
     datePublished: datePublished === '' ? null : datePublished,
     dateModified: String(formData.get('dateModified') ?? ''),
     sortOrder: Number(formData.get('sortOrder') ?? 0),
@@ -64,6 +66,7 @@ function parseForm(formData: FormData) {
 
 const toRow = (g: ReturnType<typeof parseForm>) => ({
   ...g,
+  thumbnail: g.thumbnail ?? Prisma.DbNull,
   datePublished: g.datePublished ? asDate(g.datePublished) : null,
   dateModified: asDate(g.dateModified),
 });
@@ -305,6 +308,7 @@ export async function revertBlog(
         faqs: snap.faqs as object,
         related: snap.related,
         author: snap.author,
+        thumbnail: (snap.thumbnail as Prisma.InputJsonValue | undefined) ?? Prisma.DbNull,
         datePublished: snap.datePublished ? new Date(`${snap.datePublished}T00:00:00.000Z`) : null,
         dateModified: new Date(`${snap.dateModified}T00:00:00.000Z`),
         sortOrder: snap.sortOrder,

@@ -247,6 +247,7 @@ export class CmsRepository {
     } else {
       data = { ...content, ...whereTarget(target), status: 'PUBLISHED' };
       if (target.page_type === 'blog') {
+        data.thumbnail = content.thumbnail ?? Prisma.DbNull;
         data.dateModified = new Date(`${content.dateModified}T00:00:00Z`);
         data.datePublished = content.datePublished
           ? new Date(`${content.datePublished}T00:00:00Z`)

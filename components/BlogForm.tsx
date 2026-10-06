@@ -5,6 +5,7 @@ import Link from 'next/link';
 import BlockEditor from './BlockEditor';
 import FormattedTextarea from './FormattedTextarea';
 import BlogPreview from './BlogPreview';
+import SingleImagePicker from './SingleImagePicker';
 import RelatedPicker, { type BlogOption } from './RelatedPicker';
 import DeployButton from './DeployButton';
 import WordCountSummary, { WordCount } from './WordCount';
@@ -58,6 +59,8 @@ export default function BlogForm({
   // Empty string in the field, null in the database — the action maps between
   // them, so the preview can just treat '' as "no byline".
   const [author, setAuthor] = useState(blog.author ?? '');
+  const [thumbnail, setThumbnail] = useState(blog.thumbnail ?? null);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [dateModified, setDateModified] = useState(blog.dateModified);
   // Wrapped with stable keys so reordering a block or deleting an FAQ moves the
   // DOM node with the item instead of stranding focus — see lib/keyed.ts.
@@ -84,13 +87,19 @@ export default function BlogForm({
   const wordCounts = articleWordSections({ title, summary, blocks: plainBlocks, faqs: plainFaqs });
 
   return (
-    <form action={formAction} onInput={() => setEdited(true)} className="pb-48">
+    <form
+      action={formAction}
+      onInput={() => setEdited(true)}
+      onSubmit={(event) => { if (thumbnailUploading) event.preventDefault(); }}
+      className="pb-48"
+    >
       {id !== undefined && <input type="hidden" name="id" value={id} />}
       {expectedUpdatedAt && <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />}
       <input type="hidden" name="blocks" value={JSON.stringify(plainBlocks)} />
       <input type="hidden" name="faqs" value={JSON.stringify(plainFaqs)} />
       <input type="hidden" name="keywords" value={JSON.stringify(csv(keywords))} />
       <input type="hidden" name="related" value={JSON.stringify(related)} />
+      <input type="hidden" name="thumbnail" value={JSON.stringify(thumbnail)} />
 
       <div className="mb-6 inline-flex max-w-full flex-wrap rounded-xl border border-ui-outline bg-ui-surface p-1">
         {(['edit', 'preview'] as const).map((t) => (
@@ -224,6 +233,26 @@ export default function BlogForm({
           </div>
         </section>
 
+        <section aria-labelledby="thumbnail-heading">
+          <h2 id="thumbnail-heading" className="cms-label mb-2">Blog thumbnail</h2>
+          <p className="cms-hint mb-3">
+            Optional. Shown on the Blogs page in a 4:3 crop. Leave empty to use one of
+            the selected warehouse photos.
+          </p>
+          <SingleImagePicker
+            value={thumbnail}
+            ratio="4:3"
+            onChange={(next) => {
+              setEdited(true);
+              setThumbnail(next);
+            }}
+            onUploadStateChange={(uploading) => {
+              if (uploading) setEdited(true);
+              setThumbnailUploading(uploading);
+            }}
+          />
+        </section>
+
         <section>
           <h2 className="cms-label mb-3">Content blocks</h2>
           <BlockEditor
@@ -305,8 +334,8 @@ export default function BlogForm({
             {!edited && staged ? (
               <DeployButton configured={Boolean(deployable)} />
             ) : (
-              <button type="submit" disabled={pending || !edited} className="cms-btn-primary">
-                {pending ? 'Saving…' : 'Save draft'}
+              <button type="submit" disabled={pending || thumbnailUploading || !edited} className="cms-btn-primary">
+                {thumbnailUploading ? 'Uploading thumbnail…' : pending ? 'Saving…' : 'Save draft'}
               </button>
             )}
           </div>

@@ -30,6 +30,7 @@ export type ContentSource = Pick<
   | 'faqs'
   | 'related'
   | 'author'
+  | 'thumbnail'
   | 'datePublished'
   | 'dateModified'
   | 'sortOrder'
@@ -48,6 +49,7 @@ export type DeployedContent = {
   faqs: unknown;
   related: string[];
   author: string | null;
+  thumbnail?: Blog['thumbnail'];
   datePublished: string | null;
   dateModified: string;
   sortOrder: number;
@@ -72,6 +74,7 @@ export function contentOf(g: ContentSource): DeployedContent {
     faqs: g.faqs,
     related: g.related,
     author: g.author,
+    thumbnail: g.thumbnail ?? null,
     datePublished: iso(g.datePublished),
     dateModified: iso(g.dateModified) as string,
     sortOrder: g.sortOrder,
@@ -125,7 +128,9 @@ export function stateOf(g: ContentSource & Pick<Blog, 'deployedContent'>): BlogS
   // Live: staged exactly when the saved content differs from what went out.
   // A live blog flipped to DRAFT counts, since it stays on the site until the
   // next build removes it.
-  return sameContent(contentOf(g), snapshot) ? 'PUBLISHED' : 'STAGED';
+  // Older deploy snapshots predate the upload field. An absent thumbnail and
+  // an explicit null both mean the default thumbnail, not staged edits.
+  return sameContent(contentOf(g), { ...snapshot, thumbnail: snapshot?.thumbnail ?? null }) ? 'PUBLISHED' : 'STAGED';
 }
 
 export const STATE_LABEL: Record<ContentState, string> = {

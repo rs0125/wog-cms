@@ -74,6 +74,7 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
           faqs: true,
           related: true,
           author: true,
+          thumbnail: true,
           datePublished: true,
           dateModified: true,
           sortOrder: true,

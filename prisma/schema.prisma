@@ -64,6 +64,8 @@ model Blog {
   related       String[]    @default([])
   /// Optional byline; null falls back to the WareOnGo organisation.
   author        String?
+  /// Optional blog-card image; null uses site defaults.
+  thumbnail     Json?
   datePublished DateTime?   @db.Date
   dateModified  DateTime    @db.Date
   sortOrder     Int         @default(0)

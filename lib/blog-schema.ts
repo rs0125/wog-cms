@@ -75,6 +75,7 @@ export const blogSchema = z.object({
   // the empty string would otherwise show up as a difference against the
   // deployed snapshot and mark the blog Staged for nothing.
   author: nonEmpty.nullable(),
+  thumbnail: blogImageSchema.nullable().default(null),
   blocks: z.array(blogBlockSchema).min(1, 'a blog needs at least one block').refine(tableRowsMatchHeaders, {
     message: 'every table row must have the same number of cells as headers',
   }),

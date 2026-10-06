@@ -29,6 +29,7 @@ export default async function NewBlogPage() {
     blocks: [{ kind: 'p', text: '' }],
     faqs: [],
     author: null,
+    thumbnail: null,
     datePublished: today,
     dateModified: today,
     sortOrder: (last?.sortOrder ?? -1) + 1,
