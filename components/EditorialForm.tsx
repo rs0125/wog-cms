@@ -25,6 +25,7 @@ import {
 } from '@/lib/editorial-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
 import type { SaveResult } from '@/lib/action-results';
+import AiWriting from './AiWriting';
 
 /**
  * Editor for one editorial listing page — a micromarket, a city or a state.
@@ -219,6 +220,22 @@ export default function EditorialForm({
           absent, which keeps "no image" a single representation. */}
       <input type="hidden" name="heroImage" value={heroImage ? JSON.stringify(heroImage) : ''} />
       <input type="hidden" name="marketImage" value={marketImage ? JSON.stringify(marketImage) : ''} />
+
+      <AiWriting
+        target={{ type: identity.scope, slug, ...(isMicromarket ? { citySlug } : {}) }}
+        initial={{ ...page }} values={{ ...page, ...text, heroProse, marketProse, rentsProse, specProse, corridorProse, complianceProse, faqs: plainFaqs }}
+        expectedUpdatedAt={expectedUpdatedAt} disabled={pending}
+        lockedReason={page.status === 'PUBLISHED' ? 'This page is approved for the website. Use the editor to change its copy.' : undefined}
+        onReveal={() => setTab('edit')}
+        onChange={next => {
+          setText(current => Object.fromEntries(Object.entries(current).map(([key, value]) => [key, key === 'name' ? value : next[key] ?? ''])) as typeof current);
+          setHeroProse(next.heroProse as string); setMarketProse(next.marketProse as string ?? '');
+          setRentsProse(next.rentsProse as string ?? ''); setSpecProse(next.specProse as string ?? '');
+          setCorridorProse(next.corridorProse as string ?? ''); setComplianceProse(next.complianceProse as string ?? '');
+          if (JSON.stringify(next.faqs) !== JSON.stringify(plainFaqs)) setFaqs(keyAll(next.faqs as EditorialFaq[]));
+          touch();
+        }}
+      />
 
       <div className="rounded-xl border border-ui-line bg-ui-surface p-4 text-sm">
         <p className="text-wareongo-charcoal">
@@ -578,7 +595,7 @@ export default function EditorialForm({
         </div>
         <div className="space-y-3">
           {faqs.map(({ key, value: faq }, i) => (
-            <div key={key} className="cms-card">
+            <div key={key} className="cms-card" data-writing-path={`faqs.${i}`}>
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-wareongo-slate">#{i + 1}</span>
                 <WordCount count={countFaqWords([faq])} />
@@ -595,12 +612,14 @@ export default function EditorialForm({
               </div>
               <input
                 value={faq.q}
+                data-writing-path={`faqs.${i}.q`}
                 placeholder="Question"
                 onChange={(e) => setFaqs(replaceAt(faqs, i, { ...faq, q: e.target.value }))}
                 className="cms-input mb-2 font-medium"
               />
               <FormattedTextarea
                 value={faq.a}
+                data-writing-path={`faqs.${i}.a`}
                 rows={3}
                 placeholder="Answer"
                 onChange={(e) => setFaqs(replaceAt(faqs, i, { ...faq, a: e.target.value }))}

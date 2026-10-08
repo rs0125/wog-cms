@@ -14,6 +14,7 @@ import { countFaqWords, totalWords } from '@/lib/word-count';
 import type { BlogBlock, BlogFaq, BlogInput } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
 import type { SaveResult } from '@/app/(authed)/blogs/actions';
+import AiWriting from './AiWriting';
 
 export default function BlogForm({
   blog,
@@ -61,6 +62,8 @@ export default function BlogForm({
   const [author, setAuthor] = useState(blog.author ?? '');
   const [thumbnail, setThumbnail] = useState(blog.thumbnail ?? null);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [blocksUploading, setBlocksUploading] = useState(false);
+  const uploading = thumbnailUploading || blocksUploading;
   const [dateModified, setDateModified] = useState(blog.dateModified);
   // Wrapped with stable keys so reordering a block or deleting an FAQ moves the
   // DOM node with the item instead of stranding focus — see lib/keyed.ts.
@@ -90,7 +93,7 @@ export default function BlogForm({
     <form
       action={formAction}
       onInput={() => setEdited(true)}
-      onSubmit={(event) => { if (thumbnailUploading) event.preventDefault(); }}
+      onSubmit={(event) => { if (uploading) event.preventDefault(); }}
       className="pb-48"
     >
       {id !== undefined && <input type="hidden" name="id" value={id} />}
@@ -116,6 +119,21 @@ export default function BlogForm({
         ))}
       </div>
 
+      <AiWriting
+        target={{ type: 'blog', slug: text.slug }} initial={{ ...blog }}
+        values={{ ...blog, ...text, title, summary, author: author || null, blocks: plainBlocks, faqs: plainFaqs, keywords: csv(keywords) }}
+        expectedUpdatedAt={expectedUpdatedAt} disabled={pending || uploading}
+        lockedReason={blog.status === 'PUBLISHED' ? 'This blog is approved for the website. Use the editor to change its copy.' : undefined}
+        onReveal={() => setTab('edit')}
+        onChange={next => {
+          setTitle(next.title as string); setSummary(next.summary as string); setAuthor(next.author as string ?? '');
+          setText(current => ({ ...current, seoTitle: next.seoTitle as string, description: next.description as string }));
+          setKeywords((next.keywords as string[]).join(', '));
+          if (JSON.stringify(next.blocks) !== JSON.stringify(plainBlocks)) setBlocks(keyAll(next.blocks as BlogBlock[]));
+          if (JSON.stringify(next.faqs) !== JSON.stringify(plainFaqs)) setFaqs(keyAll(next.faqs as BlogFaq[]));
+          setEdited(true);
+        }}
+      />
       <WordCountSummary sections={wordCounts} />
 
       {/* Kept mounted and hidden rather than unmounted, so switching tabs never
@@ -253,10 +271,11 @@ export default function BlogForm({
           />
         </section>
 
-        <section>
+        <section data-writing-path="blocks">
           <h2 className="cms-label mb-3">Content blocks</h2>
           <BlockEditor
             blocks={blocks}
+            onUploadStateChange={setBlocksUploading}
             onChange={(next) => {
               setEdited(true);
               setBlocks(next);
@@ -264,14 +283,14 @@ export default function BlogForm({
           />
         </section>
 
-        <section>
+        <section data-writing-path="faqs">
           <h2 className="cms-label mb-2">FAQs</h2>
           <p className="mb-3 text-xs text-wareongo-slate">
             Rendered on the page and emitted as FAQPage schema. Google requires the two to match, so both come from here.
           </p>
           <div className="space-y-3">
             {faqs.map(({ key, value: faq }, i) => (
-              <div key={key} className="cms-card">
+              <div key={key} className="cms-card" data-writing-path={`faqs.${i}`}>
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <span className="text-xs text-wareongo-slate">#{i + 1}</span>
                   <WordCount count={countFaqWords([faq])} />
@@ -287,12 +306,14 @@ export default function BlogForm({
                   </button>
                 </div>
                 <input
+                  data-writing-path={`faqs.${i}.q`}
                   value={faq.q}
                   placeholder="Question"
                   onChange={(e) => setFaqs(replaceAt(faqs, i, { ...faq, q: e.target.value }))}
                   className="cms-input mb-2 font-medium"
                 />
                 <FormattedTextarea
+                  data-writing-path={`faqs.${i}.a`}
                   value={faq.a}
                   rows={3}
                   placeholder="Answer"
@@ -334,8 +355,8 @@ export default function BlogForm({
             {!edited && staged ? (
               <DeployButton configured={Boolean(deployable)} />
             ) : (
-              <button type="submit" disabled={pending || thumbnailUploading || !edited} className="cms-btn-primary">
-                {thumbnailUploading ? 'Uploading thumbnail…' : pending ? 'Saving…' : 'Save draft'}
+              <button type="submit" disabled={pending || uploading || !edited} className="cms-btn-primary">
+                {uploading ? 'Uploading image…' : pending ? 'Saving…' : 'Save draft'}
               </button>
             )}
           </div>

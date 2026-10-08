@@ -2,7 +2,7 @@
 
 import FormattedTextarea from './FormattedTextarea';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MAX_IMAGES, type BlogImage, type BlogImagesBlock } from '@/lib/blog-schema';
 import { COLLAGE_LABEL } from '@/lib/collage';
 import { uploadImage } from '@/lib/image-upload';
@@ -19,26 +19,34 @@ import { uploadImage } from '@/lib/image-upload';
 export default function ImagesEditor({
   block,
   onChange,
+  onUploadStateChange,
 }: {
   block: BlogImagesBlock;
   onChange: (next: BlogImagesBlock) => void;
+  onUploadStateChange?: (uploading: boolean) => void;
 }) {
   const { images, caption } = block;
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const latest = useRef({ block, onChange });
+  const mounted = useRef(true);
+  useEffect(() => { latest.current = { block, onChange }; }, [block, onChange]);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const room = MAX_IMAGES - images.length;
   const setImages = (next: BlogImage[]) => onChange({ ...block, images: next });
 
   async function addFiles(picked: File[]) {
+    if (busy) return;
     setError(null);
+    onUploadStateChange?.(true);
     // Uploaded one at a time — a batch of four phone photos in parallel is a lot
     // of canvas work at once, and one-at-a-time means the button can name the
     // file it's on. Whatever succeeded is committed in a single change at the
     // end: partial success survives a mid-batch failure, and there's exactly one
     // write back into the block rather than one per file.
-    let next: BlogImage[] = images;
+    const added: BlogImage[] = [];
     const problems: string[] = [];
 
     for (const file of picked.slice(0, room)) {
@@ -47,11 +55,11 @@ export default function ImagesEditor({
         const uploaded = await uploadImage(file);
         // Same bytes as one already here: the content-addressed key makes this
         // the identical URL, which would also collide as a React key.
-        if (next.some((img) => img.url === uploaded.url)) {
+        if ([...latest.current.block.images, ...added].some((img) => img.url === uploaded.url)) {
           problems.push(`${file.name} is already in this block.`);
           continue;
         }
-        next = [...next, uploaded];
+        added.push(uploaded);
       } catch (err) {
         problems.push(err instanceof Error ? err.message : `${file.name} could not be uploaded.`);
       }
@@ -60,9 +68,13 @@ export default function ImagesEditor({
     if (picked.length > room) {
       problems.push(`A block holds at most ${MAX_IMAGES} images — the extra files were skipped.`);
     }
-    setBusy(null);
-    if (next.length !== images.length) setImages(next);
-    setError(problems.join(' ') || null);
+    if (mounted.current) {
+      setBusy(null);
+      const current = latest.current;
+      if (added.length) current.onChange({ ...current.block, images: [...current.block.images, ...added].slice(0, MAX_IMAGES) });
+      setError(problems.join(' ') || null);
+    }
+    onUploadStateChange?.(false);
   }
 
   return (
@@ -135,6 +147,7 @@ export default function ImagesEditor({
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif"
         multiple
+        disabled={busy !== null}
         className="hidden"
         // No `name`: this input is never part of the form submission — the files
         // are already in R2 by the time anything is saved.

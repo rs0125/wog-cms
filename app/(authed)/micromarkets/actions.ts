@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { micromarketSchema, pruneOverrides } from '@/lib/micromarket-schema';
 import { requireUser } from '@/lib/auth';
+import { writingSaveError } from '@/lib/ai-writing-guard';
 import type { DeployedContent } from '@/lib/micromarket-staging';
 import type { SaveResult, ListingResult } from '@/lib/action-results';
 
@@ -123,6 +124,8 @@ export async function createMicromarket(
   let id: number;
   try {
     const page = parseForm(formData);
+    const importError = await writingSaveError(formData, { type: 'micromarket', citySlug: page.citySlug, slug: page.slug });
+    if (importError) return { ok: false, error: importError };
     await assertBlogsExist(page.relatedBlogs);
     id = (await prisma.micromarketPage.create({ data: toRow(page) })).id;
   } catch (err) {
@@ -141,6 +144,8 @@ export async function updateMicromarket(
   const id = Number(formData.get('id'));
   try {
     const page = parseForm(formData);
+    const importError = await writingSaveError(formData, { type: 'micromarket', citySlug: page.citySlug, slug: page.slug });
+    if (importError) return { ok: false, error: importError };
     await assertBlogsExist(page.relatedBlogs);
 
     // Optimistic concurrency, folded into the write itself: `updatedAt` is part

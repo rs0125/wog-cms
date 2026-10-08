@@ -12,6 +12,7 @@ import { LEGAL_BLOCK_KINDS, type LegalContent } from '@/lib/legal-schema';
 import type { BlogBlock } from '@/lib/blog-schema';
 import { keyAll, unkey, type Keyed } from '@/lib/keyed';
 import type { SaveResult } from '@/lib/action-results';
+import AiWriting from './AiWriting';
 
 export default function LegalForm({ content, expectedUpdatedAt, state, action, deployable }: {
   content: LegalContent; expectedUpdatedAt: string;
@@ -39,6 +40,12 @@ export default function LegalForm({ content, expectedUpdatedAt, state, action, d
       {(['edit', 'preview'] as const).map(t => <button key={t} type="button" role="tab" aria-selected={tab === t}
         className={tab === t ? 'cms-btn-primary' : 'cms-btn'} onClick={() => setTab(t)}>{t === 'edit' ? 'Edit' : 'Preview'}</button>)}
     </div>
+    <AiWriting target={{ type: 'legal', slug: content.slug }} initial={content} values={preview}
+      expectedUpdatedAt={expectedUpdatedAt} disabled={pending}
+      lockedReason="This legal page already has approved content. You can download its writing template; make changes in the editor."
+      onReveal={() => setTab('edit')} onChange={next => {
+        setFields(next as LegalContent); setBlocks(keyAll(next.blocks as BlogBlock[])); setEdited(true);
+      }} />
     <WordCountSummary sections={wordCounts} />
     {/* Keep fields mounted so preview and failed saves preserve all typed input. */}
     <div className={tab === 'edit' ? 'space-y-6' : 'hidden'}>

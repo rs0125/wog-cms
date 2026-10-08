@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { writingSaveError } from '@/lib/ai-writing-guard';
 import { isServiceSlug, serviceDraftSchema, servicePublishSchema } from '@/lib/service-schema';
 import type { SaveResult } from '@/lib/action-results';
 
@@ -24,6 +25,8 @@ export async function saveServicePage(_prev: SaveResult | undefined, form: FormD
     raw && typeof raw === 'object' ? { ...raw, slug } : raw,
   );
   if (!parsed.success) return { ok: false, error: parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ') };
+  const importError = await writingSaveError(form, { type: 'service', slug });
+  if (importError) return { ok: false, error: importError };
 
   try {
     const data = {

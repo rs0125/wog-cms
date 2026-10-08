@@ -11,6 +11,7 @@ import AdPagePreview from './AdPagePreview';
 import WordCountSummary, { WordCount } from './WordCount';
 import { adPageWordSections } from '@/lib/page-word-counts';
 import { totalWords } from '@/lib/word-count';
+import AiWriting from './AiWriting';
 
 function Field({ id, label, value, onChange, multiline = false }: {
   id: string; label: string; value: string; onChange: (value: string) => void; multiline?: boolean;
@@ -77,6 +78,10 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
     <div className="mb-6 flex gap-2" role="group" aria-label="Ad page editor">
       {(['edit', 'preview'] as const).map(value => <button key={value} type="button" aria-pressed={tab === value} className={tab === value ? 'cms-btn-primary' : 'cms-btn'} onClick={() => setTab(value)}>{value === 'edit' ? 'Edit content' : 'Preview'}</button>)}
     </div>
+    <AiWriting target={{ type: 'ad', slug: content.slug }} initial={content} values={fields}
+      expectedUpdatedAt={expectedUpdatedAt} disabled={pending || uploading}
+      lockedReason="This ad page already has approved content. You can download its writing template; make changes in the editor."
+      onReveal={() => setTab('edit')} onChange={next => { setFields(next as AdPageContent); setEdited(true); }} />
     <WordCountSummary sections={wordCounts} />
     <fieldset disabled={pending} aria-label="Ad page content" className={tab === 'edit' ? 'min-w-0 space-y-4' : 'hidden'}>
       {AD_COPY_GROUPS.map(group => <details key={group.id} open={group.id === 'hero'} className="cms-card" id={`ad-section-${group.id}`}>

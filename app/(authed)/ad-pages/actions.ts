@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { writingSaveError } from '@/lib/ai-writing-guard';
 import { isAdPageSlug, readAdPage } from '@/lib/ad-page-schema';
 import { sameContent } from '@/lib/staging';
 import type { SaveResult } from '@/lib/action-results';
@@ -15,6 +16,8 @@ export async function saveAdPage(_prev: SaveResult | undefined, form: FormData):
   if (!isAdPageSlug(slug)) return { ok: false, error: 'Unknown ad page.' };
   if (!['draft', 'publish'].includes(intent)) return { ok: false, error: 'Unknown save action.' };
   if (!expected || !Number.isFinite(Date.parse(expected))) return { ok: false, error: 'Reload this page before saving.' };
+  const importError = await writingSaveError(form, { type: 'ad', slug });
+  if (importError) return { ok: false, error: importError };
   let content;
   try {
     const raw = JSON.parse(String(form.get('content') ?? ''));

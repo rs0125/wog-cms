@@ -71,6 +71,7 @@
     line-height: var(--ui-leading-ui);
   }
   .cms-hint { @apply mt-1.5 text-xs leading-relaxed text-ui-muted; }
+  .cms-input[aria-invalid="true"] { border-color: #b91c1c; outline-color: #b91c1c; }
   .cms-card { @apply min-w-0 rounded-xl border border-ui-line bg-ui-surface p-4; }
   .cms-btn, .cms-btn-danger {
     @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-ui-outline bg-ui-surface px-3 py-2

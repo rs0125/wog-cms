@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
+import { writingSaveError } from '@/lib/ai-writing-guard';
 import { legalContentSchema, isLegalSlug } from '@/lib/legal-schema';
 import type { SaveResult } from '@/lib/action-results';
 
@@ -24,6 +25,8 @@ export async function saveLegalPage(_prev: SaveResult | undefined, form: FormDat
     effectiveDate: form.get('effectiveDate'), updated: form.get('updated'), notice: form.get('notice'),
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ') };
+  const importError = await writingSaveError(form, { type: 'legal', slug });
+  if (importError) return { ok: false, error: importError };
   try {
     const { count } = await prisma.legalPage.updateMany({
       where: { slug, updatedAt: new Date(expected) },

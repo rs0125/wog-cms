@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { blogSchema } from '@/lib/blog-schema';
 import { requireUser } from '@/lib/auth';
+import { writingSaveError } from '@/lib/ai-writing-guard';
 import type { DeployedContent } from '@/lib/staging';
 import type { SaveResult, ListingResult } from '@/lib/action-results';
 
@@ -112,6 +113,8 @@ export async function createBlog(_prev: SaveResult | undefined, formData: FormDa
   let id: number;
   try {
     const blog = parseForm(formData);
+    const importError = await writingSaveError(formData, { type: 'blog', slug: blog.slug });
+    if (importError) return { ok: false, error: importError };
     await assertRelatedExist(blog.related, blog.slug);
     id = (await prisma.blog.create({ data: toRow(blog) })).id;
   } catch (err) {
@@ -127,6 +130,8 @@ export async function updateBlog(_prev: SaveResult | undefined, formData: FormDa
   const id = Number(formData.get('id'));
   try {
     const blog = parseForm(formData);
+    const importError = await writingSaveError(formData, { type: 'blog', slug: blog.slug });
+    if (importError) return { ok: false, error: importError };
     await assertRelatedExist(blog.related, blog.slug);
 
     // Optimistic concurrency, folded into the write itself: `updatedAt` is part

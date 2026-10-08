@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ImagesEditor from './ImagesEditor';
 import FormattedTextarea from './FormattedTextarea';
 import { WordCount } from './WordCount';
@@ -28,24 +28,40 @@ export default function BlockEditor({
   onChange,
   kinds = BLOCK_KINDS,
   links = false,
+  onUploadStateChange,
 }: {
   blocks: Keyed<BlogBlock>[];
   onChange: (next: Keyed<BlogBlock>[]) => void;
   kinds?: readonly BlogBlock['kind'][];
   links?: boolean;
+  onUploadStateChange?: (uploading: boolean) => void;
 }) {
+  const [uploadingKeys, setUploadingKeys] = useState<string[]>([]);
+  const uploading = uploadingKeys.some(key => blocks.some(b => b.key === key));
+  useEffect(() => { onUploadStateChange?.(uploading); }, [uploading, onUploadStateChange]);
+  const latest = useRef({ blocks, onChange });
+  useEffect(() => { latest.current = { blocks, onChange }; }, [blocks, onChange]);
+  function changeImageBlock(key: string, next: BlogBlock) {
+    // Uploads finish asynchronously. Find the surviving block by key and merge
+    // into the current collection so another block's edits are never restored.
+    const current = latest.current;
+    const index = current.blocks.findIndex(b => b.key === key);
+    if (index !== -1) current.onChange(replaceAt(current.blocks, index, next));
+  }
   const sectionCounts = new Map(blockWordSections(unkey(blocks), { links }).map(section => [section.id, section.words]));
   return (
     <div className="space-y-3">
       {blocks.map(({ key, value: block }, i) => (
         // key comes from the item, not its position, so reordering moves the
         // DOM node with the block instead of leaving focus behind.
-        <div key={key} className="cms-card">
+        <div key={key} className="cms-card" data-writing-path={`blocks.${i}`}>
           {sectionCounts.has(`content-${i}`) && <div className="mb-3 border-b border-wareongo-blue/15 pb-2">
             <WordCount count={sectionCounts.get(`content-${i}`)!} label="Section total" />
           </div>}
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <select
+              aria-label={`Block ${i + 1} type`}
+              data-writing-path={`blocks.${i}.kind`}
               value={block.kind}
               onChange={(e) => onChange(replaceAt(blocks, i, emptyBlock(e.target.value as BlogBlock['kind'])))}
               className="max-w-full rounded-lg border border-ui-outline bg-ui-surface px-2.5 py-1.5 text-xs text-wareongo-blue"
@@ -78,6 +94,7 @@ export default function BlockEditor({
 
           {(block.kind === 'h2' || block.kind === 'h3' || block.kind === 'p') && (
             <FormattedTextarea
+              data-writing-path={`blocks.${i}.text`}
               aria-label={`${KIND_LABEL[block.kind]} ${i + 1}`}
               value={block.text}
               rows={block.kind === 'p' ? 4 : 1}
@@ -88,6 +105,7 @@ export default function BlockEditor({
 
           {(block.kind === 'ul' || block.kind === 'ol') && (
             <ListItems
+              path={`blocks.${i}.items`}
               items={block.items}
               onChange={(items) => onChange(replaceAt(blocks, i, { ...block, items }))}
             />
@@ -95,13 +113,15 @@ export default function BlockEditor({
 
           {block.kind === 'table' && (
             <TableEditor
+              path={`blocks.${i}.table`}
               table={block.table}
               onChange={(table) => onChange(replaceAt(blocks, i, { ...block, table }))}
             />
           )}
 
           {block.kind === 'images' && (
-            <ImagesEditor block={block} onChange={(next) => onChange(replaceAt(blocks, i, next))} />
+            <ImagesEditor block={block} onChange={next => changeImageBlock(key, next)}
+              onUploadStateChange={busy => setUploadingKeys(keys => busy ? [...keys.filter(k => k !== key), key] : keys.filter(k => k !== key))} />
           )}
         </div>
       ))}
@@ -120,7 +140,7 @@ export default function BlockEditor({
 // Owns its own keys: this component is the only editor of the array, so keys
 // assigned here can't drift from the parent's copy. Deleting item 2 of 5 would
 // otherwise shift every index below it and strand the caret.
-function ListItems({ items, onChange }: { items: string[]; onChange: (next: string[]) => void }) {
+function ListItems({ items, onChange, path }: { items: string[]; onChange: (next: string[]) => void; path: string }) {
   const [keys, setKeys] = useState<Keyed<string>[]>(() => keyAll(items));
 
   const push = (next: Keyed<string>[]) => {
@@ -129,10 +149,11 @@ function ListItems({ items, onChange }: { items: string[]; onChange: (next: stri
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-writing-path={path}>
       {keys.map(({ key, value }, i) => (
         <div key={key} className="flex gap-2">
           <FormattedTextarea
+            data-writing-path={`${path}.${i}`}
             aria-label={`List item ${i + 1}`}
             value={value}
             rows={2}
@@ -159,9 +180,11 @@ function ListItems({ items, onChange }: { items: string[]; onChange: (next: stri
 function TableEditor({
   table,
   onChange,
+  path,
 }: {
   table: { headers: string[]; rows: string[][] };
   onChange: (next: { headers: string[]; rows: string[][] }) => void;
+  path: string;
 }) {
   const { headers, rows } = table;
 
@@ -172,7 +195,7 @@ function TableEditor({
     onChange({ headers: headers.filter((_, j) => j !== c), rows: rows.map((r) => r.filter((_, j) => j !== c)) });
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-writing-path={path}>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -180,6 +203,7 @@ function TableEditor({
               {headers.map((h, c) => (
                 <th key={c} className="border border-ui-line p-1">
                   <FormattedTextarea
+                    data-writing-path={`${path}.headers.${c}`}
                     rows={1}
                     aria-label={`Header ${c + 1}`}
                     value={h}
@@ -203,10 +227,11 @@ function TableEditor({
           </thead>
           <tbody>
             {rows.map((row, r) => (
-              <tr key={r}>
+              <tr key={r} data-writing-path={`${path}.rows.${r}`}>
                 {row.map((cell, c) => (
                   <td key={c} className="border border-ui-line p-1">
                     <FormattedTextarea
+                      data-writing-path={`${path}.rows.${r}.${c}`}
                       rows={1}
                       aria-label={`Row ${r + 1}, column ${c + 1}`}
                       value={cell}
@@ -221,6 +246,15 @@ function TableEditor({
                   </td>
                 ))}
                 <td className="p-1">
+                  {row.length !== headers.length && <div className="mb-2 space-y-1">
+                    <p className="text-xs text-red-700">Row {r + 1} has {row.length} cells for {headers.length} columns.</p>
+                    <button type="button" className={btn} disabled={!headers.length}
+                      onClick={() => onChange({ ...table, rows: rows.map((rr, j) => j === r ? headers.map((_, c) => rr[c] ?? '') : rr) })}>
+                      {row.length < headers.length ? `Add ${headers.length - row.length} empty ${headers.length - row.length === 1 ? 'cell' : 'cells'}`
+                        : `Remove ${row.length - headers.length} extra ${row.length - headers.length === 1 ? 'cell' : 'cells'}`}
+                    </button>
+                    {!headers.length && <p className="text-xs">Add a column first.</p>}
+                  </div>}
                   <button
                     type="button"
                     className="text-xs text-wareongo-sienna disabled:opacity-30"

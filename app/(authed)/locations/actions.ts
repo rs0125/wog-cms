@@ -6,6 +6,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { locationSchema, pruneOverrides } from '@/lib/location-schema';
 import { requireUser } from '@/lib/auth';
+import { writingSaveError } from '@/lib/ai-writing-guard';
 import { fetchLocations, findLocation, listFor, locationOverviewPath } from '@/lib/locations-api';
 import type { LocationKind } from '@/lib/location-schema';
 import type { DeployedContent } from '@/lib/location-staging';
@@ -118,6 +119,8 @@ export async function createLocation(
   let id: number;
   try {
     const page = parseForm(formData);
+    const importError = await writingSaveError(formData, { type: page.kind === 'CITY' ? 'city' : 'state', slug: page.slug });
+    if (importError) return { ok: false, error: importError };
     await assertPublishable(page);
     await assertBlogsExist(page.relatedBlogs);
     id = (await prisma.locationPage.create({ data: toRow(page) })).id;
@@ -135,6 +138,8 @@ export async function updateLocation(
   const id = Number(formData.get('id'));
   try {
     const page = parseForm(formData);
+    const importError = await writingSaveError(formData, { type: page.kind === 'CITY' ? 'city' : 'state', slug: page.slug });
+    if (importError) return { ok: false, error: importError };
     await assertPublishable(page);
     const existing = await prisma.locationPage.findUnique({ where: { id }, select: { kind: true } });
     if (!existing) throw new EditorError('That page no longer exists.');
