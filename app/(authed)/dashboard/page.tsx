@@ -69,6 +69,11 @@ export default async function DashboardPage() {
       detail: `${blogLive} published${blogStaged > 0 ? ` · ${blogStaged} staged` : ''}`,
       description: 'Write and manage articles, guides and warehouse insights.',
     },
+    imports: {
+      lead: 'Draft review',
+      detail: process.env.CMS_CONTEXT_ENABLED === 'true' ? 'Approval required' : 'Not enabled',
+      description: 'Review incoming drafts before approving them for a website build.',
+    },
     states: {
       lead: stateStats.total > 0 ? `${stateStats.written} of ${stateStats.total} written` : `${stateStats.rows} ${stateStats.rows === 1 ? 'page' : 'pages'}`,
       detail: `${stateStats.live} published${stateStats.staged > 0 ? ` · ${stateStats.staged} staged` : ''}`,
