@@ -6,6 +6,7 @@ import { NO_OVERRIDES } from '@/lib/editorial-schema';
 import { locationKindSchema, type LocationKind } from '@/lib/location-schema';
 import { fetchLocations, findLocation, listFor, locationOverviewPath, KIND_LABEL, KIND_PLURAL, type Location } from '@/lib/locations-api';
 import { isDeployConfigured } from '@/lib/deploy';
+import { summarisePages } from '@/lib/state-overview';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
 
@@ -18,7 +19,7 @@ export default async function NewLocationPage({
 }: {
   searchParams: Promise<{ kind?: string; slug?: string; name?: string }>;
 }) {
-  const [blogOptions, prefill, inventory] = await Promise.all([
+  const [blogOptions, prefill, inventory, pageRows] = await Promise.all([
     prisma.blog.findMany({
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       select: { slug: true, title: true },
@@ -29,6 +30,11 @@ export default async function NewLocationPage({
       states: [] as Location[],
       gates: { locationPageMinListings: 0 },
     })),
+    // A state preview links only published city and state pages, and a city
+    // row repeats the corrections its own page makes to its figures.
+    prisma.locationPage.findMany({
+      select: { kind: true, slug: true, status: true, statOverrides: true },
+    }),
   ]);
 
   const kind: LocationKind = locationKindSchema.safeParse(prefill.kind?.toUpperCase()).data ?? 'CITY';
@@ -97,6 +103,8 @@ export default async function NewLocationPage({
         blogOptions={blogOptions}
         deployable={isDeployConfigured()}
         locationInventory={listFor(inventory, kind)}
+        cityInventory={kind === 'STATE' ? inventory.cities : undefined}
+        locationPages={kind === 'STATE' ? summarisePages(pageRows) : undefined}
       />
     </main>
   );

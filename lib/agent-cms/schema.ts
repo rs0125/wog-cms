@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { blogSchema } from '../blog-schema';
 import { editorialFields, optionalProse } from '../editorial-schema';
+import { stateCitiesSchema } from '../location-schema';
 import {
   serviceDraftSchema,
   servicePublishSchema,
@@ -85,7 +86,12 @@ const schemas = {
     complianceHeading: optionalProse.optional().default(null),
     complianceProse: optionalProse.optional().default(null),
   }),
-  state: overview,
+  state: overview.extend({
+    complianceHeading: optionalProse.optional().default(null),
+    complianceProse: optionalProse.optional().default(null),
+    citiesHeading: optionalProse.optional().default(null),
+    stateCities: stateCitiesSchema.optional().default(null),
+  }),
   micromarket: overview,
   service: serviceDraftSchema.omit({ slug: true }).strict(),
   legal: z.object(legalContentSchema.shape).omit({ slug: true }).strict(),

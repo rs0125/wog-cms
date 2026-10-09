@@ -78,7 +78,7 @@
 .dark .warehouse-card__spec { border-color: #91a48a; }
 .dark .warehouse-card__enquiry { border-color: #96a89f; }
 @media (hover: hover) {
-  .dark .warehouse-card:hover { background: var(--card-hover); }
+  .dark .warehouse-card:hover { border-color: var(--card-edge); background: var(--card-hover); }
   .dark .warehouse-card__enquiry:hover { background: #dce8e6; color: #102739; }
 }
 @media (prefers-reduced-motion: reduce) {

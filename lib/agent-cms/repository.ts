@@ -255,6 +255,8 @@ export class CmsRepository {
       } else {
         data.heroImage = content.heroImage ?? Prisma.DbNull;
         data.marketImage = content.marketImage ?? Prisma.DbNull;
+        if (target.page_type === 'state')
+          data.stateCities = content.stateCities ?? Prisma.DbNull;
         data.statOverrides =
           pruneOverrides(
             content.statOverrides as Parameters<typeof pruneOverrides>[0],

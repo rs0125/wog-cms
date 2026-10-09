@@ -18,7 +18,7 @@ new pages need a valid slug first (plus the city slug for a micromarket).
 | --- | --- |
 | Blog | Blog validator, restricted to writing fields and content blocks |
 | City | Location validator, with city corridor and compliance fields |
-| State | Location validator, restricted to the state editor’s writing fields |
+| State | Location validator, with cities heading and compliance; city selections stay in the CMS |
 | Micromarket | Micromarket validator, bound to both city and micromarket slugs |
 | Service | Draft limits plus publishing requirements, combined with JSON Schema `allOf` |
 | Legal | Legal validator, including its restricted block types; dates stay in the CMS |

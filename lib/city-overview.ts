@@ -21,6 +21,7 @@ export interface CityOverviewStats {
   nearbyLabel: string;
   nearbyCities: { name: string; slug: string; path: string }[];
 }
+/** City overview copy. State pages share the compliance pair; see ./state-overview.ts. */
 export interface CityOverviewContent {
   corridorHeading?: string | null;
   corridorProse?: string | null;

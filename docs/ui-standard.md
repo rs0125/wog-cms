@@ -1,7 +1,8 @@
 # CMS UI and website previews
 
 The CMS uses the approved WareOnGo website roles: Montserrat, paper `#FAF9F5`,
-surface `#FFFEFA`, navy ink `#0A2239`, muted text `#47515B`, light dividers
+surface `#FFFEFA`, navy ink `#0A2239` (muted and charcoal text alias ink, as on
+the website), grey placeholders `#47515B` (`placeholder:text-ui-placeholder`), light dividers
 `#D5DDE5`, and defined outlines `#AEBDCA`. Cards are flat, with 12px corners;
 fields and buttons have 8px corners. Table fills remain neutral, with the
 navbar's `#EDF2F7` hover. Do not reintroduce dark ivory loading fills.
@@ -53,8 +54,11 @@ when markup changes. Public headings use `ui-page-title`, paragraphs 16px,
 tables `ui-table`, and CTAs `ui-button`; do not substitute smaller admin roles.
 Navigation is presentational. Editorial inventory is explicitly marked as
 layout placeholders because listing photos/prices arrive at website build
-rather than from the prose editor. Statistics use actual backend values and
-unsaved overrides; never fabricate them for appearance.
+rather than from the prose editor. The same applies to state pages: a city
+card or market slot without an uploaded photo is labelled as chosen at build
+(the website picks a T1 listing photo), never filled with a stand-in image.
+Statistics use actual backend values and unsaved overrides; never fabricate
+them for appearance.
 
 ## Verification
 

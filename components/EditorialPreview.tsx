@@ -3,13 +3,14 @@
 import InlineText from './InlineText';
 import { PreviewListingPlaceholder } from './PreviewListingPlaceholder';
 import { PreviewNavbar as Navbar, PreviewFooter as Footer } from './PreviewChrome';
-import { CorridorPanel, RentBySize, SpecSizeComparison } from './city/CityPanels';
+import { CorridorPanel, RentBySize, SpecSizeComparison, StateCitiesTable, StateCityCards } from './city/CityPanels';
 
 import { useState } from 'react';
 import type { CityOverviewContent, CityOverviewStats } from '@/lib/city-overview';
 import type { EditorialFaq, EditorialImage } from '@/lib/editorial-schema';
 import { formatRentRange, formatSqft, formatSqftRange } from '@/lib/micromarket-format';
 import type { DerivedStats } from '@/lib/derived-stats';
+import { listText, type StateCities, type StateOverviewContent } from '@/lib/state-overview';
 
 /**
  * How the public site lays out an editorial listing page, class-for-class from
@@ -18,7 +19,9 @@ import type { DerivedStats } from '@/lib/derived-stats';
  *
  * One wireframe serves micromarkets, cities and states, so one preview does
  * too. Cities add corridor, size-band and compliance content within the same
- * hero, paginated grid and numbered sections used by the other scopes.
+ * hero, paginated grid and numbered sections used by the other scopes. States
+ * add a market photo slot, their cities ahead of the grid, compliance and
+ * neighbouring states.
  *
  * Duplicated rather than shared, for the same reason BlogPreview is: two
  * deployments, two Tailwind setups, and a package for one page would cost more
@@ -36,7 +39,9 @@ import type { DerivedStats } from '@/lib/derived-stats';
  * nearby-market chart (each bar is another micromarket's own median, computed on
  * that page) and the listing cards themselves (photos, addresses and prices come
  * from the warehouse rows at build time). Inventing either would put a number in
- * front of an editor that they could not tell from data.
+ * front of an editor that they could not tell from data. The same goes for a
+ * state's listing photos: city cards and the market slot without an uploaded
+ * image are filled with T1 listing photos at build, so they carry a label here.
  */
 
 // Inline rather than pulling in lucide-react for two glyphs; the site uses that
@@ -124,6 +129,17 @@ const Figure = ({ image }: { image: EditorialImage }) => (
 );
 
 /**
+ * A state's market slot without an uploaded image: the site fills it with the
+ * state's best T1 listing photo that no city card uses, which only the build
+ * can choose. Same 4:3 box as Figure, so the layout does not shift.
+ */
+const BuildPhoto = () => (
+  <div className="grid aspect-[4/3] place-items-center rounded-xl border border-ui-line bg-ui-tint p-4 text-center text-xs text-wareongo-slate">
+    Warehouse photo chosen at build
+  </div>
+);
+
+/**
  * Where the page sits and what it links to, mirroring EditorialScope in the
  * website's loader so the preview and the real page name things identically.
  */
@@ -137,9 +153,14 @@ export interface PreviewScope {
   up: { label: string; linkLabel: string } | null;
 }
 
-export interface EditorialPreviewData extends CityOverviewContent {
+export interface EditorialPreviewData extends CityOverviewContent, Omit<StateOverviewContent, 'stateCities'> {
   isCity?: boolean;
   cityOverview?: CityOverviewStats;
+  isState?: boolean;
+  /** State pages: its city list as the site resolves it, and the other cities with listings. */
+  stateCities?: StateCities;
+  /** State pages: published bordering states, or null when the backend predates them. */
+  nearbyStates?: { name: string; slug: string; path: string }[] | null;
   scope: PreviewScope;
   slug: string;
   name: string;
@@ -196,8 +217,15 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
 
   const stats = data.stats;
   const city = data.isCity ? data.cityOverview : undefined;
+  const isState = Boolean(data.isState);
+  const cityRows = isState ? data.stateCities?.rows ?? [] : [];
+  // Footer chips: only the cities the site links.
+  const linkedCities = cityRows.filter((row) => row.link);
+  const otherCities = isState ? data.stateCities?.others ?? [] : [];
+  const nearby = isState ? data.nearbyStates ?? null : null;
   const peers = stats?.peers ?? [];
-  const siblings = city?.nearbyCities ?? peers.filter((p) => !p.isSelf);
+  // A state's bordering states replace its peers, unless the backend predates them.
+  const siblings = city?.nearbyCities ?? nearby ?? peers.filter((p) => !p.isSelf);
   const peerMax = peers.length > 0 ? Math.max(...peers.map((p) => p.medianRent)) : 1;
   const rows = specRows(stats);
   const tiles = bandTiles(stats);
@@ -230,15 +258,19 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
    * very page it was previewing.
    */
   const hasMarket = Boolean(data.marketProse);
+  const hasCities = cityRows.length > 0;
   const hasCorridors = data.isCity && (Boolean(data.corridorProse) || Boolean(city?.corridors.length));
   const hasRents = Boolean(data.rentsProse) || peers.length > 0 || Boolean(city?.rentBySize.length);
   const hasSpec = Boolean(data.specProse) || rows.length > 0;
-  const hasCompliance = data.isCity && Boolean(data.complianceProse);
+  const hasCompliance = (data.isCity || isState) && Boolean(data.complianceProse);
 
-  // Numbered as rendered, exactly as the page does it.
+  // Numbered as rendered, exactly as the page does it. A state's market and
+  // cities lead its grid; other scopes lead with the grid.
   const numbered = [
-    'listings',
+    ...(isState ? [] : ['listings']),
     ...(hasMarket ? ['market'] : []),
+    ...(hasCities ? ['cities'] : []),
+    ...(isState ? ['listings'] : []),
     ...(hasCorridors ? ['corridors'] : []),
     ...(hasRents ? ['rents'] : []),
     ...(hasSpec ? ['specification'] : []),
@@ -246,6 +278,35 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
     ...(faqs.length > 0 ? ['faq'] : []),
   ];
   const indexOf = (id: string) => numbered.indexOf(id) + 1;
+
+  // Defined here because a state renders them ahead of the listings.
+  const marketSection = hasMarket && (
+    <section id="market" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
+      <SectionHeading index={indexOf('market')} eyebrow="Market">
+        {data.marketHeading || (isState ? `Why ${place} for warehousing` : `Warehouse space in ${place}: where the stock sits`)}
+      </SectionHeading>
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-10">
+        <p className={`max-w-2xl ${PROSE}`}><InlineText text={data.marketProse} /></p>
+        {data.marketImage ? <Figure image={data.marketImage} /> : isState && <BuildPhoto />}
+      </div>
+    </section>
+  );
+
+  // State only: the city list, as a table and as photo cards.
+  const citiesSection = hasCities && (
+    <section id="cities" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
+      <SectionHeading index={indexOf('cities')} eyebrow="Cities">
+        {data.citiesHeading || `Where warehouse stock sits in ${place}`}
+      </SectionHeading>
+      <StateCitiesTable rows={cityRows} place={place} />
+      <StateCityCards rows={cityRows} />
+      {otherCities.length > 0 && (
+        <p className="mt-6 text-sm text-wareongo-slate">
+          Other cities with listings: {listText(otherCities.map((c) => c.name))}.
+        </p>
+      )}
+    </section>
+  );
 
   return (
     <div className="flex flex-col bg-wareongo-ivory font-sans">
@@ -315,7 +376,9 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
               <span className="ui-button">
                 Get a shortlist in 4 hours →
               </span>
-              {!data.isCity && <span className="ui-button ui-button--secondary">
+              {isState ? <span className="ui-button ui-button--secondary">
+                See available warehouses in {place} →
+              </span> : !data.isCity && <span className="ui-button ui-button--secondary">
                 Browse the listings ↓
               </span>}
             </div>
@@ -324,7 +387,8 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
         </header>
 
         <div>
-          {/* Inventory leads, as on the site */}
+          {isState && <>{marketSection}{citiesSection}</>}
+          {/* Inventory leads, as on the site, except on a state */}
           <section id="listings" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
             <SectionHeading index={indexOf('listings')} eyebrow="Inventory">
               {data.inventoryHeading || `Warehouses for rent in ${place}`}
@@ -363,19 +427,14 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                 <PagerRow pages={pageCounts.lg} className="mt-8 hidden lg:flex" />
               </>
             )}
+            {isState && (
+              <span className="mt-6 inline-block text-sm font-semibold text-wareongo-blue">
+                View all warehouses in {place} →
+              </span>
+            )}
           </section>
 
-          {hasMarket && (
-            <section id="market" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
-              <SectionHeading index={indexOf('market')} eyebrow="Market">
-                {data.marketHeading || `Warehouse space in ${place}: where the stock sits`}
-              </SectionHeading>
-              <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-10">
-                <p className={`max-w-2xl ${PROSE}`}><InlineText text={data.marketProse} /></p>
-                {data.marketImage && <Figure image={data.marketImage} />}
-              </div>
-            </section>
-          )}
+          {!isState && marketSection}
 
           {hasCorridors && (
             <section id="corridors" className="mt-12 border-t border-ui-line pt-12 md:mt-16 md:pt-16">
@@ -592,10 +651,22 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
                   </dd>
                 </div>
               )}
+              {linkedCities.length > 0 && (
+                <div className="sm:flex sm:gap-6">
+                  <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>Cities</dt>
+                  <dd className="flex flex-wrap gap-2">
+                    {linkedCities.map((row) => (
+                      <span key={row.key} className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-ui-outline px-3 py-1.5 text-wareongo-blue">
+                        {row.name}
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              )}
               {siblings.length > 0 && (
                 <div className="sm:flex sm:gap-6">
                   <dt className={`mb-2 min-w-[9rem] ${EYEBROW} text-wareongo-slate sm:mb-0`}>
-                    {city?.nearbyLabel ?? data.scope.peersLabel}
+                    {city?.nearbyLabel ?? (nearby ? 'Nearby states' : data.scope.peersLabel)}
                   </dt>
                   <dd className="flex flex-wrap gap-2">
                     {siblings.map((p) => (

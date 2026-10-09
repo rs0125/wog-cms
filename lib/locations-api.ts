@@ -38,6 +38,11 @@ export interface Location extends DerivedStats {
    * rather than that the URL is missing.
    */
   hasPage: boolean;
+  /**
+   * States only: bordering states in the inventory, busiest first. Absent from
+   * an older backend, which the state page treats as "show other states".
+   */
+  nearbyStates?: { name: string; slug: string }[];
 }
 
 export interface LocationGates {

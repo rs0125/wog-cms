@@ -12,6 +12,9 @@ import { findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
 import { findLocation, type Location } from '@/lib/locations-api';
 import EditorialPreview, { type PreviewScope } from './EditorialPreview';
 import type { CityOverviewContent } from '@/lib/city-overview';
+import { nearbyStates, stateCandidates, stateCities, type LocationPageSummary, type StateOverviewContent } from '@/lib/state-overview';
+import type { StateCityEntry } from '@/lib/location-schema';
+import StateCitiesEditor from './StateCitiesEditor';
 import DeployButton from './DeployButton';
 import WordCountSummary, { WordCount } from './WordCount';
 import { editorialWordSections } from '@/lib/page-word-counts';
@@ -56,7 +59,7 @@ export type FormIdentity =
   | { scope: 'city'; slug: string; parentLabel: string | null }
   | { scope: 'state'; slug: string };
 
-export interface EditorialFormPage extends CityOverviewContent {
+export interface EditorialFormPage extends CityOverviewContent, StateOverviewContent {
   name: string;
   seoTitle: string;
   metaDescription: string;
@@ -90,6 +93,8 @@ export default function EditorialForm({
   expectedUpdatedAt,
   inventory = [],
   locationInventory = [],
+  cityInventory = [],
+  locationPages = [],
 }: {
   page: EditorialFormPage;
   /** Which URL segments address this page — see FormIdentity. */
@@ -113,6 +118,10 @@ export default function EditorialForm({
    */
   inventory?: Micromarket[];
   locationInventory?: Location[];
+  /** State pages: every city, for the cities section's list, rows and cards. */
+  cityInventory?: Location[];
+  /** State pages: every location page, for which cities and neighbours are published. */
+  locationPages?: LocationPageSummary[];
 }) {
   const [result, formAction, pending] = useActionState(action, undefined);
   // Any input anywhere in the form counts as an edit, including the FAQ editor —
@@ -143,6 +152,10 @@ export default function EditorialForm({
   const [faqs, setFaqs] = useState<Keyed<EditorialFaq>[]>(() => keyAll(page.faqs));
   const [relatedBlogs, setRelatedBlogs] = useState<string[]>(page.relatedBlogs);
   const [statOverrides, setStatOverrides] = useState<StatOverrides>(page.statOverrides);
+  // Null is the default list; see StateCitiesEditor.
+  const [cityList, setCityList] = useState<Keyed<StateCityEntry>[] | null>(
+    () => page.stateCities?.length ? keyAll(page.stateCities) : null,
+  );
 
   /**
    * The plain text fields, held in state rather than left as defaultValue.
@@ -168,6 +181,7 @@ export default function EditorialForm({
     inventoryHeading: page.inventoryHeading ?? '',
     corridorHeading: page.corridorHeading ?? '',
     complianceHeading: page.complianceHeading ?? '',
+    citiesHeading: page.citiesHeading ?? '',
   });
   const bind = (key: keyof typeof text) => ({
     value: text[key],
@@ -187,9 +201,14 @@ export default function EditorialForm({
 
   const isMicromarket = identity.scope === 'micromarket';
   const isCity = identity.scope === 'city';
+  const isState = identity.scope === 'state';
   const wordCounts = editorialWordSections({
     ...text, heroProse, marketProse, rentsProse, specProse, corridorProse, complianceProse, faqs: plainFaqs,
-  }, isCity);
+  }, identity.scope);
+  // Derived for the slug as typed, the way the site derives them at build.
+  const candidates = isState ? stateCandidates(slug, cityInventory) : [];
+  const cities = isState ? stateCities(slug, cityInventory, locationPages, cityList && unkey(cityList)) : undefined;
+  const nearby = isState ? nearbyStates(location ?? null, locationInventory, locationPages) : null;
   const parentLabel = isMicromarket ? market?.parentCity ?? null : location?.parentState ?? null;
   /** The URL the site will serve this content at, shown back to the editor. */
   const pagePath = isMicromarket
@@ -220,6 +239,7 @@ export default function EditorialForm({
           absent, which keeps "no image" a single representation. */}
       <input type="hidden" name="heroImage" value={heroImage ? JSON.stringify(heroImage) : ''} />
       <input type="hidden" name="marketImage" value={marketImage ? JSON.stringify(marketImage) : ''} />
+      {isState && <input type="hidden" name="stateCities" value={cityList ? JSON.stringify(unkey(cityList)) : ''} />}
 
       <AiWriting
         target={{ type: identity.scope, slug, ...(isMicromarket ? { citySlug } : {}) }}
@@ -462,11 +482,13 @@ export default function EditorialForm({
             Market <span className="ml-1 text-xs font-normal text-wareongo-slate">optional section</span>
           </h2>
           <p className="mt-1 text-xs text-wareongo-slate">
-            {isCity ? 'Why this city works for an occupier: routes, industries and demand. Mention three to five relevant localities; the corridor section below handles the detailed comparison.' : 'Where the stock actually sits: the sub-localities and estates inside this belt.'}
+            {isCity ? 'Why this city works for an occupier: routes, industries and demand. Mention three to five relevant localities; the corridor section below handles the detailed comparison.'
+              : isState ? 'Why this state works for warehousing: its freight routes, industries and demand, and which cities carry the stock. The cities section below compares them, so leave city figures out.'
+              : 'Where the stock actually sits: the sub-localities and estates inside this belt.'}
           </p>
         </div>
 
-        <HeadingField name="marketHeading" placeholder="Warehouse space in {place}: where the stock sits" {...bind('marketHeading')} />
+        <HeadingField name="marketHeading" placeholder={isState ? 'Why {place} for warehousing' : 'Warehouse space in {place}: where the stock sits'} {...bind('marketHeading')} />
 
         <ProseField
           name="marketProse"
@@ -487,8 +509,23 @@ export default function EditorialForm({
             }}
             ratio="5:4"
           />
+          {isState && <p className="cms-hint">Optional. Without one, the page shows the state&apos;s best T1 listing photo that no city card is already using.</p>}
         </div>
       </section>
+
+      {isState && <section className="space-y-5">
+        <div><h2 className="text-base font-semibold text-wareongo-blue">Cities <span className="ml-1 text-xs font-normal text-wareongo-slate">optional heading and list</span></h2>
+          <p className="mt-1 text-xs text-wareongo-slate">The table and photo cards show these cities in order. By default that is the 4 cities in this state with the most listings. Each card uses the city&apos;s best T1 listing photo unless you upload one. A city with a published overview links to it, any other city in our listings links to its listing page, and a city not in our listings shows no figures and no link. The state&apos;s other cities with listings are named in a line under the cards.</p></div>
+        <HeadingField name="citiesHeading" placeholder="Where warehouse stock sits in {place}" {...bind('citiesHeading')} />
+        <StateCitiesEditor
+          value={cityList}
+          candidates={candidates}
+          onChange={(next) => {
+            touch();
+            setCityList(next);
+          }}
+        />
+      </section>}
 
       {isCity && <section className="space-y-5">
         <div><h2 className="text-base font-semibold text-wareongo-blue">Corridors <span className="ml-1 text-xs font-normal text-wareongo-slate">optional paragraph</span></h2>
@@ -543,10 +580,12 @@ export default function EditorialForm({
         />
       </section>
 
-      {isCity && <section className="space-y-5">
+      {(isCity || isState) && <section className="space-y-5">
         <div><h2 className="text-base font-semibold text-wareongo-blue">Compliance <span className="ml-1 text-xs font-normal text-wareongo-slate">optional paragraph</span></h2>
-          <p className="mt-1 text-xs text-wareongo-slate">Local and state context for approvals and the documents an occupier should check. Recorded inventory counts appear separately.</p></div>
-        <HeadingField name="complianceHeading" placeholder="Compliance and approvals in {place}" {...bind('complianceHeading')} />
+          <p className="mt-1 text-xs text-wareongo-slate">{isState
+            ? 'State rules an occupier should know: land conversion and zoning, industrial-estate allotment terms, the fire NOC authority and building plan approval. The FAQs stay the short answers, so no sentence repeats between them. Check every legal claim against a dated source.'
+            : 'Local and state context for approvals and the documents an occupier should check. Recorded inventory counts appear separately.'}</p></div>
+        <HeadingField name="complianceHeading" placeholder="Warehouse compliance in {place}" {...bind('complianceHeading')} />
         <ProseField name="complianceProse" label="Compliance paragraph" value={complianceProse} onChange={setComplianceProse} band="complianceProse" rows={6} />
       </section>}
 
@@ -554,7 +593,7 @@ export default function EditorialForm({
         <div className="border-b border-ui-line pb-2.5">
           <h2 className="text-base font-semibold text-wareongo-blue">Listings heading &amp; links</h2>
           <p className="mt-1 text-xs text-wareongo-slate">
-            The warehouse grid is built for you and leads the page. Add a heading and any blogs worth linking at the foot.
+            The warehouse grid is built for you and {isState ? 'sits third on the page, after the market and cities sections' : 'leads the page'}. Add a heading and any blogs worth linking at the foot.
           </p>
         </div>
 
@@ -650,6 +689,9 @@ export default function EditorialForm({
           <EditorialPreview
             data={{
               isCity,
+              isState,
+              stateCities: cities,
+              nearbyStates: nearby,
               scope: previewScope,
               slug,
               name: stats?.name || text.name,
@@ -669,6 +711,7 @@ export default function EditorialForm({
               corridorProse,
               complianceHeading: text.complianceHeading,
               complianceProse,
+              citiesHeading: text.citiesHeading,
               cityOverview: isCity ? location?.cityOverview : undefined,
               faqs: plainFaqs,
               stats: previewStats,

@@ -13,6 +13,7 @@
   --color-ui-paper: var(--ui-paper);
   --color-ui-surface: var(--ui-surface);
   --color-ui-muted: var(--ui-muted);
+  --color-ui-placeholder: var(--ui-placeholder);
   --color-ui-tint: var(--ui-tint);
   --color-ui-line: var(--ui-line);
   --color-ui-outline: var(--ui-outline);
@@ -22,7 +23,7 @@
   --color-wareongo-purple: #4a2e50;
   --color-wareongo-ivory: var(--ui-paper);
   --color-wareongo-slate: var(--ui-muted);
-  --color-wareongo-charcoal: #343a40;
+  --color-wareongo-charcoal: var(--ui-ink);
   --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -68,7 +69,7 @@
   }
   .cms-input {
     @apply w-full min-h-12 rounded-lg border border-ui-outline bg-ui-surface px-3.5 py-2.5 text-base text-ui-ink
-      transition-colors placeholder:text-ui-muted focus:border-ui-accent;
+      transition-colors placeholder:text-ui-placeholder focus:border-ui-accent;
     line-height: var(--ui-leading-ui);
   }
   .cms-hint { @apply mt-1.5 text-xs leading-relaxed text-ui-muted; }

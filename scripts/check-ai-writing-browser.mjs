@@ -218,7 +218,7 @@ try {
     assert.equal(exported.schema.additionalProperties, false);
     assert.equal(exported.content.status, undefined);
     if (kind === 'city') { assert.ok(exported.schema.properties.corridorProse); assert.equal(exported.schema.properties.citiesHeading, undefined); }
-    if (kind === 'state') { assert.equal(exported.schema.properties.citiesHeading, undefined); assert.equal(exported.schema.properties.corridorProse, undefined); }
+    if (kind === 'state') { assert.ok(exported.schema.properties.citiesHeading); assert.equal(exported.schema.properties.corridorProse, undefined); }
     if (kind === 'micromarket') assert.equal(exported.page.citySlug, 'bengaluru');
     if (kind === 'service') assert.equal(exported.schema.allOf[0].properties.title.minLength, 1);
     if (kind === 'ad') assert.equal(exported.schema.properties.heroSteps.maxItems, 4);
@@ -228,7 +228,7 @@ try {
   for (const kind of ['city', 'state', 'micromarket', 'service']) {
     await open(`kind=${kind}`);
     await upload(kind === 'service' ? { summary: 'A service introduction.', blocks: [{ kind: 'p', text: 'Useful service copy.' }] }
-      : { h1: 'Location heading', heroProse: 'Location introduction.', complianceProse: kind === 'city' ? 'Check the relevant documents.' : undefined }, false);
+      : { h1: 'Location heading', heroProse: 'Location introduction.', complianceProse: kind === 'micromarket' ? undefined : 'Check the relevant documents.' }, false);
     await apply(); await applied();
     assert.equal(await value(kind === 'service' ? 'summary' : 'heroProse'), kind === 'service' ? 'A service introduction.' : 'Location introduction.');
   }

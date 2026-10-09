@@ -53,7 +53,7 @@ function adShape(example: unknown, path: string): z.ZodType {
 const schemas = {
   blog: blogSchema.pick({ title: true, seoTitle: true, description: true, summary: true, author: true, keywords: true, blocks: true, faqs: true }),
   city: locationSchema.in.pick({ ...overviewFields, corridorHeading: true, corridorProse: true, complianceHeading: true, complianceProse: true }),
-  state: locationSchema.in.pick(overviewFields),
+  state: locationSchema.in.pick({ ...overviewFields, citiesHeading: true, complianceHeading: true, complianceProse: true }),
   micromarket: micromarketSchema.pick(overviewFields),
   service: serviceDraftSchema.omit({ slug: true }),
   legal: z.object(legalContentSchema.shape).pick({ title: true, seoTitle: true, description: true, blocks: true, notice: true }),
@@ -66,7 +66,7 @@ const labels: Record<string, string> = {
   heroEyebrow: 'Eyebrow', heroProse: 'Lead paragraph', marketHeading: 'Market heading', marketProse: 'Market paragraph',
   rentsHeading: 'Pricing heading', rentsProse: 'Pricing paragraph', specHeading: 'Specification heading', specProse: 'Specification paragraph',
   inventoryHeading: 'Listings heading', corridorHeading: 'Corridor heading', corridorProse: 'Corridor paragraph',
-  complianceHeading: 'Compliance heading', complianceProse: 'Compliance paragraph',
+  complianceHeading: 'Compliance heading', complianceProse: 'Compliance paragraph', citiesHeading: 'Cities heading',
   notice: 'Closing notice', heroSteps: 'Process steps', benefits: 'Benefits', services: 'Service cards', audiences: 'Audience cards',
   areaRows: 'Area recommendations', overviewParagraphs: 'Overview paragraphs', q: 'Question', a: 'Answer', text: 'Text',
   items: 'List items', table: 'Table', headers: 'Headers', rows: 'Rows', kind: 'Block type',
@@ -174,7 +174,7 @@ export function writingTemplate(target: WritingTarget, values: WritingValues) {
       'Omit optional sections with nothing useful to say. Remove entirely blank FAQ entries. Never write placeholder instructions as final copy.',
       'Photos, dates, URL slugs, related-page selections and publishing settings are managed in the CMS. Preserve existing image blocks exactly; add photos in the editor.',
       ...(target.type === 'city' ? ['Market copy explains demand and routes; corridor copy compares locations; compliance copy covers local approvals. Avoid repeating the same explanation.'] : []),
-      ...(target.type === 'state' ? ['Describe the state and its warehouse markets. City figures come from inventory. Corridor and compliance sections belong to city pages, so do not add them to this JSON.'] : []),
+      ...(target.type === 'state' ? ['Describe the state and its cities. City selections and images are managed in the CMS; city figures come from inventory. Compliance is state-specific; corridors are not a state-page field.'] : []),
       ...(target.type === 'service' ? ['The schema includes both draft limits and completion requirements (allOf). Before publishing, fill the required writing and include meaningful body text in a paragraph, list or table. Unfinished drafts can still be saved privately.'] : []),
       ...(target.type === 'ad' ? ['Keep every existing card ID exactly once. Process steps, required card text and optional copy follow the ad page validator.'] : []),
     ],
@@ -199,7 +199,7 @@ function fieldGuidance(type: WritingType, field: string): string {
     heroEyebrow: 'A short location label above the main heading. Use null to keep the automatic location label.',
     heroProse: 'Explain why this location works as a warehouse market and which occupiers it suits. Live count, rent and size tiles sit beside this paragraph, so leave those figures out.',
     marketProse: type === 'city' ? 'Explain the city’s freight routes, industries and demand. Mention three to five relevant localities; reserve detailed comparisons for corridorProse.'
-      : type === 'state' ? 'Explain the state’s freight routes, industries and demand, and the cities that carry its warehouse stock. Do not invent or repeat changing inventory figures.'
+      : type === 'state' ? 'Explain the state’s freight routes, industries and demand, and the cities that carry its warehouse stock. City figures are shown separately.'
         : 'Describe the sub-localities and estates inside this belt, where stock sits, and practical access considerations.',
     rentsProse: 'Explain what drives rent here: unit size, grade, access and compliance. The chart supplies current figures; do not invent or restate them.',
     specProse: 'Explain what building heights, docks and unit sizes mean for occupiers. The adjoining table supplies measured inventory specifications.',

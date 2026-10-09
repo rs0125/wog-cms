@@ -131,6 +131,8 @@ export async function requestSiteBuild(): Promise<SiteBuildResult> {
           corridorProse: true,
           complianceHeading: true,
           complianceProse: true,
+          citiesHeading: true,
+          stateCities: true,
           faqs: true,
           relatedBlogs: true,
           statOverrides: true,

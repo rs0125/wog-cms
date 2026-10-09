@@ -5,7 +5,9 @@
   --ui-accent-rgb: 23 62 90;
   --ui-paper-rgb: 250 249 245;
   --ui-surface-rgb: 255 254 250;
-  --ui-muted-rgb: 71 81 91;
+  /* Supporting text shares the ink color; only placeholders stay grey. */
+  --ui-muted-rgb: var(--ui-ink-rgb);
+  --ui-placeholder-rgb: 71 81 91;
   --ui-tint-rgb: 237 242 247;
   --ui-line-rgb: 213 221 229;
   --ui-outline-rgb: 174 189 202;
@@ -14,12 +16,15 @@
   --ui-paper: rgb(var(--ui-paper-rgb));
   --ui-surface: rgb(var(--ui-surface-rgb));
   --ui-muted: rgb(var(--ui-muted-rgb));
+  --ui-placeholder: rgb(var(--ui-placeholder-rgb));
   --ui-tint: rgb(var(--ui-tint-rgb));
   --ui-line: rgb(var(--ui-line-rgb));
   --ui-outline: rgb(var(--ui-outline-rgb));
   --ui-listing-hover: #f6f4ee;
   --ui-table-header: #f3f2ee;
   --ui-table-stripe: #fcfbf8;
+  /* Legibility shade over photo cards, from the approved Bangalore cards. */
+  --ui-photo-shade: linear-gradient(180deg, #0a223900 15%, #0a223933 40%, #0a2239ed 100%);
   --ui-error: #913c21;
   --ui-font: Montserrat, ui-sans-serif, system-ui, sans-serif;
   --ui-text-xs: 12px;
@@ -52,6 +57,7 @@
   --ui-grid-gap: 24px;
   --ui-content-width: 1400px;
   --ui-gutter: 32px;
+  --ui-photo-card-height: 208px;
 }
 @media (max-width: 767px) {
   :root {
@@ -65,6 +71,7 @@
     --ui-section-space: 48px;
     --ui-grid-gap: 16px;
     --ui-gutter: 20px;
+    --ui-photo-card-height: 176px;
   }
 }
 @media (prefers-reduced-motion: reduce) { :root { --ui-motion: 0ms; } }

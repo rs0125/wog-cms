@@ -1,6 +1,7 @@
 import { EYEBROW, PANEL } from './tokens';
 import { formatRentRange, formatSqft } from '@/lib/micromarket-format';
 import type { CityOverviewStats, CityStockStats } from '@/lib/city-overview';
+import type { StateCityRow } from '@/lib/state-overview';
 
 // Mirrored in the CMS preview. Values arrive computed by the backend; these
 // components only format them. Each table keeps real headings on a phone.
@@ -38,6 +39,56 @@ export function CorridorPanel({ data }: { data: CityOverviewStats }) {
     </div>
     <p className="text-xs leading-relaxed text-wareongo-slate">Rents are asking rates per sq ft per month; sizes are in sq ft. Each listing is counted once in this table. Unmapped or overlapping locations appear in the unassigned row. Construction shares use listings with a recorded construction type.</p>
   </div>;
+}
+
+// The preview's links do not navigate, so city names and cards are plain
+// elements here where the site renders router links. A city not in our
+// listings is plain text on the site too: no figures, no link.
+export function StateCitiesTable({ rows, place }: { rows: StateCityRow[]; place: string }) {
+  return <>
+    {/* The panel is the scroll region itself: a clipping wrapper around it
+        would hide the region's keyboard focus ring. */}
+    <div className={`overflow-x-auto ${PANEL}`} role="region" aria-label={`Warehouse cities in ${place}`} tabIndex={0}>
+        <table className="ui-table min-w-[560px] text-left">
+          <caption className="sr-only">Cities in {place} compared by spaces, asking rent, median unit size and main build</caption>
+          <thead><tr>{['City', 'Spaces', 'Rent Range', 'Median Unit', 'Main Build'].map(label => <th key={label} scope="col" className={HEAD}>{label}</th>)}</tr></thead>
+          <tbody>{rows.map(({ key, name, stats, link }) => <tr key={key} className="border-t border-ui-line">
+            <th scope="row" className={`${CELL} font-medium`}>{link ? <span className="text-wareongo-blue">{name}</span> : name}</th>
+            <td className={`${CELL} whitespace-nowrap tabular-nums`}>{stats ? stats.listings : '—'}</td>
+            <td className={`${CELL} whitespace-nowrap tabular-nums`}>{stats?.rent ? formatRentRange(stats.rent) : '—'}</td>
+            <td className={`${CELL} whitespace-nowrap tabular-nums`}>{stats?.size ? `${formatSqft(stats.size.median)} sq ft` : '—'}</td>
+            <td className={CELL}>{stats?.construction[0]?.label ?? '—'}</td>
+          </tr>)}</tbody>
+        </table>
+    </div>
+    <p className="mt-4 text-xs leading-relaxed text-wareongo-slate">Rents are asking rates per sq ft per month; sizes are in sq ft. Figures match each city page.</p>
+  </>;
+}
+
+const cardMeta = ({ name, link }: StateCityRow) =>
+  link === 'overview' ? `${name} warehousing overview →` : link === 'listings' ? `Warehouses in ${name} →` : 'No listings yet';
+
+/**
+ * Without an uploaded photo the site uses our city's best T1 listing photo,
+ * which only the build knows, so the card says so on its ink surface. A city
+ * not in our listings has no such photo and keeps the plain surface; it is not
+ * a link on the site, so it has no hover state here either.
+ */
+export function StateCityCards({ rows }: { rows: StateCityRow[] }) {
+  return <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+    {rows.map((row) => <li key={row.key} className="min-w-0">
+      <div className={row.link ? 'ui-photo-card' : 'ui-photo-card ui-photo-card--static'}>
+        {row.image
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={row.image.url} alt={row.image.alt} loading="lazy" decoding="async" className="ui-photo-card__img" />
+          : row.link && <span className="absolute left-4 top-4 z-[1] text-xs text-ui-line">Listing photo chosen at build</span>}
+        <div className="ui-photo-card__body">
+          <h3 className="ui-photo-card__title">{row.name}</h3>
+          <p className="ui-photo-card__meta">{cardMeta(row)}</p>
+        </div>
+      </div>
+    </li>)}
+  </ul>;
 }
 
 export function RentBySize({ bands }: { bands: CityOverviewStats['rentBySize'] }) {

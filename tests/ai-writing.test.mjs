@@ -25,13 +25,13 @@ test('templates follow current city and state schemas and include existing prose
   const state = w.writingTemplate({ type: 'state', slug: 'karnataka' }, {});
   assert.ok(city.schema.properties.corridorProse);
   assert.equal(city.schema.properties.citiesHeading, undefined);
-  assert.equal(state.schema.properties.citiesHeading, undefined);
-  assert.equal(state.schema.properties.complianceProse, undefined);
+  assert.ok(state.schema.properties.citiesHeading);
+  assert.ok(state.schema.properties.complianceProse);
   assert.equal(state.schema.properties.corridorProse, undefined);
   assert.deepEqual(city.guidance.marketProse.suggestedWords, { min: 130, max: 160 });
   assert.equal(city.content.heroProse, 'Keep this introduction.');
   assert.match(city.guidance.marketProse.guidance, /freight routes/);
-  assert.match(city.guidance.complianceProse.guidance, /dated authoritative/);
+  assert.match(state.guidance.complianceProse.guidance, /dated authoritative/);
   assert.equal(city.reference, undefined, 'Do not duplicate long copy in the export.');
 });
 test('valid blog round trip keeps status, images and URL out of import control', () => {

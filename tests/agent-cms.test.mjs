@@ -147,6 +147,74 @@ test('nested unknown keys and legal date refinements are preserved by authoritat
     }),
   );
 });
+test('location imports follow the kind table: corridors city-only, cities state-only, compliance both', () => {
+  const columns = (type) => schemas.schemaFor(type).columns;
+  for (const field of ['complianceHeading', 'complianceProse']) {
+    assert.ok(columns('city').includes(field));
+    assert.ok(columns('state').includes(field));
+  }
+  assert.ok(columns('city').includes('corridorProse'));
+  assert.equal(columns('state').includes('corridorProse'), false);
+  assert.ok(columns('state').includes('citiesHeading'));
+  assert.equal(columns('city').includes('citiesHeading'), false);
+  assert.equal(columns('micromarket').some((c) => /corridor|compliance|cities/.test(c)), false);
+  const state = schemas.parseContent(fixtures.state.target, {
+    ...fixtures.state.content,
+    citiesHeading: 'Cities with stock',
+    complianceProse: 'State rules.',
+  });
+  assert.equal(state.citiesHeading, 'Cities with stock');
+  assert.equal(state.complianceProse, 'State rules.');
+  assert.equal(state.complianceHeading, null);
+  assert.throws(() =>
+    schemas.parseContent(fixtures.state.target, { ...fixtures.state.content, corridorProse: 'City copy.' }),
+  );
+  assert.throws(() =>
+    schemas.parseContent(fixtures.city.target, { ...fixtures.city.content, citiesHeading: 'State copy.' }),
+  );
+  // Existing state rows expose the new fields, so missing CSV columns preserve them.
+  const repository = disconnected('lib/agent-cms/repository.ts');
+  const native = repository.nativeContent('state', {
+    kind: 'STATE', slug: 'test-state', ...fixtures.state.content, status: 'PUBLISHED',
+    corridorHeading: 'Stray', corridorProse: 'Stray', complianceHeading: 'Approvals',
+    complianceProse: 'State rules.', citiesHeading: 'Cities with stock',
+  });
+  assert.equal(native.citiesHeading, 'Cities with stock');
+  assert.equal(native.complianceProse, 'State rules.');
+  assert.equal(Object.hasOwn(native, 'corridorProse'), false);
+});
+test('state imports carry the CMS city list with its validation; city imports reject it', () => {
+  const columns = (type) => schemas.schemaFor(type).columns;
+  assert.ok(columns('state').includes('stateCities'));
+  assert.equal(columns('city').includes('stateCities'), false);
+  assert.equal(columns('micromarket').includes('stateCities'), false);
+  const list = [
+    { name: 'Mysuru', slug: 'mysuru', image: null },
+    { name: 'Hosapete', slug: null, image: null },
+  ];
+  const state = (stateCities) =>
+    schemas.parseContent(fixtures.state.target, { ...fixtures.state.content, stateCities });
+  assert.deepEqual(state(list).stateCities, list);
+  assert.equal(state([]).stateCities, null, 'An empty list clears to the default four.');
+  assert.equal(state(null).stateCities, null);
+  assert.equal(
+    schemas.parseContent(fixtures.state.target, fixtures.state.content).stateCities,
+    null,
+  );
+  assert.throws(() => state([...list, { name: 'mysuru', slug: null, image: null }]), /listed twice/);
+  assert.throws(() => state(Array.from({ length: 9 }, (_, i) => ({ name: `City ${i}`, slug: null }))));
+  assert.throws(() =>
+    schemas.parseContent(fixtures.city.target, { ...fixtures.city.content, stateCities: list }),
+  );
+  const repository = disconnected('lib/agent-cms/repository.ts');
+  const row = { kind: 'STATE', slug: 'test-state', ...fixtures.state.content, status: 'PUBLISHED', stateCities: list };
+  assert.deepEqual(repository.nativeContent('state', row).stateCities, list);
+  assert.equal(repository.nativeContent('state', { ...row, stateCities: null }).stateCities, null);
+  assert.equal(
+    Object.hasOwn(repository.nativeContent('city', { ...row, kind: 'CITY' }), 'stateCities'),
+    false,
+  );
+});
 test('ad parser errors are returned as row validation errors', async () => {
   const h = memory(),
     fixture = fixtures.ad;

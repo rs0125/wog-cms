@@ -112,20 +112,26 @@ test('legal pages include closing notices and exclude dates and SEO', () => {
   assert.equal(totalWords(sections), 8);
 });
 
-test('location totals include authored headings and FAQs, with city-only copy scoped correctly', () => {
+test('location totals include authored headings and FAQs, with scope-only copy counted where it renders', () => {
   const content = {
     h1: 'Warehouse guide', heroEyebrow: 'Bangalore', heroProse: 'Ready to rent',
     marketHeading: 'Local market', marketProse: 'Industrial area',
     rentsHeading: null, rentsProse: '', specProse: null,
     corridorHeading: 'Main corridors', corridorProse: 'Nearby transport',
     complianceHeading: 'Local approvals', complianceProse: 'Check documents',
+    citiesHeading: '**Cities** with stock',
     inventoryHeading: 'Available warehouses', faqs: [{ q: 'Where?', a: 'Near Bangalore' }],
     name: 'Internal display name', seoTitle: 'Metadata', metaDescription: 'More metadata',
     heroImage: { alt: 'Image description' }, statOverrides: { docksMedian: 10 },
   };
-  assert.equal(totalWords(editorialWordSections(content, false)), 15);
-  assert.equal(totalWords(editorialWordSections(content, true)), 23);
-  assert.equal(editorialWordSections(content, false).some(section => section.id === 'corridors'), false);
+  assert.equal(totalWords(editorialWordSections(content, 'micromarket')), 15);
+  assert.equal(totalWords(editorialWordSections(content, 'city')), 23);
+  assert.equal(totalWords(editorialWordSections(content, 'state')), 22);
+  const ids = scope => plain(editorialWordSections(content, scope).map(section => section.id));
+  assert.deepEqual(ids('micromarket'), ['title', 'hero', 'market', 'pricing', 'specification', 'inventory', 'faqs']);
+  assert.deepEqual(ids('city'), ['title', 'hero', 'market', 'corridors', 'pricing', 'specification', 'compliance', 'inventory', 'faqs']);
+  assert.deepEqual(ids('state'), ['title', 'hero', 'market', 'cities', 'inventory', 'pricing', 'specification', 'compliance', 'faqs']);
+  assert.deepEqual(plain(editorialWordSections(content, 'state')[3]), { id: 'cities', label: 'Cities heading', words: 3 });
 });
 
 test('ad pages count nested card, table, process and figure copy but exclude settings and image metadata', () => {

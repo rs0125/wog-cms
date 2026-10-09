@@ -165,11 +165,16 @@ model LocationPage {
   specHeading      String?
   specProse        String?
   inventoryHeading String?
-  /// City overview sections; mirror the backend schema.
+  /// Overview sections; mirror the backend schema. Corridors are city-only,
+  /// compliance is city and state, cities is state-only.
   corridorHeading  String?
   corridorProse    String?
   complianceHeading String?
   complianceProse  String?
+  citiesHeading    String?
+  /// State-only city list, {name, slug, image}[] in display order; null means
+  /// the default four. See stateCitiesSchema in lib/location-schema.ts.
+  stateCities      Json?
   faqs             Json
   relatedBlogs     String[]              @default([])
   /// Same contract as MicromarketPage.statOverrides — see the backend schema,

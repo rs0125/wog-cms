@@ -31,21 +31,32 @@ type EditorialCopy = {
 } & Partial<Record<
   'heroEyebrow' | 'marketHeading' | 'marketProse' | 'rentsHeading' | 'rentsProse'
   | 'specHeading' | 'specProse' | 'corridorHeading' | 'corridorProse'
-  | 'complianceHeading' | 'complianceProse' | 'inventoryHeading', string | null
+  | 'complianceHeading' | 'complianceProse' | 'citiesHeading' | 'inventoryHeading', string | null
 >>;
 
-export function editorialWordSections(content: EditorialCopy, isCity: boolean): WordCountSection[] {
-  return [
-    wordSection('title', 'Page heading & eyebrow', [content.h1, content.heroEyebrow], { formatted: false }),
-    wordSection('hero', 'Opening paragraph', [content.heroProse]),
-    wordSection('market', 'Market', [content.marketHeading, content.marketProse]),
-    ...(isCity ? [wordSection('corridors', 'Corridors', [content.corridorHeading, content.corridorProse])] : []),
-    wordSection('pricing', 'Pricing', [content.rentsHeading, content.rentsProse]),
-    wordSection('specification', 'Specification', [content.specHeading, content.specProse]),
-    ...(isCity ? [wordSection('compliance', 'Compliance', [content.complianceHeading, content.complianceProse])] : []),
-    wordSection('inventory', 'Listings heading', [content.inventoryHeading], { formatted: false }),
-    { id: 'faqs', label: 'Questions', words: countFaqWords(content.faqs) },
-  ];
+export type EditorialScope = 'micromarket' | 'city' | 'state';
+
+/** Each scope lists only the sections it renders; a state's grid sits third. */
+const EDITORIAL_ORDER = {
+  micromarket: ['title', 'hero', 'market', 'pricing', 'specification', 'inventory', 'faqs'],
+  city: ['title', 'hero', 'market', 'corridors', 'pricing', 'specification', 'compliance', 'inventory', 'faqs'],
+  state: ['title', 'hero', 'market', 'cities', 'inventory', 'pricing', 'specification', 'compliance', 'faqs'],
+} as const;
+
+export function editorialWordSections(content: EditorialCopy, scope: EditorialScope): WordCountSection[] {
+  const sections = {
+    title: wordSection('title', 'Page heading & eyebrow', [content.h1, content.heroEyebrow], { formatted: false }),
+    hero: wordSection('hero', 'Opening paragraph', [content.heroProse]),
+    market: wordSection('market', 'Market', [content.marketHeading, content.marketProse]),
+    cities: wordSection('cities', 'Cities heading', [content.citiesHeading], { formatted: false }),
+    corridors: wordSection('corridors', 'Corridors', [content.corridorHeading, content.corridorProse]),
+    pricing: wordSection('pricing', 'Pricing', [content.rentsHeading, content.rentsProse]),
+    specification: wordSection('specification', 'Specification', [content.specHeading, content.specProse]),
+    compliance: wordSection('compliance', 'Compliance', [content.complianceHeading, content.complianceProse]),
+    inventory: wordSection('inventory', 'Listings heading', [content.inventoryHeading], { formatted: false }),
+    faqs: { id: 'faqs', label: 'Questions', words: countFaqWords(content.faqs) },
+  };
+  return EDITORIAL_ORDER[scope].map(key => sections[key]);
 }
 
 export function adPageWordSections(content: AdPageContent): WordCountSection[] {
