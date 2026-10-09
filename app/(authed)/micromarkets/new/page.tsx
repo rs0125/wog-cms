@@ -1,9 +1,10 @@
+import { getEditorMicromarkets } from '@/lib/editor-inventory';
 import Link from '@/components/CmsLink';
 import EditorialForm from '@/components/EditorialForm';
 import { createMicromarket } from '../actions';
 import { prisma } from '@/lib/prisma';
 import { NO_OVERRIDES, type MicromarketInput } from '@/lib/micromarket-schema';
-import { fetchMicromarkets, findMicromarket, micromarketOverviewPath } from '@/lib/micromarkets-api';
+import { findMicromarket, micromarketOverviewPath } from '@/lib/micromarkets-api';
 import { isDeployConfigured } from '@/lib/deploy';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
@@ -23,7 +24,7 @@ export default async function NewMicromarketPage({
       select: { slug: true, title: true },
     }),
     searchParams,
-    fetchMicromarkets()
+    getEditorMicromarkets()
       .then((r) => r.data)
       .catch(() => []),
   ]);

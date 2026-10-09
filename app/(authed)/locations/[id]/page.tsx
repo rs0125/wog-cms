@@ -1,3 +1,4 @@
+import { getEditorLocations } from '@/lib/editor-inventory';
 import { notFound } from 'next/navigation';
 import EditorialForm, { type EditorialFormPage } from '@/components/EditorialForm';
 import DeleteForm from '@/components/DeleteForm';
@@ -9,7 +10,7 @@ import { prisma } from '@/lib/prisma';
 import { locationSchema } from '@/lib/location-schema';
 import { stateOf } from '@/lib/location-staging';
 import { summarisePages } from '@/lib/state-overview';
-import { fetchLocations, findLocation, listFor, locationOverviewPath, KIND_LABEL, KIND_PLURAL, type Location } from '@/lib/locations-api';
+import { findLocation, listFor, locationOverviewPath, KIND_LABEL, KIND_PLURAL, type Location } from '@/lib/locations-api';
 import { isDeployConfigured } from '@/lib/deploy';
 import Link from '@/components/CmsLink';
 
@@ -24,25 +25,25 @@ export default async function EditLocationPage({
 }) {
   const { id } = await params;
   const { saved } = await searchParams;
-  // Issued together: these don't depend on each other, and each sequential
-  // round trip to the database costs real latency.
+  // Share one record read with the state-only preview lookup. The independent
+  // blog options and inventory requests still start together.
+  const rowPromise = Promise.resolve(prisma.locationPage.findUnique({ where: { id: Number(id) } }));
   const [row, blogOptions, inventory, pageRows] = await Promise.all([
-    prisma.locationPage.findUnique({ where: { id: Number(id) } }),
+    rowPromise,
     prisma.blog.findMany({
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       select: { slug: true, title: true },
     }),
     // Derived figures for the preview and the overrides reference; never fatal.
-    fetchLocations().catch(() => ({
+    getEditorLocations().catch(() => ({
       cities: [] as Location[],
       states: [] as Location[],
       gates: { locationPageMinListings: 0 },
     })),
-    // A state preview links only published city and state pages, and a city
-    // row repeats the corrections its own page makes to its figures.
-    prisma.locationPage.findMany({
+    // City editors do not use the state preview's cross-page data.
+    rowPromise.then(page => page?.kind === 'STATE' ? prisma.locationPage.findMany({
       select: { kind: true, slug: true, status: true, statOverrides: true },
-    }),
+    }) : []),
   ]);
   if (!row) notFound();
 

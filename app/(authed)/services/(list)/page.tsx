@@ -1,12 +1,11 @@
 import Link from '@/components/CmsLink';
-import { prisma } from '@/lib/prisma';
+import { getServiceSummaries } from '@/lib/content-summaries';
 import { SERVICE_PAGES } from '@/lib/service-schema';
-import { serviceStateOf } from '@/lib/service-staging';
 import DeployButton from '@/components/DeployButton';
 import { isDeployConfigured } from '@/lib/deploy';
 
 export default async function ServicePages() {
-  const rows = await prisma.servicePage.findMany();
+  const rows = await getServiceSummaries();
   return <main className="mx-auto max-w-4xl p-6 sm:p-10">
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
       <h1 className="cms-title">Services</h1>
@@ -16,7 +15,7 @@ export default async function ServicePages() {
     <div className="space-y-4">
       {Object.entries(SERVICE_PAGES).map(([slug, name]) => {
         const row = rows.find(r => r.slug === slug);
-        const state = row ? serviceStateOf(row) : null;
+        const state = row ?? null;
         return <div key={slug} className="cms-card">
           <h2 className="ui-panel-title text-ui-ink"><Link href={`/services/${slug}`} className="hover:underline">{name}</Link></h2>
           <p className="mt-1 text-sm text-wareongo-slate">/services/{slug}</p>

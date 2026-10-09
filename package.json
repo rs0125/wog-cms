@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test:performance": "node --test tests/content-summaries.test.mjs tests/editor-inventory.test.mjs tests/cms-link.test.mjs tests/dashboard.test.mjs tests/location-editor-reads.test.mjs",
     "test:city-localities": "node tests/city-localities.test.mjs",
     "test:dashboard": "node tests/dashboard.test.mjs",
     "test:ai-writing": "node tests/ai-writing.test.mjs && node tests/ai-writing-schema.test.mjs",

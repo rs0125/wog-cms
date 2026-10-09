@@ -1,11 +1,11 @@
+import { getEditorMicromarkets } from '@/lib/editor-inventory';
 import OverviewIntro from '@/components/OverviewIntro';
 import Link from '@/components/CmsLink';
-import { prisma } from '@/lib/prisma';
+import { getMicromarketSummaries } from '@/lib/content-summaries';
 import MicromarketList, { type MicromarketRow } from '@/components/MicromarketList';
 import DeployButton from '@/components/DeployButton';
 import Toast from '@/components/Toast';
-import { stateOf } from '@/lib/micromarket-staging';
-import { buildablePages, fetchMicromarkets } from '@/lib/micromarkets-api';
+import { buildablePages } from '@/lib/micromarkets-api';
 import { isDeployConfigured } from '@/lib/deploy';
 
 // Auth and dynamic rendering both come from app/(authed)/layout.tsx.
@@ -19,11 +19,11 @@ export default async function MicromarketsPage({
   const deployable = isDeployConfigured();
 
   const [rows, inventory] = await Promise.all([
-    prisma.micromarketPage.findMany(),
+    getMicromarketSummaries(),
     // The backend can be down independently of this app's own database; an
     // empty list degrades the screen to "written pages only" rather than to an
     // error page.
-    fetchMicromarkets()
+    getEditorMicromarkets()
       .then((r) => r.data)
       .catch((err) => {
         console.error('[micromarkets] backend unavailable:', err);
@@ -45,8 +45,8 @@ export default async function MicromarketsPage({
       name: m.name,
       city: m.parentCity as string,
       listings: m.listings,
-      state: row ? stateOf(row) : 'STUB',
-      revertable: row?.deployedContent != null,
+      state: row?.state ?? 'STUB',
+      revertable: row?.revertable ?? false,
     };
   });
 
@@ -65,8 +65,8 @@ export default async function MicromarketsPage({
       name: r.name,
       city: r.citySlug,
       listings: 0,
-      state: stateOf(r),
-      revertable: r.deployedContent != null,
+      state: r.state,
+      revertable: r.revertable,
     }));
 
   const belowThreshold = inventory

@@ -1,3 +1,4 @@
+import { getEditorMicromarkets } from '@/lib/editor-inventory';
 import { notFound } from 'next/navigation';
 import EditorialForm from '@/components/EditorialForm';
 import DeleteForm from '@/components/DeleteForm';
@@ -8,7 +9,7 @@ import { updateMicromarket, deleteMicromarket, toggleMicromarketListing } from '
 import { prisma } from '@/lib/prisma';
 import { micromarketSchema, type MicromarketInput } from '@/lib/micromarket-schema';
 import { stateOf } from '@/lib/micromarket-staging';
-import { fetchMicromarkets, findMicromarket, micromarketOverviewPath } from '@/lib/micromarkets-api';
+import { findMicromarket, micromarketOverviewPath } from '@/lib/micromarkets-api';
 import { isDeployConfigured } from '@/lib/deploy';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
@@ -31,7 +32,7 @@ export default async function EditMicromarketPage({
       select: { slug: true, title: true },
     }),
     // Derived figures for the preview and the overrides reference; never fatal.
-    fetchMicromarkets()
+    getEditorMicromarkets()
       .then((r) => r.data)
       .catch(() => []),
   ]);

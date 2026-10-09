@@ -9,7 +9,7 @@ const { NAVIGATION_GROUPS } = load('lib/navigation.ts');
 const micromarkets = load('lib/micromarkets-api.ts');
 const locations = load('lib/locations-api.ts');
 
-async function renderDashboard({ unavailableInventory = false } = {}) {
+async function renderDashboard({ unavailableInventory = false, blogs = [] } = {}) {
   const inventory = async value => {
     if (unavailableInventory) throw new Error('Inventory unavailable');
     return value;
@@ -18,16 +18,28 @@ async function renderDashboard({ unavailableInventory = false } = {}) {
     '@/components/CmsLink': ({ href, children, ...props }) => createElement('a', { href, ...props }, children),
     '@/components/DeployButton': () => null,
     '@/lib/deploy': { isDeployConfigured: () => false },
-    '@/lib/prisma': { prisma: {
-      blog: { findMany: async () => [] },
-      micromarketPage: { findMany: async () => [] },
-      locationPage: { findMany: async () => [] },
-    } },
-    '@/lib/micromarkets-api': { ...micromarkets, fetchMicromarkets: () => inventory({ data: [] }) },
-    '@/lib/locations-api': { ...locations, fetchLocations: () => inventory({ cities: [], states: [] }) },
+    '@/lib/content-summaries': {
+      getBlogSummaries: async () => blogs,
+      getMicromarketSummaries: async () => [],
+      getLocationSummaries: async () => [],
+    },
+    '@/lib/editor-inventory': {
+      getEditorMicromarkets: () => inventory({ data: [] }),
+      getEditorLocations: () => inventory({ cities: [], states: [] }),
+    },
+    '@/lib/micromarkets-api': micromarkets,
+    '@/lib/locations-api': locations,
   });
   return renderToStaticMarkup(await isolated('app/(authed)/dashboard/page.tsx').default());
 }
+
+test('dashboard counts publication states directly from fresh summaries', async () => {
+  const html = await renderDashboard({ blogs: [
+    { id: 1, state: 'DRAFT' }, { id: 2, state: 'PUBLISHED' }, { id: 3, state: 'STAGED' },
+  ] });
+  assert.match(html, /3 articles/);
+  assert.match(html, /1 published · 1 staged/);
+});
 
 for (const unavailableInventory of [false, true]) {
   test(`dashboard renders every navigation category, including imports, with inventory ${unavailableInventory ? 'unavailable' : 'available'}`, async () => {

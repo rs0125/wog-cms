@@ -52,7 +52,7 @@ export interface MicromarketGates {
  * an editor there is nothing to write.
  */
 export async function fetchMicromarkets(): Promise<{ data: Micromarket[]; gates: MicromarketGates }> {
-  const res = await fetch(`${API_BASE}/micromarkets`, { cache: 'no-store' });
+  const res = await fetch(`${API_BASE}/micromarkets`, { cache: 'no-store', signal: AbortSignal.timeout(5000) });
   if (!res.ok) {
     throw new Error(`GET ${API_BASE}/micromarkets failed: ${res.status} ${res.statusText}`);
   }

@@ -1,13 +1,11 @@
+import { getBlogSummaries, getMicromarketSummaries, getLocationSummaries } from '@/lib/content-summaries';
+import { getEditorLocations, getEditorMicromarkets } from '@/lib/editor-inventory';
 import Link from '@/components/CmsLink';
 import DeployButton from '@/components/DeployButton';
 import { isDeployConfigured } from '@/lib/deploy';
 import { NAVIGATION_GROUPS } from '@/lib/navigation';
-import { prisma } from '@/lib/prisma';
-import { stateOf as blogStateOf } from '@/lib/staging';
-import { stateOf as micromarketStateOf } from '@/lib/micromarket-staging';
-import { stateOf as locationStateOf } from '@/lib/location-staging';
-import { buildablePages, fetchMicromarkets } from '@/lib/micromarkets-api';
-import { eligible, fetchLocations, type Location } from '@/lib/locations-api';
+import { buildablePages } from '@/lib/micromarkets-api';
+import { eligible, type Location } from '@/lib/locations-api';
 
 // Auth and dynamic rendering both come from app/(authed)/layout.tsx.
 
@@ -19,27 +17,27 @@ import { eligible, fetchLocations, type Location } from '@/lib/locations-api';
  */
 export default async function DashboardPage() {
   const [blogs, pages, locationRows, inventory, locations] = await Promise.all([
-    prisma.blog.findMany(),
-    prisma.micromarketPage.findMany(),
-    prisma.locationPage.findMany(),
+    getBlogSummaries(),
+    getMicromarketSummaries(),
+    getLocationSummaries(),
     // Never fatal: the dashboard is still worth showing if the backend is down.
-    fetchMicromarkets()
+    getEditorMicromarkets()
       .then((r) => r.data)
       .catch(() => []),
-    fetchLocations().catch(() => ({
+    getEditorLocations().catch(() => ({
       cities: [] as Location[],
       states: [] as Location[],
       gates: { locationPageMinListings: 0 },
     })),
   ]);
 
-  const blogLive = blogs.filter((b) => blogStateOf(b) === 'PUBLISHED').length;
-  const blogStaged = blogs.filter((b) => blogStateOf(b) === 'STAGED').length;
+  const blogLive = blogs.filter((b) => b.state === 'PUBLISHED').length;
+  const blogStaged = blogs.filter((b) => b.state === 'STAGED').length;
 
   const withPage = buildablePages(inventory);
   const written = new Set(pages.map((p) => `${p.citySlug}/${p.slug}`));
-  const mmLive = pages.filter((m) => micromarketStateOf(m) === 'PUBLISHED').length;
-  const mmStaged = pages.filter((m) => micromarketStateOf(m) === 'STAGED').length;
+  const mmLive = pages.filter((m) => m.state === 'PUBLISHED').length;
+  const mmStaged = pages.filter((m) => m.state === 'STAGED').length;
   const mmWritten = withPage.filter((m) => written.has(`${m.citySlug}/${m.slug}`)).length;
 
   /** Both kinds share one table, so each card counts its own slice of it. */
@@ -50,8 +48,8 @@ export default async function DashboardPage() {
     return {
       total: all.length,
       written: all.filter((l) => slugs.has(l.slug)).length,
-      live: rows.filter((r) => locationStateOf(r) === 'PUBLISHED').length,
-      staged: rows.filter((r) => locationStateOf(r) === 'STAGED').length,
+      live: rows.filter((r) => r.state === 'PUBLISHED').length,
+      staged: rows.filter((r) => r.state === 'STAGED').length,
       rows: rows.length,
     };
   };

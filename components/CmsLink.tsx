@@ -2,11 +2,17 @@
 
 import Link, { useLinkStatus } from 'next/link';
 import { createPortal } from 'react-dom';
-import type { ComponentProps } from 'react';
+import { useState, type ComponentProps } from 'react';
 
 /** Keep Next's navigation, prefetching and modifier-click behavior intact. */
-export default function CmsLink({ children, ...props }: ComponentProps<typeof Link>) {
-  return <Link {...props}>{children}<NavigationProgress /></Link>;
+export default function CmsLink({ children, prefetch, onMouseEnter, onFocus, onTouchStart, ...props }: ComponentProps<typeof Link>) {
+  const [intent, setIntent] = useState(false);
+  return <Link {...props}
+    prefetch={prefetch ?? (intent ? null : false)}
+    onMouseEnter={event => { onMouseEnter?.(event); if (!event.defaultPrevented) setIntent(true); }}
+    onFocus={event => { onFocus?.(event); if (!event.defaultPrevented) setIntent(true); }}
+    onTouchStart={event => { onTouchStart?.(event); if (!event.defaultPrevented) setIntent(true); }}
+  >{children}<NavigationProgress /></Link>;
 }
 
 function NavigationProgress() {

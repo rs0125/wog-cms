@@ -1,9 +1,8 @@
 import Link from '@/components/CmsLink';
-import { prisma } from '@/lib/prisma';
-import BlogList, { type BlogRow } from '@/components/BlogList';
+import { getBlogSummaries } from '@/lib/content-summaries';
+import BlogList from '@/components/BlogList';
 import DeployButton from '@/components/DeployButton';
 import Toast from '@/components/Toast';
-import { stateOf } from '@/lib/staging';
 import { isDeployConfigured } from '@/lib/deploy';
 
 // Auth and dynamic rendering both come from app/(authed)/layout.tsx.
@@ -15,24 +14,9 @@ export default async function BlogsPage({
 }) {
   const { reordered, reverted, deleted } = await searchParams;
   const deployable = isDeployConfigured();
-  const rows = await prisma.blog.findMany({ orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] });
-  // State computed once per row and carried alongside it, so nothing has to
-  // look it up again (and no non-null assertion on a Map lookup).
-  const withState = rows.map((g) => ({ row: g, state: stateOf(g) }));
-  const live = withState.filter((e) => e.state === 'PUBLISHED').length;
-  const staged = withState.filter((e) => e.state === 'STAGED').length;
-
-  // Dates are formatted here: a Date can't cross into a client component, and
-  // formatting on the client would risk a timezone-dependent hydration mismatch.
-  const blogs: BlogRow[] = withState.map(({ row: g, state }) => ({
-    id: g.id,
-    slug: g.slug,
-    title: g.title,
-    state,
-    revertable: g.deployedContent !== null,
-    dateModified: g.dateModified.toISOString().slice(0, 10),
-    sortOrder: g.sortOrder,
-  }));
+  const rows = await getBlogSummaries();
+  const live = rows.filter(g => g.state === 'PUBLISHED').length;
+  const staged = rows.filter(g => g.state === 'STAGED').length;
 
   return (
     <main className="mx-auto max-w-4xl p-6 sm:p-10">
@@ -70,7 +54,7 @@ export default async function BlogsPage({
         </div>
       )}
 
-      <BlogList blogs={blogs} />
+      <BlogList blogs={rows} />
     </main>
   );
 }

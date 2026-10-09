@@ -60,7 +60,7 @@ export async function fetchLocations(): Promise<{
   states: Location[];
   gates: LocationGates;
 }> {
-  const res = await fetch(`${API_BASE}/locations`, { cache: 'no-store' });
+  const res = await fetch(`${API_BASE}/locations`, { cache: 'no-store', signal: AbortSignal.timeout(5000) });
   if (!res.ok) {
     throw new Error(`GET ${API_BASE}/locations failed: ${res.status} ${res.statusText}`);
   }

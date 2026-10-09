@@ -1,11 +1,11 @@
+import { getEditorLocations } from '@/lib/editor-inventory';
 import OverviewIntro from '@/components/OverviewIntro';
 import Link from '@/components/CmsLink';
-import { prisma } from '@/lib/prisma';
+import { getLocationSummaries } from '@/lib/content-summaries';
 import LocationList, { type LocationRow } from '@/components/LocationList';
 import DeployButton from '@/components/DeployButton';
 import Toast from '@/components/Toast';
-import { stateOf } from '@/lib/location-staging';
-import { eligible, fetchLocations, listFor, locationOverviewPath, KIND_PLURAL } from '@/lib/locations-api';
+import { eligible, listFor, locationOverviewPath, KIND_PLURAL } from '@/lib/locations-api';
 import { locationKindSchema, type LocationKind } from '@/lib/location-schema';
 import { isDeployConfigured } from '@/lib/deploy';
 
@@ -24,10 +24,10 @@ export default async function LocationsPage({
   const deployable = isDeployConfigured();
 
   const [rows, inventory] = await Promise.all([
-    prisma.locationPage.findMany({ where: { kind } }),
+    getLocationSummaries(kind),
     // The backend can be down independently of this app's own database; empty
     // degrades the screen to "written pages only" rather than to an error page.
-    fetchLocations().catch((err) => {
+    getEditorLocations().catch((err) => {
       console.error('[locations] backend unavailable:', err);
       return { cities: [], states: [], gates: { locationPageMinListings: 0 } };
     }),
@@ -48,8 +48,8 @@ export default async function LocationsPage({
       path: locationOverviewPath(l),
       group: kind === 'CITY' ? l.parentState : null,
       listings: l.listings,
-      state: row ? stateOf(row) : 'STUB',
-      revertable: row?.deployedContent != null,
+      state: row?.state ?? 'STUB',
+      revertable: row?.revertable ?? false,
     };
   });
 
@@ -68,8 +68,8 @@ export default async function LocationsPage({
       path: null,
       group: null,
       listings: 0,
-      state: stateOf(r),
-      revertable: r.deployedContent != null,
+      state: r.state,
+      revertable: r.revertable,
     }));
 
   const belowThreshold = all
