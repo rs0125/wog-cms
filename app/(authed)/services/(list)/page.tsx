@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { prisma } from '@/lib/prisma';
 import { SERVICE_PAGES } from '@/lib/service-schema';
 import { serviceStateOf } from '@/lib/service-staging';

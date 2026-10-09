@@ -70,3 +70,18 @@ fonts, borders and overflow. Review captured screenshots too. The website
 harness's `check-ad-page-preview.mjs` checks the actual ad preview against the
 website with isolated fixture builds. Run TypeScript, ESLint and a production
 build after stylesheet changes; development CSS ordering alone is not proof.
+
+## Loading feedback
+
+Every CMS list and editor has a route-level `loading.tsx`. List pages and their
+loading files live in `(list)` route groups so their fallbacks never wrap an
+editor. URLs stay unchanged. `CmsLoading` follows
+the corresponding page's width, card or row layout, form sections and save bar.
+Placeholders use neutral fills, expose one loading announcement, and contain no
+focusable controls. Motion stops when reduced motion is requested.
+
+Internal navigation uses `CmsLink`, which preserves Next's link behavior and
+adds a small progress bar only while navigation is pending. Its brief appearance
+delay avoids a flash on fast clicks. Feedback stays visible when the mobile menu
+closes and clears with the navigation; it never covers or disables the editor.
+Keep page loading tied to real requests rather than adding artificial delays.

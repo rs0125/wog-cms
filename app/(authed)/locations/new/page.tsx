@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import EditorialForm, { type EditorialFormPage } from '@/components/EditorialForm';
 import { createLocation } from '../actions';
 import { prisma } from '@/lib/prisma';

@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import OverviewIntro from '@/components/OverviewIntro';
+import Link from '@/components/CmsLink';
 import { prisma } from '@/lib/prisma';
 import MicromarketList, { type MicromarketRow } from '@/components/MicromarketList';
 import DeployButton from '@/components/DeployButton';
@@ -100,12 +101,7 @@ export default async function MicromarketsPage({
         </div>
       </header>
 
-      <p className="mb-7 rounded-xl border border-ui-line bg-ui-surface p-4 text-sm text-wareongo-slate">
-        Publish prose, FAQs and market context at <strong>/overview/&#123;state&#125;/&#123;city&#125;/&#123;micromarket&#125;</strong>.
-        The state comes from the city&apos;s location data. Existing micromarket listing URLs
-        continue to show the plain warehouse grid. Deleting or delisting content removes its
-        overview page on the next build.
-      </p>
+      <OverviewIntro micromarket />
 
       {deleted && <Toast title={`“${deleted}” deleted`} tone="removed" />}
       {reverted && <Toast title="Reverted to the last deployed version" />}

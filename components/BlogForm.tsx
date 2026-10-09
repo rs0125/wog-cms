@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import BlockEditor from './BlockEditor';
 import FormattedTextarea from './FormattedTextarea';
 import BlogPreview from './BlogPreview';

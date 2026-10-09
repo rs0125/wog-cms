@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import EditorialForm from '@/components/EditorialForm';
 import { createMicromarket } from '../actions';
 import { prisma } from '@/lib/prisma';

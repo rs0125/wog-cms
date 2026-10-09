@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { revertLocation } from '@/app/(authed)/locations/actions';
 import {
   PAGE_STATE_CLASS,

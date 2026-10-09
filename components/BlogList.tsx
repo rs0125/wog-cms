@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { reorderBlogs, revertBlog } from '@/app/(authed)/blogs/actions';
 import { STATE_CLASS, STATE_HINT, STATE_LABEL, type BlogState } from '@/lib/staging';
 

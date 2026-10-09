@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { prisma } from '@/lib/prisma';
 import { LEGAL_PAGES } from '@/lib/legal-schema';
 import { legalStateOf } from '@/lib/legal-staging';

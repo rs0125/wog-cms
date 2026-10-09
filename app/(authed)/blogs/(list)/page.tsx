@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { prisma } from '@/lib/prisma';
 import BlogList, { type BlogRow } from '@/components/BlogList';
 import DeployButton from '@/components/DeployButton';

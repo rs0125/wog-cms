@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import DeployButton from '@/components/DeployButton';
 import { isDeployConfigured } from '@/lib/deploy';
 import { NAVIGATION_GROUPS } from '@/lib/navigation';
@@ -58,52 +58,39 @@ export default async function DashboardPage() {
   const cityStats = locationCard('CITY');
   const stateStats = locationCard('STATE');
 
-  const cards: Record<string, { lead: string; detail: string; description: string }> = {
+  const cards: Record<string, { lead: string; detail: string }> = {
     'ad-pages': {
       lead: '1 page',
       detail: 'Bangalore',
-      description: 'Manage campaign landing page copy, images and enquiry buttons.',
     },
     blogs: {
       lead: `${blogs.length} ${blogs.length === 1 ? 'article' : 'articles'}`,
       detail: `${blogLive} published${blogStaged > 0 ? ` · ${blogStaged} staged` : ''}`,
-      description: 'Write and manage articles, guides and warehouse insights.',
     },
     imports: {
       lead: 'Draft review',
       detail: process.env.CMS_CONTEXT_ENABLED === 'true' ? 'Approval required' : 'Not enabled',
-      description: 'Review incoming drafts before approving them for a website build.',
     },
     states: {
       lead: stateStats.total > 0 ? `${stateStats.written} of ${stateStats.total} written` : `${stateStats.rows} ${stateStats.rows === 1 ? 'page' : 'pages'}`,
       detail: `${stateStats.live} published${stateStats.staged > 0 ? ` · ${stateStats.staged} staged` : ''}`,
-      description: 'Regional market context and state-wide warehouse overviews.',
     },
     cities: {
       lead: cityStats.total > 0 ? `${cityStats.written} of ${cityStats.total} written` : `${cityStats.rows} ${cityStats.rows === 1 ? 'page' : 'pages'}`,
       detail: `${cityStats.live} published${cityStats.staged > 0 ? ` · ${cityStats.staged} staged` : ''}`,
-      description: 'City market guides, rental trends and local warehouse insights.',
     },
     micromarkets: {
       lead: withPage.length > 0 ? `${mmWritten} of ${withPage.length} written` : `${pages.length} ${pages.length === 1 ? 'page' : 'pages'}`,
       detail: `${mmLive} published${mmStaged > 0 ? ` · ${mmStaged} staged` : ''}`,
-      description: 'Detailed guides to individual warehouse and logistics clusters.',
     },
     legal: {
       lead: '2 pages',
       detail: 'Privacy Policy & Terms of Service',
-      description: 'Manage policy wording, dates and legal information.',
     },
     services: {
       lead: '4 pages',
       detail: 'Warehouse Search, Build-To-Suit, Lease Negotiation & Compliance Procurement',
-      description: 'Describe your services. Only written, approved pages appear on the website.',
     },
-  };
-  const descriptions: Record<string, string> = {
-    content: 'Articles and resources for your readers.',
-    overviews: 'Market guides, organized from states to individual clusters.',
-    website: 'The information pages that support your website.',
   };
 
   return (
@@ -124,7 +111,7 @@ export default async function DashboardPage() {
           <section key={group.id} id={group.id} aria-labelledby={`category-${group.id}`}>
             <div className="mb-4">
               <h2 id={`category-${group.id}`} className="ui-card-title text-ui-ink">{group.label}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-wareongo-slate">{descriptions[group.id]}</p>
+              <p className="mt-1 text-xs leading-relaxed text-wareongo-slate">{group.description}</p>
             </div>
             <div className={`grid gap-4 ${group.items.length > 1 ? 'xl:grid-cols-3' : ''}`}>
               {group.items.map(item => {
@@ -136,7 +123,7 @@ export default async function DashboardPage() {
                         <h3 className="ui-panel-title text-ui-ink">{item.label}</h3>
                         <span aria-hidden="true" className="text-wareongo-slate transition-transform group-hover:translate-x-1">→</span>
                       </div>
-                      <p className="mt-2 max-w-lg text-sm leading-relaxed text-wareongo-slate">{card.description}</p>
+                      <p className="mt-2 max-w-lg text-sm leading-relaxed text-wareongo-slate">{item.description}</p>
                     </div>
                     <div className={`mt-5 ${group.items.length === 1 ? 'sm:mt-0 sm:shrink-0 sm:text-right' : 'border-t border-ui-line pt-4'}`}>
                       <p className="text-lg font-semibold tabular-nums text-wareongo-blue">{card.lead}</p>

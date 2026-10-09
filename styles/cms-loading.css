@@ -1,0 +1,45 @@
+/* CMS feedback uses the same neutral fills as cards and fields. */
+@layer components {
+  .cms-skeleton {
+    border-radius: 4px;
+    background: var(--ui-line);
+    opacity: .65;
+  }
+}
+
+.cms-navigation-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  animation: cms-progress-appear .15s ease .12s forwards;
+}
+.cms-navigation-progress-track {
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  background: var(--ui-line);
+}
+.cms-navigation-progress-track > span {
+  display: block;
+  width: 35%;
+  height: 100%;
+  background: var(--ui-ink);
+  animation: cms-progress-travel 1.25s ease-in-out infinite;
+}
+@keyframes cms-progress-appear { to { opacity: 1; } }
+@keyframes cms-progress-travel {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(390%); }
+}
+@keyframes cms-skeleton-pulse {
+  50% { opacity: .3; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cms-skeleton { animation: cms-skeleton-pulse 1.8s ease-in-out infinite; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cms-navigation-progress { animation: none; opacity: 1; }
+  .cms-navigation-progress-track > span { animation: none; width: 100%; }
+}

@@ -3,6 +3,7 @@
 @import '../styles/ui.css';
 @import '../styles/navigation.css';
 @import '../styles/WarehouseCard.css';
+@import '../styles/cms-loading.css';
 
 /* Versioned website styles; see scripts/sync-ui-styles.mjs. Both apps deploy
    independently, so the CMS never imports the neighbouring repo at runtime. */

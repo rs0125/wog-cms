@@ -1,4 +1,5 @@
-import Link from 'next/link';
+import OverviewIntro from '@/components/OverviewIntro';
+import Link from '@/components/CmsLink';
 import { prisma } from '@/lib/prisma';
 import LocationList, { type LocationRow } from '@/components/LocationList';
 import DeployButton from '@/components/DeployButton';
@@ -107,12 +108,7 @@ export default async function LocationsPage({
         </div>
       </header>
 
-      <p className="mb-7 rounded-xl border border-ui-line bg-ui-surface p-4 text-sm text-wareongo-slate">
-        Publish a {kind === 'CITY' ? 'city overview at /overview/{state}/{city}' : 'state overview at /overview/{state}'}
-        {' '}using the shared wireframe: prose, images, FAQs and live inventory statistics.
-        The existing listing pages keep their warehouse grids. Deleting or delisting content
-        removes its overview on the next build.
-      </p>
+      <OverviewIntro kind={kind} />
 
       {deleted && <Toast title={`“${deleted}” deleted`} tone="removed" />}
       {reverted && <Toast title="Reverted to the last deployed version" />}

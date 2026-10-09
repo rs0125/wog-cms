@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { prisma } from '@/lib/prisma';
 import { AD_PAGES } from '@/lib/ad-page-schema';
 import { adPageStateOf } from '@/lib/ad-page-staging';

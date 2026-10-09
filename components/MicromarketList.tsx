@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { revertMicromarket } from '@/app/(authed)/micromarkets/actions';
 import {
   PAGE_STATE_CLASS,

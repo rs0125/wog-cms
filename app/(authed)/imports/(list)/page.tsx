@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { requireUser } from '@/lib/auth';
 import { transaction } from '@/lib/agent-cms/repository';
 export default async function Imports() {

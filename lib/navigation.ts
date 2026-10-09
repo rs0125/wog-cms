@@ -5,27 +5,27 @@ export type NavigationItem = {
   children?: NavigationItem[];
 };
 
-export const NAVIGATION_GROUPS: { id: string; label: string; items: NavigationItem[] }[] = [
-  { id: 'content', label: 'Content', items: [
-    { id: 'blogs', label: 'Blogs', href: '/blogs' },
-    { id: 'imports', label: 'Content imports', href: '/imports' },
+export const NAVIGATION_GROUPS: { id: string; label: string; description: string; items: (NavigationItem & { description: string })[] }[] = [
+  { id: 'content', label: 'Content', description: 'Articles and resources for your readers.', items: [
+    { id: 'blogs', description: 'Write and manage articles, guides and warehouse insights.', label: 'Blogs', href: '/blogs' },
+    { id: 'imports', description: 'Review incoming drafts before approving them for a website build.', label: 'Content imports', href: '/imports' },
   ] },
-  { id: 'overviews', label: 'Overview pages', items: [
-    { id: 'states', label: 'States', href: '/locations?kind=STATE' },
-    { id: 'cities', label: 'Cities', href: '/locations?kind=CITY' },
-    { id: 'micromarkets', label: 'Micromarkets', href: '/micromarkets' },
+  { id: 'overviews', label: 'Overview pages', description: 'Market guides, organized from states to individual clusters.', items: [
+    { id: 'states', description: 'Regional market context and state-wide warehouse overviews.', label: 'States', href: '/locations?kind=STATE' },
+    { id: 'cities', description: 'City market guides, rental trends and local warehouse insights.', label: 'Cities', href: '/locations?kind=CITY' },
+    { id: 'micromarkets', description: 'Detailed guides to individual warehouse and logistics clusters.', label: 'Micromarkets', href: '/micromarkets' },
   ] },
-  { id: 'website', label: 'Website pages', items: [
-    { id: 'ad-pages', label: 'Ad pages', href: '/ad-pages', children: [
+  { id: 'website', label: 'Website pages', description: 'The information pages that support your website.', items: [
+    { id: 'ad-pages', description: 'Manage campaign landing page copy, images and enquiry buttons.', label: 'Ad pages', href: '/ad-pages', children: [
       { id: 'ad-bangalore', label: 'Bangalore', href: '/ad-pages/bangalore' },
     ] },
-    { id: 'services', label: 'Services', href: '/services', children: [
+    { id: 'services', description: 'Describe your services. Only written, approved pages appear on the website.', label: 'Services', href: '/services', children: [
       { id: 'warehouse-search', label: 'Warehouse Search', href: '/services/warehouse-search' },
       { id: 'build-to-suit', label: 'Build-To-Suit', href: '/services/build-to-suit' },
       { id: 'lease-negotiation', label: 'Lease Negotiation', href: '/services/lease-negotiation' },
       { id: 'compliance-procurement', label: 'Compliance Procurement', href: '/services/compliance-procurement' },
     ] },
-    { id: 'legal', label: 'Legal pages', href: '/legal', children: [
+    { id: 'legal', description: 'Manage policy wording, dates and legal information.', label: 'Legal pages', href: '/legal', children: [
       { id: 'privacy', label: 'Privacy Policy', href: '/legal/privacy-policy' },
       { id: 'terms', label: 'Terms of Service', href: '/legal/terms-of-service' },
     ] },

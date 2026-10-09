@@ -10,7 +10,7 @@ import { locationSchema } from '@/lib/location-schema';
 import { stateOf } from '@/lib/location-staging';
 import { fetchLocations, findLocation, listFor, locationOverviewPath, KIND_LABEL, KIND_PLURAL, type Location } from '@/lib/locations-api';
 import { isDeployConfigured } from '@/lib/deploy';
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
 

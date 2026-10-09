@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 import { checkWritingImport } from '@/app/(authed)/writing-actions';
 import {
   MAX_WRITING_BYTES, applyWritingChanges, canonicalWriting, parseWritingJson,

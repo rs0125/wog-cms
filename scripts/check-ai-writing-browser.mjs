@@ -20,7 +20,7 @@ await build({ entryPoints: [path.join(root, 'tests/fixtures/ai-writing-browser.t
     build.onLoad({ filter: /.*/, namespace: 'actions' }, () => ({ contents: `export async function checkWritingImport(){window.checks++; await new Promise(r=>setTimeout(r,window.checkDelay)); return window.checkResult;} export async function triggerSiteBuild(){throw new Error('Deployment forbidden in browser audit');}` }));
     build.onResolve({ filter: /^next\/(navigation|link)$/ }, args => ({ path: args.path, namespace: 'next' }));
     build.onLoad({ filter: /.*/, namespace: 'next' }, args => ({ contents: args.path === 'next/link'
-      ? `import React from 'react'; export default function Link(props){return React.createElement('a',props,props.children);}`
+      ? `import React from 'react'; export default function Link(props){return React.createElement('a',props,props.children);} export const useLinkStatus=()=>({pending:false});`
       : `export const useRouter=()=>({refresh(){},push(){}}); export function unstable_rethrow(){};`, resolveDir: root }));
   } }] });
 const css = await require('postcss')([require('@tailwindcss/postcss')({ base: root })]).process(await fs.readFile(path.join(root, 'app/globals.css'), 'utf8'), { from: path.join(root, 'app/globals.css') });

@@ -15,7 +15,7 @@ async function renderDashboard({ unavailableInventory = false } = {}) {
     return value;
   };
   const isolated = loader({
-    'next/link': ({ href, children, ...props }) => createElement('a', { href, ...props }, children),
+    '@/components/CmsLink': ({ href, children, ...props }) => createElement('a', { href, ...props }, children),
     '@/components/DeployButton': () => null,
     '@/lib/deploy': { isDeployConfigured: () => false },
     '@/lib/prisma': { prisma: {

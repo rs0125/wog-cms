@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/components/CmsLink';
 
 // Catches render/data errors under the authed group so a thrown exception shows
 // something usable instead of Next's bare error screen. `error.message` is
