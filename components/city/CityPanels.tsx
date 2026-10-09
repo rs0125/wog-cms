@@ -11,6 +11,8 @@ const money = (value: number | undefined) => value === undefined ? '—' : `₹$
 const mixText = (entries: CityStockStats['construction']) => entries.map(e => `${e.label} ${e.share}%`).join(' · ') || '—';
 
 export function CorridorPanel({ data }: { data: CityOverviewStats }) {
+  const table = data.localityTable;
+  const showTable = table?.eligible && data.corridors.length > 0;
   return <div className="city-corridor-panel space-y-6">
     <div className="city-corridor-segments grid gap-4 sm:grid-cols-2">
       {([
@@ -23,21 +25,23 @@ export function CorridorPanel({ data }: { data: CityOverviewStats }) {
         <p className="mt-1 text-xs text-wareongo-slate">{mixText(stats.construction)}</p>
       </div>)}
     </div>
-    <div className={`city-corridor-table overflow-hidden ${PANEL}`}>
-      <div className="overflow-x-auto" role="region" aria-label="Warehouse locations comparison" tabIndex={0}>
-        <table className="ui-table min-w-[700px] text-left">
-          <caption className="sr-only">{data.corridorMode === 'corridors' ? 'Corridors' : 'Localities'} compared by listing count, asking rent, unit size and construction</caption>
-          <thead><tr>{[data.corridorMode === 'corridors' ? 'Corridor' : 'Locality', 'Listings', 'Median rent', 'Rent range', 'Median size', 'Main build'].map(label => <th key={label} scope="col" className={HEAD}>{label}</th>)}</tr></thead>
-          <tbody>{data.corridors.map(c => <tr key={c.slug} className="border-t border-ui-line">
-            <th scope="row" className={`${CELL} font-medium text-wareongo-blue`}>{c.name}{c.direction && <span className="mt-1 block text-xs font-normal text-wareongo-slate">{c.direction}</span>}</th>
-            <td className={`${CELL} tabular-nums`}>{c.listings}</td><td className={`${CELL} whitespace-nowrap tabular-nums`}>{money(c.rent?.median)}</td>
-            <td className={`${CELL} whitespace-nowrap tabular-nums`}>{c.rent ? formatRentRange(c.rent) : '—'}</td>
-            <td className={`${CELL} whitespace-nowrap tabular-nums`}>{c.size ? formatSqft(c.size.median) : '—'}</td><td className={CELL}><span className="city-corridor-build">{c.construction[0]?.label ?? '—'}</span></td>
-          </tr>)}</tbody>
-        </table>
+    {showTable && <>
+      <div className={`city-corridor-table overflow-hidden ${PANEL}`}>
+        <div className="overflow-x-auto" role="region" aria-label="Warehouse locations comparison" tabIndex={0}>
+          <table className="ui-table min-w-[700px] text-left">
+            <caption className="sr-only">Localities compared by listing count, asking rent, unit size and construction</caption>
+            <thead><tr>{['Locality', 'Listings', 'Median rent', 'Rent range', 'Median size', 'Main build'].map(label => <th key={label} scope="col" className={HEAD}>{label}</th>)}</tr></thead>
+            <tbody>{data.corridors.map(c => <tr key={c.slug} className="border-t border-ui-line">
+              <th scope="row" className={`${CELL} font-medium text-wareongo-blue`}>{c.name}{c.direction && <span className="mt-1 block text-xs font-normal text-wareongo-slate">{c.direction}</span>}</th>
+              <td className={`${CELL} tabular-nums`}>{c.listings}</td><td className={`${CELL} whitespace-nowrap tabular-nums`}>{c.listings >= 3 ? money(c.rent?.median) : null}</td>
+              <td className={`${CELL} whitespace-nowrap tabular-nums`}>{c.listings >= 3 ? (c.rent ? formatRentRange(c.rent) : '—') : null}</td>
+              <td className={`${CELL} whitespace-nowrap tabular-nums`}>{c.listings >= 3 ? (c.size ? formatSqft(c.size.median) : '—') : null}</td><td className={CELL}>{c.listings >= 3 ? <span className="city-corridor-build">{c.construction[0]?.label ?? '—'}</span> : null}</td>
+            </tr>)}</tbody>
+          </table>
+        </div>
       </div>
-    </div>
-    <p className="text-xs leading-relaxed text-wareongo-slate">Rents are asking rates per sq ft per month; sizes are in sq ft. Each listing is counted once in this table. Unmapped or overlapping locations appear in the unassigned row. Construction shares use listings with a recorded construction type.</p>
+      <p className="text-xs leading-relaxed text-wareongo-slate">Rents are asking rates per sq ft per month; sizes are in sq ft. The base is {table.baseListings.toLocaleString('en-IN')} distinct tagged listings{table.grouping === 'areas' ? ' in the areas shown' : ''}. A listing counts once in each matching row, so rows can overlap. Land, BTS and under-construction listings are excluded from row figures. Rows with fewer than three listings show counts only.</p>
+    </>}
   </div>;
 }
 

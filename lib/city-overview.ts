@@ -6,13 +6,27 @@ export interface CityStockStats extends Omit<DerivedStats, 'listingIds' | 'peers
   engineeredFloorShare: number | null;
   samples: { rent: number; size: number; clearHeight: number; docks: number; construction: number; flooring: number };
 }
-export interface CityCorridor extends CityStockStats { slug: string; name: string; direction: string }
+export interface CityCorridor extends CityStockStats {
+  slug: string;
+  name: string;
+  direction: string;
+  /** Percentage of distinct tagged listings covered by this city's table. */
+  share: number;
+}
 export interface CityOverviewStats {
   version: 1;
   summary: CityStockStats;
   excluded: { unbuilt: number; underConstruction: number };
-  corridorMode: 'corridors' | 'localities';
+  corridorMode: 'localities';
   corridors: CityCorridor[];
+  /** Absent on older backends: suppress their ungated locality tables. */
+  localityTable?: {
+    eligible: boolean;
+    minTaggedListings: number;
+    taggedListings: number;
+    baseListings: number;
+    grouping: 'micromarkets' | 'areas';
+  };
   segments: { large: CityStockStats; small: CityStockStats };
   rentBySize: (CityStockStats & { slug: string; label: string; min: number; max: number | null })[];
   specsBySize: { large: CityStockStats; small: CityStockStats };

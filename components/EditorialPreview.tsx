@@ -259,7 +259,9 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
    */
   const hasMarket = Boolean(data.marketProse);
   const hasCities = cityRows.length > 0;
-  const hasCorridors = data.isCity && (Boolean(data.corridorProse) || Boolean(city?.corridors.length));
+  const hasCityPanel = Boolean(city && (city.segments.large.listings > 0 || city.segments.small.listings > 0
+    || (city.localityTable?.eligible && city.corridors.length > 0)));
+  const hasCorridors = data.isCity && (Boolean(data.corridorProse) || hasCityPanel);
   const hasRents = Boolean(data.rentsProse) || peers.length > 0 || Boolean(city?.rentBySize.length);
   const hasSpec = Boolean(data.specProse) || rows.length > 0;
   const hasCompliance = (data.isCity || isState) && Boolean(data.complianceProse);
@@ -441,7 +443,7 @@ export default function EditorialPreview({ data }: { data: EditorialPreviewData 
               <SectionHeading index={indexOf('corridors')} eyebrow="Locations">
                 {data.corridorHeading || `Where to rent in ${place}`}
               </SectionHeading>
-              {city && city.corridors.length > 0 && <CorridorPanel data={city} />}
+              {city && hasCityPanel && <CorridorPanel data={city} />}
               {data.corridorProse && (
                 <p className={`mt-6 ${PROSE}`}><InlineText text={data.corridorProse} /></p>
               )}
