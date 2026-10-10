@@ -15,12 +15,14 @@ import type { BlogBlock, BlogFaq, BlogInput } from '@/lib/blog-schema';
 import { keyAll, keyed, removeAt, replaceAt, unkey, type Keyed } from '@/lib/keyed';
 import type { SaveResult } from '@/app/(authed)/blogs/actions';
 import AiWriting from './AiWriting';
+import type { BlogIndexEntry } from '@/lib/blog-index';
 
 export default function BlogForm({
   blog,
   action,
   id,
   relatedOptions,
+  indexEntries = [],
   staged,
   deployable,
   expectedUpdatedAt,
@@ -30,6 +32,7 @@ export default function BlogForm({
   id?: number;
   /** Every other blog, for the related-blogs picker. */
   relatedOptions: BlogOption[];
+  indexEntries?: BlogIndexEntry[];
   /** This blog has saved changes that haven't been deployed. */
   staged?: boolean;
   /** The row's updatedAt when this form was rendered, for the lost-update check. */
@@ -139,11 +142,8 @@ export default function BlogForm({
       {/* Kept mounted and hidden rather than unmounted, so switching tabs never
           discards in-progress edits or collapses the block editor's state. */}
       <div className={tab === 'preview' ? 'hidden' : 'space-y-8'}>
-        <section className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label className="cms-label" htmlFor="title">On-page H1</label>
-            <input id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} required className="cms-input" />
-          </div>
+        <section aria-label="Page settings" className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
+          <h2 className="cms-label sm:col-span-2">Page settings</h2>
 
           <div>
             <label className="cms-label" htmlFor="slug">Slug</label>
@@ -175,20 +175,49 @@ export default function BlogForm({
             <p className="cms-hint">Aim for ≤160 characters. Also used as Article.description.</p>
           </div>
 
+          <div>
+            <label className="cms-label" htmlFor="datePublished">First published</label>
+            <input id="datePublished" name="datePublished" type="date" {...bind('datePublished')} className="cms-input" />
+          </div>
+
+          <div>
+            <label className="cms-label" htmlFor="keywords">Keywords</label>
+            <input id="keywords" value={keywords} onChange={(e) => setKeywords(e.target.value)} className="cms-input" />
+            <p className="cms-hint">Comma-separated → Article.keywords.</p>
+          </div>
+
+        </section>
+
+        <section aria-labelledby="thumbnail-heading">
+          <h2 id="thumbnail-heading" className="cms-label mb-2">Blog index card</h2>
+          <div>
+            <label className="cms-label" htmlFor="sortOrder">Sort order</label>
+            <input id="sortOrder" name="sortOrder" type="number" min={0} {...bind('sortOrder')} className="cms-input" />
+            <p className="cms-hint">Position on /blogs and in its ItemList schema.</p>
+          </div>
+          <p className="cms-label mt-4">Thumbnail</p>
+          <p className="cms-hint mb-3">
+            Optional. Shown on the Blogs page in a 4:3 crop. Leave empty to use one of
+            the selected warehouse photos.
+          </p>
+          <SingleImagePicker
+            value={thumbnail}
+            ratio="4:3"
+            onChange={(next) => {
+              setEdited(true);
+              setThumbnail(next);
+            }}
+            onUploadStateChange={(uploading) => {
+              if (uploading) setEdited(true);
+              setThumbnailUploading(uploading);
+            }}
+          />
+        </section>
+
+        <section aria-label="Article introduction" className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="cms-label" htmlFor="summary">&ldquo;In short&rdquo; summary</label>
-            <FormattedTextarea
-              id="summary"
-              name="summary"
-              rows={4}
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              required
-              className="cms-input"
-            />
-            <p className="cms-hint">
-              The direct answer AI engines extract first — the page&apos;s speakable block. Make it stand alone.
-            </p>
+            <label className="cms-label" htmlFor="title">On-page H1</label>
+            <input id="title" name="title" value={title} onChange={(e) => setTitle(e.target.value)} required className="cms-input" />
           </div>
 
           <div className="sm:col-span-2">
@@ -207,11 +236,6 @@ export default function BlogForm({
           </div>
 
           <div>
-            <label className="cms-label" htmlFor="datePublished">First published</label>
-            <input id="datePublished" name="datePublished" type="date" {...bind('datePublished')} className="cms-input" />
-          </div>
-
-          <div>
             <label className="cms-label" htmlFor="dateModified">Last updated</label>
             <input
               id="dateModified"
@@ -225,50 +249,21 @@ export default function BlogForm({
             <p className="cms-hint">Feeds Article.dateModified — only bump it on real edits.</p>
           </div>
 
-          <div>
-            <label className="cms-label" htmlFor="sortOrder">Sort order</label>
-            <input id="sortOrder" name="sortOrder" type="number" min={0} {...bind('sortOrder')} className="cms-input" />
-            <p className="cms-hint">Position on /blogs and in its ItemList schema.</p>
-          </div>
-
-          <div>
-            <label className="cms-label" htmlFor="keywords">Keywords</label>
-            <input id="keywords" value={keywords} onChange={(e) => setKeywords(e.target.value)} className="cms-input" />
-            <p className="cms-hint">Comma-separated → Article.keywords.</p>
-          </div>
-
           <div className="sm:col-span-2">
-            <span className="cms-label">Related blogs</span>
-            <RelatedPicker
-              options={relatedOptions}
-              value={related}
-              onChange={(next) => {
-                setEdited(true);
-                setRelated(next);
-              }}
+            <label className="cms-label" htmlFor="summary">&ldquo;In short&rdquo; summary</label>
+            <FormattedTextarea
+              id="summary"
+              name="summary"
+              rows={4}
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              required
+              className="cms-input"
             />
-            <p className="cms-hint">Rendered as cross-links at the foot of the blog.</p>
+            <p className="cms-hint">
+              The direct answer AI engines extract first — the page&apos;s speakable block. Make it stand alone.
+            </p>
           </div>
-        </section>
-
-        <section aria-labelledby="thumbnail-heading">
-          <h2 id="thumbnail-heading" className="cms-label mb-2">Blog thumbnail</h2>
-          <p className="cms-hint mb-3">
-            Optional. Shown on the Blogs page in a 4:3 crop. Leave empty to use one of
-            the selected warehouse photos.
-          </p>
-          <SingleImagePicker
-            value={thumbnail}
-            ratio="4:3"
-            onChange={(next) => {
-              setEdited(true);
-              setThumbnail(next);
-            }}
-            onUploadStateChange={(uploading) => {
-              if (uploading) setEdited(true);
-              setThumbnailUploading(uploading);
-            }}
-          />
         </section>
 
         <section data-writing-path="blocks">
@@ -330,11 +325,25 @@ export default function BlogForm({
             </button>
           </div>
         </section>
+        <section aria-label="Related blogs">
+          <div className="sm:col-span-2">
+            <span className="cms-label">Related blogs</span>
+            <RelatedPicker
+              options={relatedOptions}
+              value={related}
+              onChange={(next) => {
+                setEdited(true);
+                setRelated(next);
+              }}
+            />
+            <p className="cms-hint">Rendered as cross-links at the foot of the blog.</p>
+          </div>
+        </section>
       </div>
 
       {tab === 'preview' && <BlogPreview blog={{ ...blog, ...text, sortOrder: Number(text.sortOrder), title, summary, author, dateModified,
         blocks: plainBlocks, faqs: plainFaqs, related, thumbnail, keywords: keywords.split(',').map(s => s.trim()).filter(Boolean),
-      }} />}
+      }} indexEntries={indexEntries} id={id} />}
 
       <div className="fixed inset-x-0 bottom-0 z-20 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3">

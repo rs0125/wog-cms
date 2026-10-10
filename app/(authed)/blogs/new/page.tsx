@@ -3,18 +3,16 @@ import { createBlog } from '../actions';
 import { prisma } from '@/lib/prisma';
 import type { BlogInput } from '@/lib/blog-schema';
 import { isDeployConfigured } from '@/lib/deploy';
+import { loadBlogOptions } from '@/lib/blog-index-server';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
 
 export default async function NewBlogPage() {
   // Default to the end of the list so a new blog never silently reshuffles the
   // ItemList positions of the existing ones.
-  const [last, relatedOptions] = await Promise.all([
+  const [last, { options: relatedOptions, indexEntries }] = await Promise.all([
     prisma.blog.findFirst({ orderBy: { sortOrder: 'desc' }, select: { sortOrder: true } }),
-    prisma.blog.findMany({
-      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-      select: { slug: true, title: true },
-    }),
+    loadBlogOptions(),
   ]);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -44,6 +42,7 @@ export default async function NewBlogPage() {
         blog={blank}
         action={createBlog}
         relatedOptions={relatedOptions}
+        indexEntries={indexEntries}
         deployable={isDeployConfigured()}
       />
     </main>

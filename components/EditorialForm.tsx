@@ -202,6 +202,12 @@ export default function EditorialForm({
     : identity.scope === 'city' ? `/overview/${location?.stateSlug || '{state}'}/${slug || '{city}'}`
     : `/overview/${slug || '{state}'}`;
 
+  const inventorySection = <section className="space-y-5" data-editor-section="inventory">
+    <h2 className="text-base font-semibold text-wareongo-blue">Listings</h2>
+    <p className="cms-hint">The grid {isState ? 'follows the market and cities sections' : 'leads the page after the introduction'}. Its listings come from inventory.</p>
+    <HeadingField name="inventoryHeading" placeholder="Warehouses for rent in {place}" {...bind('inventoryHeading')} />
+  </section>;
+
   return (
     <form action={formAction} onInput={touch} className="space-y-8 pb-40">
       {id !== undefined && <input type="hidden" name="id" value={id} />}
@@ -237,8 +243,8 @@ export default function EditorialForm({
         </p>
         <ul className="mt-2 space-y-1 text-xs text-wareongo-slate">
           <li>
-            Only the top block and the lead paragraph are required. Leave a section empty and it
-            simply doesn&apos;t appear on the page — no gap, no empty heading.
+            Only the top block and the lead paragraph are required. Empty prose is omitted.
+            Inventory grids, city cards and data tables can still appear when their data is available.
           </li>
           <li>
             Every number — listing count, rents, sizes, clear height, the compliance band — is
@@ -421,13 +427,15 @@ export default function EditorialForm({
         </div>
       </section>
 
+      {!isState && inventorySection}
+
       <section className="space-y-5">
         <div>
           <h2 className="text-base font-semibold text-wareongo-blue">
             Market <span className="ml-1 text-xs font-normal text-wareongo-slate">optional section</span>
           </h2>
           <p className="mt-1 text-xs text-wareongo-slate">
-            {isCity ? 'Why this city works for an occupier: routes, industries and demand. Mention three to five relevant localities; the corridor section below handles the detailed comparison.'
+            {isCity ? 'Why this city works for an occupier: routes, industries and demand. Mention three to five relevant localities; the localities section below handles the detailed comparison.'
               : isState ? 'Why this state works for warehousing: its freight routes, industries and demand, and which cities carry the stock. The cities section below compares them, so leave city figures out.'
               : 'Where the stock actually sits: the sub-localities and estates inside this belt.'}
           </p>
@@ -472,11 +480,13 @@ export default function EditorialForm({
         />
       </section>}
 
+      {isState && inventorySection}
+
       {isCity && <section className="space-y-5">
-        <div><h2 className="text-base font-semibold text-wareongo-blue">Corridors <span className="ml-1 text-xs font-normal text-wareongo-slate">optional paragraph</span></h2>
-          <p className="mt-1 text-xs text-wareongo-slate">Explain which locations suit different requirements. The corridor table and size comparison come from the inventory.</p></div>
+        <div><h2 className="text-base font-semibold text-wareongo-blue">Localities <span className="ml-1 text-xs font-normal text-wareongo-slate">optional paragraph</span></h2>
+          <p className="mt-1 text-xs text-wareongo-slate">Explain which locations suit different requirements. The locality table appears only with at least 25 listings carrying valid micromarket tags. Untagged listings stay in the grid, outside the table. Shares use tagged listings; multi-tag listings can count in multiple rows. Bengaluru uses its ten grouped areas and a base of listings in those areas. Rows below three listings omit rent and size. The small/large warehouse cards are separate and remain visible when the table is hidden.</p></div>
         <HeadingField name="corridorHeading" placeholder="Where warehouse stock sits in {place}" {...bind('corridorHeading')} />
-        <ProseField name="corridorProse" label="Corridor paragraph" value={corridorProse} onChange={setCorridorProse} band="corridorProse" rows={5} />
+        <ProseField name="corridorProse" label="Localities paragraph" value={corridorProse} onChange={setCorridorProse} band="corridorProse" rows={5} />
       </section>}
 
       <section className="space-y-5">
@@ -534,29 +544,6 @@ export default function EditorialForm({
         <ProseField name="complianceProse" label="Compliance paragraph" value={complianceProse} onChange={setComplianceProse} band="complianceProse" rows={6} />
       </section>}
 
-      <section className="space-y-5">
-        <div className="border-b border-ui-line pb-2.5">
-          <h2 className="text-base font-semibold text-wareongo-blue">Listings heading &amp; links</h2>
-          <p className="mt-1 text-xs text-wareongo-slate">
-            The warehouse grid is built for you and {isState ? 'sits third on the page, after the market and cities sections' : 'leads the page'}. Add a heading and any blogs worth linking at the foot.
-          </p>
-        </div>
-
-        <HeadingField name="inventoryHeading" placeholder="Warehouses for rent in {place}" {...bind('inventoryHeading')} />
-
-        <div>
-          <span className="cms-label">Editorial cross-links</span>
-          <RelatedPicker
-            options={blogOptions}
-            value={relatedBlogs}
-            onChange={(next) => {
-              touch();
-              setRelatedBlogs(next);
-            }}
-          />
-          <p className="cms-hint">Blogs to link at the foot of the page.</p>
-        </div>
-      </section>
 
       <StatOverridesEditor
         value={statOverrides}
@@ -624,9 +611,24 @@ export default function EditorialForm({
         </div>
       </section>
 
+      <section className="space-y-5" data-editor-section="related">
+        <h2 className="text-base font-semibold text-wareongo-blue">Related blogs</h2>
+        <div>
+          <span className="cms-label">Editorial cross-links</span>
+          <RelatedPicker
+            options={blogOptions}
+            value={relatedBlogs}
+            onChange={(next) => {
+              touch();
+              setRelatedBlogs(next);
+            }}
+          />
+          <p className="cms-hint">Blogs to link at the foot of the page.</p>
+        </div>
+      </section>
       </div>
 
-      {/* 1280 is a real desktop viewport, so `lg:` applies; the frame scales to
+      {/* 1440 is a real desktop viewport, so `lg:` applies; the frame scales to
           fit the editor column rather than rendering at whatever width happens
           to be free. */}
       {tab === 'preview' && <WebsitePreview content={{ type: identity.scope, content: {

@@ -57,7 +57,7 @@ export default function ServiceForm({ content, expectedUpdatedAt, state, action,
       <div><label htmlFor="summary" className="cms-label">Introduction</label><FormattedTextarea {...bind('summary')} rows={4} maxLength={20000} className="cms-input" /></div>
       <div><label htmlFor="seoTitle" className="cms-label">SEO title</label><input {...bind('seoTitle')} maxLength={300} className="cms-input" /></div>
       <div><label htmlFor="description" className="cms-label">Meta description</label><textarea {...bind('description')} maxLength={1000} rows={3} className="cms-input" /></div>
-      <div><label htmlFor="keywords" className="cms-label">Keywords (optional, comma separated)</label><input id="keywords" value={keywords} onChange={e => setKeywords(e.target.value)} className="cms-input" /></div>
+      <div><label htmlFor="keywords" className="cms-label">Keywords (optional, comma separated)</label><input id="keywords" value={keywords} onChange={e => setKeywords(e.target.value)} className="cms-input" /><p className="cms-hint">Describes this page in its WebPage structured data. These phrases are not visible in the page body.</p></div>
       <section aria-labelledby="service-content-heading" data-writing-path="blocks">
         <h2 id="service-content-heading" className="ui-panel-title text-ui-ink mb-4">Page content</h2>
         <BlockEditor blocks={blocks} onUploadStateChange={setUploading} onChange={next => { setBlocks(next); setEdited(true); }} />

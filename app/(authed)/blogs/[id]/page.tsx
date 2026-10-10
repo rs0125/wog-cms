@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { blogSchema, type BlogInput } from '@/lib/blog-schema';
 import { stateOf } from '@/lib/staging';
 import { isDeployConfigured } from '@/lib/deploy';
+import { loadBlogOptions } from '@/lib/blog-index-server';
 
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
 
@@ -25,12 +26,9 @@ export default async function EditBlogPage({
   const { saved } = await searchParams;
   // Issued together: these don't depend on each other, and each sequential
   // round trip to the database costs real latency.
-  const [row, allOptions] = await Promise.all([
+  const [row, { options: allOptions, indexEntries }] = await Promise.all([
     prisma.blog.findUnique({ where: { id: Number(id) } }),
-    prisma.blog.findMany({
-      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-      select: { id: true, slug: true, title: true },
-    }),
+    loadBlogOptions(),
   ]);
   if (!row) notFound();
 
@@ -110,6 +108,7 @@ export default async function EditBlogPage({
         action={updateBlog}
         id={row.id}
         relatedOptions={relatedOptions}
+        indexEntries={indexEntries}
         staged={stateOf(row) === 'STAGED'}
         deployable={isDeployConfigured()}
         expectedUpdatedAt={row.updatedAt.toISOString()}

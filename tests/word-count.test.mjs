@@ -128,8 +128,8 @@ test('location totals include authored headings and FAQs, with scope-only copy c
   assert.equal(totalWords(editorialWordSections(content, 'city')), 23);
   assert.equal(totalWords(editorialWordSections(content, 'state')), 22);
   const ids = scope => plain(editorialWordSections(content, scope).map(section => section.id));
-  assert.deepEqual(ids('micromarket'), ['title', 'hero', 'market', 'pricing', 'specification', 'inventory', 'faqs']);
-  assert.deepEqual(ids('city'), ['title', 'hero', 'market', 'corridors', 'pricing', 'specification', 'compliance', 'inventory', 'faqs']);
+  assert.deepEqual(ids('micromarket'), ['title', 'hero', 'inventory', 'market', 'pricing', 'specification', 'faqs']);
+  assert.deepEqual(ids('city'), ['title', 'hero', 'inventory', 'market', 'corridors', 'pricing', 'specification', 'compliance', 'faqs']);
   assert.deepEqual(ids('state'), ['title', 'hero', 'market', 'cities', 'inventory', 'pricing', 'specification', 'compliance', 'faqs']);
   assert.deepEqual(plain(editorialWordSections(content, 'state')[3]), { id: 'cities', label: 'Cities heading', words: 3 });
 });
@@ -152,7 +152,7 @@ test('ad pages count nested card, table, mobile and FAQ copy but exclude setting
   const sections = adPageWordSections(content);
   assert.equal(totalWords(sections), 45);
   assert.deepEqual(plain(sections).filter(section => section.words).map(({ id, words }) => [id, words]), [
-    ['hero', 2], ['areas', 7], ['why', 6], ['services', 10], ['audiences', 8], ['rent', 8], ['faqs', 4],
+    ['hero', 2], ['why', 6], ['areas', 7], ['services', 10], ['audiences', 8], ['rent', 8], ['faqs', 4],
   ]);
   assert.equal(sections.some(section => section.id === 'settings'), false);
 });

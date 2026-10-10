@@ -49,10 +49,21 @@ const { fixtures, editorial, loader } = await import(path.join(root, 'wareongo-c
 const ad = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/ad-pages/bangalore.json'), 'utf8'));
 const blog = { ...fixtures.blog.content, slug: 'preview-blog', title: 'Preview blog — title', seoTitle: 'Preview blog', status: 'PUBLISHED', related: ['preview-related'] };
 const related = { ...blog, slug: 'preview-related', title: 'Related article title', related: [] };
-const service = { ...fixtures.service.content, slug: 'warehouse-search' };
-const legal = { ...fixtures.legal.content, slug: 'privacy-policy' };
+const indexEntries = [blog, related].map((entry, i) => ({ id: i + 1, slug: entry.slug, title: entry.title, description: entry.description, updated: entry.dateModified, thumbnail: entry.thumbnail ?? null, sortOrder: i * 10 }));
+const auditBlocks = [
+ {kind:'h2',text:'Audit Section Heading'}, {kind:'h3',text:'Audit Subheading'},
+ {kind:'p',text:'Audit paragraph **bold** and *italic*.'}, {kind:'ul',items:['Audit bullet one','Audit bullet two']},
+ {kind:'ol',items:['Audit numbered one','Audit numbered two']},
+ {kind:'table',table:{headers:['Audit header one','Audit header two'],rows:[['Audit cell one','Audit cell two']]}},
+ ...[1,2,3,4].map(count=>({kind:'images',caption:`Audit collage ${count}`,images:Array.from({length:count},(_,i)=>({url:'https://example.test/audit.png',alt:`Audit image ${count}-${i}`,width:600,height:400}))}))
+];
+blog.blocks=auditBlocks; blog.faqs=[{q:'Audit FAQ question?',a:'Audit FAQ answer.'}];
+blog.author='Audit Writer'; blog.thumbnail={url:'https://example.test/thumbnail.png',alt:'Audit thumbnail',width:600,height:400};
+const service = { ...fixtures.service.content, slug: 'warehouse-search', keywords:['UNIQUE_SERVICE_KEYWORD_SENTINEL'],blocks:auditBlocks,faqs:blog.faqs };
+const services=['warehouse-search','build-to-suit','lease-negotiation','compliance-procurement'].map(slug=>({...service,slug}));
+const legal = { ...fixtures.legal.content, slug: 'privacy-policy', blocks:[...auditBlocks.slice(0,5),{kind:'p',text:'Audit compact paragraph',compact:true}],notice:'Audit closing notice.' };
 const pageContent = { ...editorial, statOverrides: loader()('lib/editorial-schema.ts').NO_OVERRIDES, name: 'Bengaluru', h1: 'warehouses for rent — bengaluru', heroProse: 'Storage — with loading bays.',
-  rentsProse: 'Pricing paragraph.', specProse: 'Specification paragraph.', relatedBlogs: [related.slug], status: 'PUBLISHED' };
+  marketHeading:'Audit Market',marketProse:'Audit market paragraph.',corridorHeading:'Audit Localities',corridorProse:'Audit localities paragraph.',complianceHeading:'Audit Compliance',complianceProse:'Audit compliance paragraph.',inventoryHeading:'Audit Listings',faqs:blog.faqs,rentsHeading:'Audit Pricing',specHeading:'Audit Specification',rentsProse: 'Pricing paragraph.', specProse: 'Specification paragraph.', relatedBlogs: [related.slug], status: 'PUBLISHED' };
 const pages = [
   { ...pageContent, kind: 'CITY', slug: 'bengaluru' },
   { ...pageContent, kind: 'CITY', name: 'Vijayawada', slug: 'vijayawada', h1: 'Vijayawada inventory' },
@@ -70,7 +81,7 @@ const layout = path.join(cms, 'app/layout.tsx');
 await write(layout, (await fs.readFile(layout, 'utf8')).replace("import { Montserrat } from 'next/font/google';", "import localFont from 'next/font/local';").replace(/Montserrat\(\{[\s\S]*?\}\)/, "localFont({ src: '../public/fonts/montserrat.woff2', weight: '100 900', variable: '--font-montserrat', display: 'swap' })"));
 const fixtureDir = path.join(cms, 'app/(authed)/preview-check/[kind]');
 await fs.mkdir(fixtureDir, { recursive: true });
-await write(path.join(fixtureDir, 'data.json'), { ad, blog, service, legal, pages, marketPage, locations, markets });
+await write(path.join(fixtureDir, 'data.json'), { ad, blog, indexEntries, service, services, legal, pages, marketPage, locations, markets });
 await write(path.join(fixtureDir, 'page.tsx'), `
 import AdPageForm from '@/components/AdPageForm';
 import BlogForm from '@/components/BlogForm';
@@ -85,8 +96,8 @@ export default async function Page({params}: {params: Promise<{kind:string}>}) {
  const item = kind === 'sparse' ? data.pages[1] : kind === 'slug' ? data.pages[2] : kind === 'state' ? data.pages[3] : kind === 'micromarket' ? data.marketPage : data.pages[0];
  return <div className="mx-auto max-w-5xl p-6">
  {kind === 'ad' ? <AdPageForm {...common} content={data.ad} previewUrl="${siteOrigin}/preview/ad-pages/bangalore"/>
- : kind === 'blog' ? <BlogForm {...common} blog={data.blog} relatedOptions={[{slug:'preview-related',title:'Related article title'}]}/>
- : kind === 'service' ? <ServiceForm {...common} content={data.service}/>
+ : kind === 'blog' ? <BlogForm {...common} id={1} blog={data.blog} indexEntries={data.indexEntries} relatedOptions={[{slug:'preview-related',title:'Related article title'}]}/>
+ : kind.startsWith('service') ? <ServiceForm {...common} content={data.services.find((s:any)=>s.slug===kind.slice(8))??data.service}/>
  : kind === 'legal' || kind === 'terms' ? <LegalForm {...common} content={{...data.legal,slug:kind === 'terms' ? 'terms-of-service' : 'privacy-policy'}}/>
  : <EditorialForm {...common} page={item} identity={{scope: kind === 'state' ? 'state' : kind === 'micromarket' ? 'micromarket' : 'city',slug:item.slug,citySlug:'bengaluru',parentLabel:'Karnataka'}} backHref="/" blogOptions={[]} inventory={data.markets.data} locationInventory={kind === 'state' ? data.locations.data.states : data.locations.data.cities} cityInventory={data.locations.data.cities}/>}
  </div>;
@@ -95,12 +106,12 @@ const generated = async (name, exported, values) => write(path.join(site, 'src/d
 await generated('locationPages.generated.ts', 'locationPages', pages);
 await generated('micromarkets.generated.ts', 'micromarkets', [marketPage]);
 await generated('blogs.generated.ts', 'blogs', [blog, related].map(p => ({ ...p, updated: p.dateModified })));
-await generated('servicePages.generated.ts', 'servicePages', [service]);
+await generated('servicePages.generated.ts', 'servicePages', services);
 await generated('blogSummaries.generated.ts', 'blogSummaries', [blog, related].map(({slug,title,description,dateModified})=>({slug,title,description,updated:dateModified})));
 await generated('legalPages.generated.ts', 'legalPages', [legal, {...legal,slug:'terms-of-service'}]);
 await generated('adPages.generated.ts', 'adPages', [ad]);
 await write(path.join(site, 'src/data/warehouse-build.generated.json'), { maxId: buildMaxId });
-const allowed = ['bangalore', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
+const allowed = ['bangalore', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
 const routesFile = path.join(site, 'src/routes.tsx');
 const routes = (await fs.readFile(routesFile, 'utf8')).replace('export const routes: RouteRecord[] =', 'const allRoutes: RouteRecord[] =');
 await write(routesFile, routes + `\nexport const routes: RouteRecord[] = allRoutes.map(root => ({ ...root, children: root.children?.map(wrapper => ({ ...wrapper, children: wrapper.children?.filter(route => ${JSON.stringify(allowed)}.includes(route.path ?? '')) })) }));\n`);
@@ -153,7 +164,7 @@ const context = await browser.newContext({ viewport: { width: 1900, height: 1100
 const payload = Buffer.from(JSON.stringify({ e: 'reviewer@example.test', n: 'Preview Reviewer' })).toString('base64url');
 const signature = createHmac('sha256', 'isolated-preview-test-secret-over-32-characters').update(payload).digest('base64url');
 await context.addCookies([{ name: 'cms_session', value: `${payload}.${signature}`, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' }]);
-const errors = [], posts = [], requests = [], results = [];
+const errors = [], posts = [], requests = [], results = [], audit = [];
 context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
 context.on('request', request => { requests.push(request.url()); if (request.method() === 'POST') posts.push(request.url()); });
 await context.route('**/*', route => {
@@ -168,7 +179,7 @@ const cases = [
   ['city', '/overview/karnataka/bengaluru'], ['sparse', '/overview/andhra-pradesh/vijayawada'],
   ['slug', '/overview/maharashtra/chhatrapati-sambhajinagar--aurangabad'],
   ['state', '/overview/karnataka'], ['micromarket', '/overview/karnataka/bengaluru/peenya'],
-  ['blog', '/blogs/preview-blog'], ['service', '/services/warehouse-search'], ['legal', '/privacy-policy'],
+  ['blog', '/blogs/preview-blog'], ['service', '/services/warehouse-search'], ['service-build-to-suit','/services/build-to-suit'], ['service-lease-negotiation','/services/lease-negotiation'], ['service-compliance-procurement','/services/compliance-procurement'], ['legal', '/privacy-policy'],
   ['terms', '/terms-of-service'], ['ad', '/bangalore'],
 ];
 const selectedCase = process.argv.find(value => value.startsWith('--case='))?.slice(7);
@@ -195,16 +206,40 @@ async function metrics(page) {
   });
 }
 try {
-  for (const [kind, path] of cases.filter(([kind]) => !selectedCase || kind === selectedCase)) {
+  for (const [kind, routePath] of cases.filter(([kind]) => !selectedCase || kind === selectedCase)) {
     await cms.goto(`${state.cmsOrigin}/preview-check/${kind}`);
     console.log('Checking',kind);
+    const editor=await cms.evaluate(()=>({
+      sections:[...document.querySelectorAll('form h2,form h3,form details summary')].map(el=>({id:el.id||el.closest('details')?.id,text:el.textContent.trim()})),
+      fields:[...document.querySelectorAll('form input:not([type=hidden]),form textarea,form select')].map(el=>({id:el.id,name:el.name,path:el.dataset.writingPath,label:el.labels?.[0]?.textContent||el.getAttribute('aria-label')}))
+    }));
+    audit.push({kind,editor});
+    // Check the editor independently of preview/public parity: both pages sharing
+    // a renderer cannot reveal controls that appear in the wrong reading order.
+    const precedes = async (first, second) => assert.ok(await cms.locator(first).evaluate((el, selector) => Boolean(el.compareDocumentPosition(document.querySelector(selector)) & Node.DOCUMENT_POSITION_FOLLOWING), second), `${kind}: ${first} before ${second}`);
+    if (kind === 'ad') {
+      const order = ['hero','enquiry','featured','why','available','locations','areas','request','services','audiences','rent','faqs'];
+      for (let i = 1; i < order.length; i++) await precedes(`#ad-section-${order[i-1]}`, `#ad-section-${order[i]}`);
+      await expect(cms.locator('#ad-section-available summary')).toContainText('desktop only');
+    } else if (['city','sparse','slug','micromarket'].includes(kind)) {
+      await precedes('#heroProse', '#inventoryHeading');
+      await precedes('#inventoryHeading', '#marketHeading');
+      await precedes('[data-writing-path="faqs.0.q"]', '[data-editor-section="related"]');
+    } else if (kind === 'state') {
+      await precedes('#citiesHeading', '#inventoryHeading');
+      await precedes('#inventoryHeading', '#rentsHeading');
+    } else if (kind === 'blog') {
+      await precedes('#title', '#author');
+      await precedes('#author', '#summary');
+      await precedes('[data-writing-path="faqs"]', 'section[aria-label="Related blogs"]');
+    }
     await cms.locator('button').filter({hasText:/^Preview$/i}).click();
     for (const [device, width] of [['Desktop',1440],['Mobile',390]]) {
       await cms.getByRole('button', {name:new RegExp(`^${device} `)}).click();
       const frame = await frameReady();
       await expect.poll(() => frame.evaluate(() => innerWidth)).toBe(width);
       await publicPage.setViewportSize({width,height:device==='Mobile'?844:900});
-      await publicPage.goto(state.siteOrigin+path);
+      await publicPage.goto(state.siteOrigin+routePath);
       await expect(publicPage.locator('h1')).toBeVisible();
       await Promise.all([settled(frame),settled(publicPage)]);
       const [preview, live] = await Promise.all([metrics(frame),metrics(publicPage)]);
@@ -225,16 +260,59 @@ try {
         await expect(frame.locator('#rents figure')).toHaveCount(0);
         await expect(frame.locator('#specification tbody tr')).toHaveCount(0);
       }
-      if (kind === 'blog') await expect(frame.locator('#blog-faq')).toHaveCount(0);
+      if (kind === 'blog') await expect(frame.locator('#blog-faq')).toHaveCount(1);
       const link = frame.locator('a[href="/request-warehouse"]').first();
       if (await link.count() && await link.isVisible()) { await link.click(); assert.ok(frame.url().includes('/preview/')); }
       await cms.locator('section[aria-label="Website preview"]').screenshot({path:`${state.work}/${kind}-${device.toLowerCase()}.png`});
+      const rendered=await frame.evaluate(()=>({
+        headings:[...document.querySelectorAll('main h1,main h2,main h3')].filter(el=>el.checkVisibility()).map(el=>({text:el.textContent.trim(),top:el.getBoundingClientRect().top+scrollY})).sort((a,b)=>a.top-b.top),
+        horizontalOverflow:document.documentElement.scrollWidth>innerWidth,
+        visibleBody:document.body.innerText,
+        imageCount:document.querySelectorAll('main img').length,
+        keywordsInHead:document.head.innerHTML.includes('UNIQUE_SERVICE_KEYWORD_SENTINEL'),
+        availableVisible:document.querySelector('#available-warehouses')?.checkVisibility()??null,
+        legalCompactMargin:[...document.querySelectorAll('[data-legal-body] p')].find(el=>el.textContent==='Audit compact paragraph')?.className
+      }));
+      audit.find(item=>item.kind===kind)[device.toLowerCase()]=rendered;
+      assert.equal(rendered.horizontalOverflow, false, `${kind}/${device}: no horizontal overflow`);
+      if (kind.startsWith('service')) assert.equal(rendered.keywordsInHead, true, 'Service keywords reach WebPage metadata');
       results.push(`${kind}/${device}: layout, fonts, content and viewport matched`);
       console.log('PASS '+results.at(-1));
     }
     if (kind === 'legal') {
       const frame = await frameReady(); await frame.getByRole('button',{name:'Back',exact:true}).click();
       assert.ok(frame.url().includes('/preview/cms'));
+    }
+    if (kind === 'terms') {
+      await cms.getByRole('tab',{name:'Edit',exact:true}).click();
+      const toggle = cms.getByRole('checkbox', {name:'Compact spacing after paragraph 6'});
+      await expect(toggle).toBeChecked();
+      await toggle.uncheck();
+      const blocks = JSON.parse(await cms.locator('input[name="blocks"]').inputValue());
+      assert.equal('compact' in blocks[5], false);
+      await cms.locator('button').filter({hasText:/^Preview$/i}).click();
+      await expect((await frameReady()).getByText('Audit compact paragraph', {exact:true})).toHaveClass(/mb-4/);
+      results.push('terms: compact paragraph spacing can be edited and previewed');
+    }
+    if (kind === 'blog') {
+      await cms.getByRole('button',{name:/^Edit$/i}).click();
+      await cms.locator('#title').fill('Unsaved Index Title');
+      await cms.locator('#description').fill('Unsaved index card description');
+      await cms.locator('#sortOrder').fill('30');
+      await cms.locator('section[aria-labelledby="thumbnail-heading"]').getByRole('button',{name:'Remove',exact:true}).click();
+      await cms.locator('button').filter({hasText:/^Preview$/i}).click();
+      await cms.getByLabel('Preview view', {exact:true}).selectOption('index');
+      const frame = await frameReady();
+      await expect(frame.locator('[data-blog-slug]')).toHaveCount(2);
+      assert.deepEqual(await frame.locator('[data-blog-slug]').evaluateAll(els => els.map(el=>el.dataset.blogSlug)), ['preview-related','preview-blog']);
+      await expect(frame.locator('[data-blog-slug="preview-blog"]')).toContainText('Unsaved Index Title');
+      await expect(frame.locator('[data-blog-slug="preview-blog"]')).toContainText('Unsaved index card description');
+      const fallback = JSON.parse(await fs.readFile(path.join(root, 'wareongo-website/src/data/blogThumbnailFallbacks.json'), 'utf8'));
+      await expect(frame.locator('[data-blog-slug="preview-related"] img')).toHaveAttribute('src', fallback[0].url);
+      await expect(frame.locator('[data-blog-slug="preview-blog"] img')).toHaveAttribute('src', fallback[1].url);
+      await cms.getByLabel('Preview view', {exact:true}).selectOption('page');
+      await expect(frame.locator('h1')).toHaveText('Unsaved Index Title');
+      results.push('blog: unsaved card copy and sort order reach the real index, then return to the article');
     }
     if (kind === 'city') {
       await cms.getByRole('button',{name:/^Edit$/i}).click();
@@ -251,11 +329,20 @@ try {
     }
     if (kind === 'ad') {
       await cms.getByRole('button',{name:'Edit content',exact:true}).click();
-      for (const group of ['areas','rent','faqs','services']) await cms.locator(`#ad-section-${group} summary`).click();
+      for (const group of ['areas','rent','faqs','services','why','audiences','locations']) await cms.locator(`#ad-section-${group} summary`).click();
+      const editedPhotos = ['doddaballapur','bidadi','sarjapur','north-bangalore','indiranagar','marathalli','jp-nagar','hsr'];
+      for (const slot of editedPhotos) await cms.locator(`[data-image-slot="micromarket-${slot}"] input:not([type=file])`).fill(`Private ${slot} image`);
       await cms.locator('#area-highway-belts-0-need').fill('Private area requirement');
       await cms.locator('#rent-intro').fill('Private rent introduction');
       await cms.locator('#faq-0-a').fill('Private FAQ answer');
       await cms.locator('#service-find-warehouse-mobileTitle').fill('Private Mobile Service');
+      await cms.locator('#service-find-warehouse-mobileBody').fill('Unique mobile service description');
+      await cms.locator('#service-find-warehouse-body').fill('Unique desktop service description');
+      await cms.locator('#benefit-local-body').fill('Unique desktop benefit description');
+      await cms.locator('#benefit-local-mobileBody').fill('Unique **mobile benefit** description');
+      await cms.locator('#audience-3pls-body').fill('Unique desktop audience description');
+      await cms.locator('#audience-3pls-mobileTitle').fill('Mobile Audience');
+      await cms.locator('#audience-3pls-mobileBody').fill('Unique **mobile audience** description');
       await cms.locator('button').filter({hasText:/^Preview$/i}).click();
       await cms.getByRole('button',{name:/^Mobile /}).click();
       const frame=await frameReady();
@@ -263,7 +350,27 @@ try {
       await expect(frame.locator('.bangalore-landing__rent-guide')).toContainText('Private rent introduction');
       await expect(frame.locator('.bangalore-landing__faq')).toContainText('Private FAQ answer');
       await expect(frame.locator('.bangalore-landing__service-mobile-copy').first()).toHaveText('Private Mobile Service');
-      results.push('Bangalore: area, rent, FAQ and mobile fields reach the real page');
+      for (const [scope, slots] of [['Warehouse Belts',editedPhotos.slice(0,3)],['City Areas',editedPhotos.slice(3)]]) {
+        await frame.getByRole('button',{name:scope,exact:true}).click();
+        for (const slot of slots) await expect(frame.locator(`img[alt="Private ${slot} image"]`)).toHaveCount(2);
+      }
+      await frame.getByRole('button',{name:'Warehouse Belts',exact:true}).click();
+      await expect(frame.getByText('Unique mobile service description',{exact:true})).toBeVisible();
+      await expect(frame.getByText('Unique desktop service description',{exact:true})).not.toBeVisible();
+      for (const subject of ['benefit','audience']) {
+        await expect(frame.getByText(`Unique mobile ${subject} description`,{exact:true})).toBeVisible();
+        await expect(frame.getByText(`Unique desktop ${subject} description`,{exact:true})).not.toBeVisible();
+        await expect(frame.locator('strong').filter({hasText:`mobile ${subject}`})).toBeVisible();
+      }
+      await cms.getByRole('button',{name:/^Desktop /}).click();
+      await expect(frame.getByText('Unique desktop service description',{exact:true})).toBeVisible();
+      await expect(frame.getByText('Unique mobile service description',{exact:true})).not.toBeVisible();
+      for (const subject of ['benefit','audience']) {
+        await expect(frame.getByText(`Unique desktop ${subject} description`,{exact:true})).toBeVisible();
+        await expect(frame.getByText(`Unique mobile ${subject} description`,{exact:true})).not.toBeVisible();
+      }
+      audit.find(item=>item.kind==='ad').serviceDescriptionSwitch=true;
+      results.push('Bangalore: area, rent, FAQ, mobile heading and mobile description reach the real page');
       await frame.locator('#bangalore-name').fill('Preview only');
       await frame.locator('#bangalore-companyName').fill('Preview company');
       await frame.locator('#bangalore-phone').fill('9999999999');
@@ -275,6 +382,19 @@ try {
       await expect(cms.getByRole('button',{name:'Exit full screen'})).toBeVisible();
       await cms.getByRole('button',{name:'Exit full screen'}).click();
       results.push('Bangalore: form submission blocked and full screen controls work');
+      for (const [view, selector, text] of [
+        ['hero-success','.bangalore-landing__enquiry-success',ad.copy.enquirySuccessHeading],
+        ['contact','[role="dialog"]',ad.copy.contactHeading],
+        ['contact-success','[role="status"]',ad.copy.contactSuccess],
+      ]) {
+        await cms.getByLabel('Preview state',{exact:true}).selectOption(view);
+        await expect(frame.locator(selector).filter({hasText:text}).first()).toBeVisible();
+      }
+      await cms.getByLabel('Preview state',{exact:true}).selectOption('page');
+      await expect(frame.locator('.bangalore-landing__enquiry-success')).toHaveCount(0);
+      await expect(frame.locator('[role="dialog"]')).toHaveCount(0);
+      await expect(frame.getByText(ad.copy.contactSuccess,{exact:true})).not.toBeVisible();
+      results.push('Bangalore: all three interaction states preview without sending a lead');
     }
   }
   await state.addFreshInventory();
@@ -319,7 +439,7 @@ try {
   assert.deepEqual(posts,[],'Preview must not submit requests');
   assert.deepEqual(errors,[],'Browser errors');
   results.push('preview privacy: no direct-page injection, POSTs, draft URLs or browser errors');
-  await fs.writeFile(`${state.work}/results.json`,JSON.stringify({results,errors,posts},null,2));
+  await fs.writeFile(`${state.work}/results.json`,JSON.stringify({results,errors,posts,audit},null,2));
   console.log('All '+results.length+' checks passed. Artifacts: '+state.work);
 } catch (error) { console.error('CMS URL', cms.url(), 'body', (await cms.locator('body').innerText()).slice(0,2500), 'errors', errors); await cms.screenshot({path:state.work+'/failure.png'}); throw error; } finally { await browser.close(); }
 

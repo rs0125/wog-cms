@@ -6,7 +6,7 @@
     "test:performance": "node --test tests/content-summaries.test.mjs tests/editor-inventory.test.mjs tests/cms-link.test.mjs tests/dashboard.test.mjs tests/location-editor-reads.test.mjs",
     "test:dashboard": "node tests/dashboard.test.mjs",
     "test:ai-writing": "node tests/ai-writing.test.mjs && node tests/ai-writing-schema.test.mjs",
-    "test:blogs": "node --test tests/blog-thumbnails.test.mjs",
+    "test:blogs": "node tests/blog-thumbnails.test.mjs && node tests/blog-index.test.mjs",
     "test:agent-cms": "node tests/agent-cms.test.mjs",
     "test:agent-cms:postgres": "node tests/agent-cms-postgres.test.mjs",
     "test:formatting": "node tests/formatting.test.mjs",

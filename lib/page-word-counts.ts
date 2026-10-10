@@ -38,8 +38,8 @@ export type EditorialScope = 'micromarket' | 'city' | 'state';
 
 /** Each scope lists only the sections it renders; a state's grid sits third. */
 const EDITORIAL_ORDER = {
-  micromarket: ['title', 'hero', 'market', 'pricing', 'specification', 'inventory', 'faqs'],
-  city: ['title', 'hero', 'market', 'corridors', 'pricing', 'specification', 'compliance', 'inventory', 'faqs'],
+  micromarket: ['title', 'hero', 'inventory', 'market', 'pricing', 'specification', 'faqs'],
+  city: ['title', 'hero', 'inventory', 'market', 'corridors', 'pricing', 'specification', 'compliance', 'faqs'],
   state: ['title', 'hero', 'market', 'cities', 'inventory', 'pricing', 'specification', 'compliance', 'faqs'],
 } as const;
 
@@ -49,7 +49,7 @@ export function editorialWordSections(content: EditorialCopy, scope: EditorialSc
     hero: wordSection('hero', 'Opening paragraph', [content.heroProse]),
     market: wordSection('market', 'Market', [content.marketHeading, content.marketProse]),
     cities: wordSection('cities', 'Cities heading', [content.citiesHeading], { formatted: false }),
-    corridors: wordSection('corridors', 'Corridors', [content.corridorHeading, content.corridorProse]),
+    corridors: wordSection('corridors', 'Localities', [content.corridorHeading, content.corridorProse]),
     pricing: wordSection('pricing', 'Pricing', [content.rentsHeading, content.rentsProse]),
     specification: wordSection('specification', 'Specification', [content.specHeading, content.specProse]),
     compliance: wordSection('compliance', 'Compliance', [content.complianceHeading, content.complianceProse]),
@@ -63,10 +63,10 @@ export function adPageWordSections(content: AdPageContent): WordCountSection[] {
   return AD_COPY_GROUPS.filter(group => group.id !== 'settings').map(group => {
     const texts = group.fields.map(field => content.copy[field.key]);
     switch (group.id) {
-      case 'why': texts.push(...content.benefits.flatMap(item => [item.title, item.mobileTitle, item.body])); break;
+      case 'why': texts.push(...content.benefits.flatMap(item => [item.title, item.mobileTitle, item.body, item.mobileBody])); break;
       case 'services': texts.push(...content.services.flatMap(item => [item.title, item.body, item.cta, item.mobileTitle, item.mobileBody])); break;
       case 'audiences': texts.push(...content.audiences.flatMap(item => [
-        item.title, item.body, item.primaryCta, ...(item.id === '3pls' ? [item.secondaryCta] : []),
+        item.title, item.body, item.mobileTitle, item.mobileBody, item.primaryCta, ...(item.id === '3pls' ? [item.secondaryCta] : []),
       ])); break;
       case 'areas': texts.push(...content.areaGroups.flatMap(group => [group.title, ...group.rows.flatMap(row => [row.need, row.areas])])); break;
       case 'rent': texts.push(content.rentGuide.intro, content.rentGuide.description, ...content.rentGuide.rows.flatMap(row => [row.area, row.rent])); break;

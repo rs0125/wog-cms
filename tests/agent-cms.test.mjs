@@ -21,10 +21,10 @@ const write = (p) => ({
 });
 const code = (name) => (error) => error.code === name;
 
-for (const source of ['native', 'import'])
-  test(`legacy Bangalore ${source} content reads and edits through the current schema without rewriting snapshots`, async () => {
+for (const version of [1, 2]) for (const source of ['native', 'import'])
+  test(`legacy v${version} Bangalore ${source} content reads and edits through the current schema without rewriting snapshots`, async () => {
     const h = memory(), target = fixtures.ad.target;
-    const legacy = JSON.parse(readFileSync(new URL('./fixtures/bangalore-v1.json', import.meta.url), 'utf8'));
+    const legacy = JSON.parse(readFileSync(new URL(`./fixtures/bangalore-v${version}.json`, import.meta.url), 'utf8'));
     legacy.copy.heroHeading = 'Retained native heading';
     const native = { slug: target.slug, draftContent: legacy, publishedContent: legacy,
       deployedContent: legacy, updatedAt: new Date('2026-10-09T00:00:00Z') };
@@ -39,7 +39,7 @@ for (const source of ['native', 'import'])
     }
     const original = structuredClone(h.state());
     const read = await h.call('read_page', target);
-    assert.equal(read.content.version, 2);
+    assert.equal(read.content.version, 3);
     for (const key of schemas.schemaFor('ad').json_schema.required) assert.ok(key in read.content, key);
     assert.equal(read.content.copy.heroHeading, editable.copy.heroHeading);
     assert.deepEqual(schemas.parseContent(target, read.content), read.content, 'API content must round-trip');
@@ -51,11 +51,11 @@ for (const source of ['native', 'import'])
     const plan = await h.prepare('ad', [{ slug: target.slug, faqs }]);
     assert.equal(plan.valid, true, JSON.stringify(plan));
     assert.deepEqual(plan.changes[0].diff.map(item => item.field), ['faqs']);
-    assert.equal(plan.changes[0].before.version, 2);
+    assert.equal(plan.changes[0].before.version, 3);
     assert.equal(plan.changes[0].after.copy.heroHeading, editable.copy.heroHeading);
     await h.call('edit_drafts', write(plan));
     assert.deepEqual(h.state().native, original.native, 'An import draft must not replace native or approved content');
-    assert.equal(h.state().drafts.get('ad/bangalore').content.version, 2);
+    assert.equal(h.state().drafts.get('ad/bangalore').content.version, 3);
     assert.deepEqual(h.state().drafts.get('ad/bangalore').content.faqs, faqs);
   });
 

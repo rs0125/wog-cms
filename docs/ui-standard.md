@@ -43,15 +43,25 @@ the content column. Fixed save bars preserve the desktop sidebar clearance.
 All page previews use `WebsitePreview` at 1440px or 390px. They load the
 website's actual React pages, CSS, navigation and inventory through an iframe.
 `WEBSITE_PREVIEW_ORIGIN` defaults to `https://wareongo.com`; set it to a local
-website origin when developing both apps. For the version 2 Bangalore schema,
+website origin when developing both apps. For the version 3 Bangalore schema,
 deploy the backend first, then the website preview routes, then the CMS.
-Version 1 ad content upgrades in memory when read; stored drafts, approvals and
+Version 1 and 2 ad content upgrade in memory when read; stored drafts, approvals and
 historical revisions are preserved. No database migration is required.
 
 Drafts cross only an origin-checked `postMessage` connection and stay in memory.
 Never put draft text in URLs, storage, logs or public endpoints. Links and form
 submissions are disabled in the frame; preview routes are excluded from indexing
 and analytics. A failed preview offers Retry and leaves editor content intact.
+
+Ad controls follow the website section order. Services have separate desktop/mobile
+copy; benefits and audiences support optional mobile overrides with desktop fallback.
+Every map-area photo has an independent image slot. Use the Preview state menu to
+review the hero thank-you, contact dialog and contact notification without submissions.
+
+Blog previews include the article and its index card in the current sort order.
+The website resolves thumbnail fallbacks with the same rule as the production build.
+Terms paragraphs expose their compact-spacing flag; privacy paragraphs use standard spacing.
+City locality help describes the live 25-tagged-listing gate, separate from size cards.
 
 The website owns pagination, missing-data conditions, related links, text
 normalization and responsive layouts. Do not add duplicate page templates to
@@ -61,7 +71,8 @@ keep schema tests for saving, publishing and backward-compatible ad revisions.
 Run `npm run test:previews:browser` from the CMS checkout in the combined workspace to build isolated
 CMS and website fixture apps and compare every preview type at both widths.
 It requires installed sibling backend, website and eval dependencies plus Chrome.
-The audit checks unsaved edits, retry, form isolation and the locality gate; it
+The audit checks editor order, mobile descriptions, map images, index cards,
+interaction states, unsaved edits, retry, form isolation and the locality gate; it
 writes screenshots and build logs to a temporary directory and makes no content
 or deployment writes.
 

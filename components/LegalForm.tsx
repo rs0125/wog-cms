@@ -59,7 +59,7 @@ export default function LegalForm({ content, expectedUpdatedAt, state, action, d
       <section>
         <h2 className="ui-panel-title text-ui-ink mb-2">Page content</h2>
         <p className="cms-hint mb-4">Select text and use Bold or Italic. Add links with [link text](https://example.com); email links can use mailto:.</p>
-        <BlockEditor blocks={blocks} kinds={LEGAL_BLOCK_KINDS} links onChange={next => { setBlocks(next); setEdited(true); }} />
+        <BlockEditor blocks={blocks} kinds={LEGAL_BLOCK_KINDS} links paragraphSpacing={content.slug === 'terms-of-service'} onChange={next => { setBlocks(next); setEdited(true); }} />
       </section>
       <div><label htmlFor="notice" className="cms-label">Closing notice (optional)</label><FormattedTextarea {...bind('notice')} rows={4} className="cms-input" /></div>
     </div>

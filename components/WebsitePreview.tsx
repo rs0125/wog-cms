@@ -1,23 +1,23 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 const WebsiteOrigin = createContext('https://wareongo.com');
 export const WebsitePreviewProvider = WebsiteOrigin.Provider;
 const VIEWPORTS = { desktop: { width: 1440, height: 900 }, mobile: { width: 390, height: 844 } };
 
 /** The website owns the renderer and styles. Drafts only cross into this frame in memory. */
-export default function WebsitePreview({ content, url: suppliedUrl, message = 'wareongo:cms-preview', title = 'Website preview' }: { content: unknown; url?: string; message?: string; title?: string }) {
+export default function WebsitePreview({ content, url: suppliedUrl, message = 'wareongo:cms-preview', title = 'Website preview', view = 'page', controls }: { content: unknown; url?: string; message?: string; title?: string; view?: string; controls?: ReactNode }) {
   const websiteOrigin = useContext(WebsiteOrigin);
   const url = suppliedUrl ?? new URL('/preview/cms', websiteOrigin).href;
-  return <PreviewFrame key={`${url}:${message}`} content={content} url={url} message={message} title={title} />;
+  return <PreviewFrame key={`${url}:${message}`} content={content} url={url} message={message} title={title} view={view} controls={controls} />;
 }
 
-function PreviewFrame({ content, url, message, title }: { content: unknown; url: string; message: string; title: string }) {
+function PreviewFrame({ content, url, message, title, view, controls }: { content: unknown; url: string; message: string; title: string; view: string; controls?: ReactNode }) {
   const container = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
-  const draft = useRef(content);
+  const draft = useRef({ content, view });
   const connected = useRef(false);
   const [viewport, setViewport] = useState<'desktop' | 'mobile'>('desktop');
   const [availableWidth, setAvailableWidth] = useState(0);
@@ -29,9 +29,9 @@ function PreviewFrame({ content, url, message, title }: { content: unknown; url:
   const origin = new URL(url).origin;
 
   useEffect(() => {
-    draft.current = content;
-    if (connected.current) frame.current?.contentWindow?.postMessage({ type: message, action: 'content', content }, origin);
-  }, [content, origin, message]);
+    draft.current = { content, view };
+    if (connected.current) frame.current?.contentWindow?.postMessage({ type: message, action: 'content', content, view }, origin);
+  }, [content, view, origin, message]);
 
   useEffect(() => {
     connected.current = false;
@@ -43,7 +43,7 @@ function PreviewFrame({ content, url, message, title }: { content: unknown; url:
       if (event.source !== frame.current?.contentWindow || event.origin !== origin || event.data?.type !== message) return;
       if (event.data.action === 'ready') {
         connected.current = true;
-        frame.current?.contentWindow?.postMessage({ type: message, action: 'content', content: draft.current }, origin);
+        frame.current?.contentWindow?.postMessage({ type: message, action: 'content', ...draft.current }, origin);
       } else if (event.data.action === 'rendered') {
         window.clearTimeout(timeout);
         setError('');
@@ -81,6 +81,7 @@ function PreviewFrame({ content, url, message, title }: { content: unknown; url:
           {value === 'desktop' ? 'Desktop' : 'Mobile'} <span className="ml-2 text-xs opacity-75">{VIEWPORTS[value].width}px</span>
         </button>)}
       </div>
+      {controls}
       <button type="button" className="cms-btn" onClick={async () => {
         try {
           if (document.fullscreenElement) await document.exitFullscreen();

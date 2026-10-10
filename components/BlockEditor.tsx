@@ -28,12 +28,15 @@ export default function BlockEditor({
   onChange,
   kinds = BLOCK_KINDS,
   links = false,
+  paragraphSpacing = false,
   onUploadStateChange,
 }: {
   blocks: Keyed<BlogBlock>[];
   onChange: (next: Keyed<BlogBlock>[]) => void;
   kinds?: readonly BlogBlock['kind'][];
   links?: boolean;
+  /** Terms paragraphs can use the website's compact spacing. */
+  paragraphSpacing?: boolean;
   onUploadStateChange?: (uploading: boolean) => void;
 }) {
   const [uploadingKeys, setUploadingKeys] = useState<string[]>([]);
@@ -102,6 +105,16 @@ export default function BlockEditor({
               className={field}
             />
           )}
+
+          {paragraphSpacing && block.kind === 'p' && <label className="mt-3 flex items-center gap-2 text-sm text-wareongo-slate">
+            <input type="checkbox" checked={Boolean((block as { compact?: boolean }).compact)}
+              onChange={event => {
+                const next = { ...block, compact: event.target.checked };
+                if (!next.compact) delete (next as { compact?: boolean }).compact;
+                onChange(replaceAt(blocks, i, next));
+              }} />
+            Compact spacing after paragraph {i + 1}
+          </label>}
 
           {(block.kind === 'ul' || block.kind === 'ol') && (
             <ListItems
