@@ -94,7 +94,7 @@ export const KIND_PLURAL: Record<LocationKind, string> = { CITY: 'Cities', STATE
 export const locationOverviewPath = (location: Pick<Location, 'kind' | 'slug' | 'stateSlug' | 'hasPage'>): string | null => {
   if (!location.hasPage) return null;
   const segments = location.kind === 'STATE' ? [location.slug] : [location.stateSlug, location.slug];
-  if (!segments.every(segment => segment && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segment))) return null;
+  if (!segments.every(segment => segment && /^[a-z0-9]+(?:-+[a-z0-9]+)*$/.test(segment))) return null;
   if (location.kind === 'STATE') return `/overview/${location.slug}`;
   return location.stateSlug ? `/overview/${location.stateSlug}/${location.slug}` : null;
 };

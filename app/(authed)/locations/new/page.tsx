@@ -12,7 +12,7 @@ import { summarisePages } from '@/lib/state-overview';
 // Gated by app/(authed)/layout.tsx, which also marks this segment dynamic.
 
 /** Only what the schema itself would accept, so a hand-edited URL can't seed junk. */
-const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SLUG = /^[a-z0-9]+(?:-+[a-z0-9]+)*$/;
 const asSlug = (v: string | undefined) => (v && SLUG.test(v) ? v : '');
 
 export default async function NewLocationPage({

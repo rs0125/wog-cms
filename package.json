@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "test:performance": "node --test tests/content-summaries.test.mjs tests/editor-inventory.test.mjs tests/cms-link.test.mjs tests/dashboard.test.mjs tests/location-editor-reads.test.mjs",
-    "test:city-localities": "node tests/city-localities.test.mjs",
     "test:dashboard": "node tests/dashboard.test.mjs",
     "test:ai-writing": "node tests/ai-writing.test.mjs && node tests/ai-writing-schema.test.mjs",
     "test:blogs": "node --test tests/blog-thumbnails.test.mjs",
@@ -21,7 +20,9 @@
     "postinstall": "prisma generate",
     "test:legal": "node tests/legal-actions.test.mjs",
     "test:services": "node --test tests/service-actions.test.mjs",
-    "test:ad-pages": "node --test tests/ad-page-actions.test.mjs tests/ad-page-content.test.mjs"
+    "test:ad-pages": "node --test tests/ad-page-actions.test.mjs tests/ad-page-content.test.mjs",
+    "test:previews": "node tests/preview-contract.test.mjs",
+    "test:previews:browser": "node scripts/check-website-previews.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1109.0",

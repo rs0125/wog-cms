@@ -24,7 +24,7 @@ export const AD_COPY_GROUPS: { id: string; title: string; fields: { key: AdPageC
   ] },
   { id: 'featured', title: 'Featured warehouses', fields: [{ key: 'featuredHeading', label: 'Section heading' }] },
   { id: 'available', title: 'Available warehouses', fields: [
-    { key: 'availableEyebrow', label: 'Eyebrow' }, { key: 'availableHeading', label: 'Section heading' },
+    { key: 'availableHeading', label: 'Section heading' },
     { key: 'filterAll', label: 'All sizes filter' }, { key: 'filterSmall', label: 'Under 5,000 sq ft filter' }, { key: 'filterMedium', label: '5,000–20,000 sq ft filter' }, { key: 'filterLarge', label: '20,000 sq ft and up filter' },
     { key: 'availableFooter', label: 'Footer copy — {listings} inserts the current listing count', multiline: true }, { key: 'availableCta', label: 'Footer button' },
   ] },
@@ -40,10 +40,9 @@ export const AD_COPY_GROUPS: { id: string; title: string; fields: { key: AdPageC
   ] },
   { id: 'services', title: 'Our services', fields: [{ key: 'servicesHeading', label: 'Section heading' }] },
   { id: 'audiences', title: 'Who we serve', fields: [{ key: 'audiencesHeading', label: 'Section heading' }] },
-  { id: 'overview', title: 'Bangalore overview', fields: [
-    { key: 'overviewEyebrow', label: 'Eyebrow' }, { key: 'overviewHeading', label: 'Section heading' },
+  { id: 'rent', title: 'Warehouse rent guide', fields: [
+    { key: 'rentHeading', label: 'Section heading' }, { key: 'rentAreaHeading', label: 'Area column heading' },
+    { key: 'rentRateHeading', label: 'Rent column heading' }, { key: 'rentUnit', label: 'Rent unit' },
   ] },
-  { id: 'statistics', title: 'Warehouse statistics', fields: [
-    { key: 'statsHeading', label: 'Section heading' }, { key: 'statsLocationsHeading', label: 'Locations heading' }, { key: 'statsRentHeading', label: 'Rent heading' }, { key: 'statsInventoryHeading', label: 'Inventory heading' }, { key: 'statsSpecificationsHeading', label: 'Specifications heading' }, { key: 'statsCityHeading', label: 'City table heading' },
-  ] },
+  { id: 'faqs', title: 'Frequently asked questions', fields: [{ key: 'faqHeading', label: 'Section heading' }] },
 ];

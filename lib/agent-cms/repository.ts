@@ -27,7 +27,7 @@ import { AD_PAGES } from '../ad-page-schema';
 import { pruneOverrides } from '../editorial-schema';
 import {
   CmsError,
-  contentFields,
+  readStoredContent,
   pageRef,
   type Content,
   type Target,
@@ -101,7 +101,7 @@ export function nativeContent(type: PageType, row: NativePage | null): Content {
       : type === 'micromarket'
         ? marketContent(row as MicromarketPage)
         : locationContent(row as LocationPage);
-  return contentFields(type, JSON.parse(JSON.stringify(value ?? {})));
+  return readStoredContent({ page_type: type, slug: row.slug }, JSON.parse(JSON.stringify(value ?? {})));
 }
 export function nativeState(type: PageType, row: NativePage | null) {
   if (!row) return 'no_content';

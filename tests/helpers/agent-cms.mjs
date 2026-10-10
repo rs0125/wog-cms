@@ -15,8 +15,8 @@ export function loader(mocks = {}) {
     if (Object.hasOwn(mocks, file)) return mocks[file];
     if (cache.has(file)) return cache.get(file);
     if (!/\.tsx?$/.test(file)) return require(file);
-    const module = { exports: {} };
-    cache.set(file, module.exports);
+    const loaded = { exports: {} };
+    cache.set(file, loaded.exports);
     const compiled = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
       fileName: file,
       compilerOptions: {
@@ -46,8 +46,8 @@ export function loader(mocks = {}) {
     vm.runInThisContext(
       `(function(exports,require,module,__filename,__dirname){${compiled}\n})`,
       { filename: file },
-    )(module.exports, localRequire, module, file, path.dirname(file));
-    return module.exports;
+    )(loaded.exports, localRequire, loaded, file, path.dirname(file));
+    return loaded.exports;
   }
   return load;
 }
@@ -172,7 +172,8 @@ export function csv(objects) {
   ].join('\r\n');
 }
 export function row(target, content) {
-  const { page_type: _, ...identity } = target;
+  const identity = { ...target };
+  delete identity.page_type;
   return { ...identity, ...content };
 }
 export function memory() {

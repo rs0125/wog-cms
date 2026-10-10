@@ -10,8 +10,9 @@ navbar's `#EDF2F7` hover. Do not reintroduce dark ivory loading fills.
 ## Sources
 
 `styles/ui.tokens.css` and `styles/ui.css` are exact, committed copies of the
-website files. The navigation and warehouse-card CSS are also mirrored for
-preview geometry. Both apps deploy independently; no sibling import runs in
+website files. Preview frames load styles directly from the website; the older
+navigation and warehouse-card snapshots do not control previews. Both apps deploy
+independently; no sibling import runs in
 production. After a website role changes, run these from the CMS checkout:
 
 ```sh
@@ -21,7 +22,7 @@ node scripts/sync-ui-styles.mjs --check
 
 `app/globals.css` bridges these roles to Tailwind 4 and the generated
 `next/font` Montserrat family. Keep its `--ui-font` override: a literal font
-name alone does not select the font that Next provides inside preview frames.
+name alone does not select the font that Next provides in the editor.
 
 ## Editor roles
 
@@ -32,33 +33,37 @@ name alone does not select the font that Next provides inside preview frames.
 - `cms-btn`: 14px, weight 600, at least 44px; primary actions are at least 48px.
 - `cms-card`: surface fill, light border, no shadow. Status colors retain
   their publishing/error meanings. Listing press shadows belong only to
-  actual website listing cards and their preview placeholders.
+  the actual website listing cards.
 
 Mobile lists wrap actions beneath titles, and long overview URLs wrap inside
 the content column. Fixed save bars preserve the desktop sidebar clearance.
 
 ## Preview contract
 
-The ad-page preview continues to load the actual website renderer through its
-origin-checked message protocol. Do not replace it with a separate mockup.
+All page previews use `WebsitePreview` at 1440px or 390px. They load the
+website's actual React pages, CSS, navigation and inventory through an iframe.
+`WEBSITE_PREVIEW_ORIGIN` defaults to `https://wareongo.com`; set it to a local
+website origin when developing both apps. For the version 2 Bangalore schema,
+deploy the backend first, then the website preview routes, then the CMS.
+Version 1 ad content upgrades in memory when read; stored drafts, approvals and
+historical revisions are preserved. No database migration is required.
 
-Blog, service and legal previews use `PagePreview` and `DeviceFrame` at 1440px
-or 390px. Editorial previews use the same frame and widths. Media queries run
-inside the iframe; shrinking a desktop container is not a mobile preview.
-The frame copies CSS and the next/font class, scales its full viewport to fit,
-and reserves its content height. Keep borders outside its measured viewport.
+Drafts cross only an origin-checked `postMessage` connection and stay in memory.
+Never put draft text in URLs, storage, logs or public endpoints. Links and form
+submissions are disabled in the frame; preview routes are excluded from indexing
+and analytics. A failed preview offers Retry and leaves editor content intact.
 
-`PreviewChrome`, `ContentPreview`, `LegalContent`, `city/CityPanels` and
-`EditorialPreview` mirror the corresponding public components. Update both
-when markup changes. Public headings use `ui-page-title`, paragraphs 16px,
-tables `ui-table`, and CTAs `ui-button`; do not substitute smaller admin roles.
-Navigation is presentational. Editorial inventory is explicitly marked as
-layout placeholders because listing photos/prices arrive at website build
-rather than from the prose editor. The same applies to state pages: a city
-card or market slot without an uploaded photo is labelled as chosen at build
-(the website picks a T1 listing photo), never filled with a stand-in image.
-Statistics use actual backend values and unsaved overrides; never fabricate
-them for appearance.
+The website owns pagination, missing-data conditions, related links, text
+normalization and responsive layouts. Do not add duplicate page templates to
+the CMS. Test changes against the website renderer at both frame widths, and
+keep schema tests for saving, publishing and backward-compatible ad revisions.
+
+Run `npm run test:previews:browser` from the CMS checkout in the combined workspace to build isolated
+CMS and website fixture apps and compare every preview type at both widths.
+It requires installed sibling backend, website and eval dependencies plus Chrome.
+The audit checks unsaved edits, retry, form isolation and the locality gate; it
+writes screenshots and build logs to a temporary directory and makes no content
+or deployment writes.
 
 ## Verification
 
@@ -70,9 +75,9 @@ npx playwright test tests/specs/navigation.spec.ts tests/specs/ui-standard.spec.
 
 The checks cover 320/390/768/1440px editor layouts, readable inputs, sidebar and
 mobile navigation, retained unsaved edits, real desktop/mobile preview widths,
-fonts, borders and overflow. Review captured screenshots too. The website
-harness's `check-ad-page-preview.mjs` checks the actual ad preview against the
-website with isolated fixture builds. Run TypeScript, ESLint and a production
+fonts, borders and overflow. Review captured screenshots too. The CMS
+`test:previews:browser` checks every actual page preview against the website
+with isolated fixture builds. Run TypeScript, ESLint and a production
 build after stylesheet changes; development CSS ordering alone is not proof.
 
 ## Loading feedback

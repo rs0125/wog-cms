@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID, generateKeyPairSync, sign } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import {
   disconnected,
   schemas,
@@ -20,27 +21,78 @@ const write = (p) => ({
 });
 const code = (name) => (error) => error.code === name;
 
+for (const source of ['native', 'import'])
+  test(`legacy Bangalore ${source} content reads and edits through the current schema without rewriting snapshots`, async () => {
+    const h = memory(), target = fixtures.ad.target;
+    const legacy = JSON.parse(readFileSync(new URL('./fixtures/bangalore-v1.json', import.meta.url), 'utf8'));
+    legacy.copy.heroHeading = 'Retained native heading';
+    const native = { slug: target.slug, draftContent: legacy, publishedContent: legacy,
+      deployedContent: legacy, updatedAt: new Date('2026-10-09T00:00:00Z') };
+    h.state().native.set('ad/bangalore', native);
+    let editable = legacy;
+    if (source === 'import') {
+      editable = structuredClone(legacy);
+      delete editable.slug;
+      editable.copy.heroHeading = 'Retained private import heading';
+      h.state().drafts.set('ad/bangalore', { ref: 'ad/bangalore', revision: randomUUID(), content: editable,
+        base_version: schemas.digest(native), actor: h.actor, import_id: randomUUID() });
+    }
+    const original = structuredClone(h.state());
+    const read = await h.call('read_page', target);
+    assert.equal(read.content.version, 2);
+    for (const key of schemas.schemaFor('ad').json_schema.required) assert.ok(key in read.content, key);
+    assert.equal(read.content.copy.heroHeading, editable.copy.heroHeading);
+    assert.deepEqual(schemas.parseContent(target, read.content), read.content, 'API content must round-trip');
+    assert.deepEqual(read.approved_content, legacy);
+    assert.deepEqual(read.deployed_snapshot, legacy);
+    assert.deepEqual(h.state(), original, 'Reading must not migrate storage or alter historical snapshots');
+
+    const faqs = [{ q: 'New question?', a: 'New answer.' }];
+    const plan = await h.prepare('ad', [{ slug: target.slug, faqs }]);
+    assert.equal(plan.valid, true, JSON.stringify(plan));
+    assert.deepEqual(plan.changes[0].diff.map(item => item.field), ['faqs']);
+    assert.equal(plan.changes[0].before.version, 2);
+    assert.equal(plan.changes[0].after.copy.heroHeading, editable.copy.heroHeading);
+    await h.call('edit_drafts', write(plan));
+    assert.deepEqual(h.state().native, original.native, 'An import draft must not replace native or approved content');
+    assert.equal(h.state().drafts.get('ad/bangalore').content.version, 2);
+    assert.deepEqual(h.state().drafts.get('ad/bangalore').content.faqs, faqs);
+  });
+
 for (const type of ['city', 'state', 'micromarket'])
   test(`${type}: invalid geography slugs do not block valid discovery or imports`, async () => {
     const h = memory(), fixture = fixtures[type], inventory = h.deps.inventory;
     h.deps.inventory = async (requested) => [
       ...(await inventory(requested)),
-      { ...fixture.target, slug: 'legacy--slug', name: 'Legacy' },
+      { ...fixture.target, slug: 'legacy/slug', name: 'Legacy' },
       ...(type === 'micromarket'
-        ? [{ ...fixture.target, city_slug: 'legacy--city', name: 'Legacy city' }]
+        ? [{ ...fixture.target, city_slug: 'legacy/city', name: 'Legacy city' }]
         : []),
     ];
     const listed = await h.call('list_pages', { page_type: type });
     assert.deepEqual(listed.items.map((item) => item.target), [fixture.target]);
     assert.equal((await h.prepare(type)).valid, true);
-    await assert.rejects(h.call('read_page', { ...fixture.target, slug: 'legacy--slug' }));
-    await assert.rejects(h.prepare(type, [row({ ...fixture.target, slug: 'legacy--slug' }, fixture.content)]));
+    await assert.rejects(h.call('read_page', { ...fixture.target, slug: 'legacy/slug' }));
+    await assert.rejects(h.prepare(type, [row({ ...fixture.target, slug: 'legacy/slug' }, fixture.content)]));
     // Discovery must not turn a malformed source identity into an invented URL.
     const invented = await h.prepare(type, [row({ ...fixture.target, slug: 'legacy-slug' }, fixture.content)]);
     assert.equal(invented.valid, false);
     assert.equal(invented.saved_drafts, 0);
     assert.match(invented.errors[0].message, /Unknown CMS target/);
   });
+
+test('canonical backend city slugs with repeated hyphens can be discovered and imported unchanged', async () => {
+  const h = memory();
+  const target = { page_type: 'city', slug: 'chhatrapati-sambhajinagar--aurangabad' };
+  const inventory = h.deps.inventory;
+  h.deps.inventory = async type => [...await inventory(type), { ...target, name: 'Aurangabad' }];
+  assert.ok((await h.call('list_pages', { page_type: 'city' })).items.some(item => item.target.slug === target.slug));
+  const preview = await h.prepare('city', [row(target, fixtures.city.content)]);
+  assert.equal(preview.valid, true, JSON.stringify(preview));
+  const saved = await h.call('fill_empty_drafts', write(preview));
+  assert.equal(saved.data.published, false);
+  assert.ok(h.state().drafts.has(schemas.pageRef(target)));
+});
 
 for (const [type, fixture] of Object.entries(fixtures))
   test(`${type}: schema, CSV, private draft and CMS approval round trip`, async () => {

@@ -24,7 +24,7 @@ const cases = {
   micromarket: { source: micromarket.micromarketSchema, fields: overview, managed: [...managedOverview, 'citySlug'] },
   service: { source: service.serviceDraftSchema, fields: ['title', 'seoTitle', 'description', 'summary', 'keywords', 'blocks', 'faqs'], managed: ['slug'] },
   legal: { source: legal.legalContentSchema, fields: ['title', 'seoTitle', 'description', 'blocks', 'notice'], managed: ['slug', 'effectiveDate', 'updated'] },
-  ad: { fields: ['copy', 'heroSteps', 'benefits', 'services', 'audiences', 'areaRows', 'overviewParagraphs'], managed: ['version', 'slug', 'name', 'images', 'overviewStats'] },
+  ad: { fields: ['copy', 'benefits', 'services', 'audiences', 'areaGroups', 'rentGuide', 'faqs'], managed: ['version', 'slug', 'name', 'images'] },
 };
 const sorted = items => [...items].sort();
 const jsonSchema = schema => z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any' });
@@ -92,11 +92,12 @@ test('service export includes completion constraints as well as draft limits, fo
   }
 });
 
-test('ad export follows native required text, fixed step count, card identities and optional fields', () => {
+test('ad export follows native required text, area groups, card identities and optional fields', () => {
   const schema = writing.writingJsonSchema('ad').properties;
   assert.ok(writing.writingTemplate({ type: 'ad', slug: 'bangalore' }, ad).instructions.some(text => text.startsWith('All ad-page copy uses plain text.')));
-  assert.equal(schema.heroSteps.minItems, adRules.AD_HERO_STEP_COUNT);
-  assert.equal(schema.heroSteps.maxItems, adRules.AD_HERO_STEP_COUNT);
+  assert.equal(schema.areaGroups.minItems, 2);
+  assert.equal(schema.areaGroups.maxItems, 2);
+  assert.deepEqual(schema.areaGroups.prefixItems.map(group => group.properties.scope.const), ['belts', 'city']);
   for (const [key, field] of Object.entries(schema.copy.properties)) {
     assert.equal(field.minLength, adRules.AD_REQUIRED_COPY_FIELDS.includes(key) ? 1 : undefined, key);
     assert.equal(field.maxLength, adRules.AD_TEXT_LIMIT);
@@ -108,9 +109,9 @@ test('ad export follows native required text, fixed step count, card identities 
     assert.deepEqual(sorted(cards.map(card => card.properties.id.const)), sorted(ad[group].map(card => card.id)));
     for (const card of cards) for (const key of required) assert.equal(card.properties[key].minLength, 1, `${group}.${key}`);
   }
-  assert.equal(schema.areaRows.minItems, 1);
-  assert.equal(schema.areaRows.items.properties.areas.minItems, 1);
-  assert.equal(schema.overviewParagraphs.minItems, 1);
+  assert.equal(schema.areaGroups.prefixItems[0].properties.rows.minItems, 1);
+  assert.equal(schema.rentGuide.properties.rows.minItems, 1);
+  assert.equal(schema.faqs.minItems, 1);
   const triplePl = schema.audiences.items.anyOf.find(card => card.properties.id.const === '3pls');
   assert.equal(triplePl.properties.secondaryCta.minLength, 1);
   assert.deepEqual(writing.validateWriting('ad', ad), []);
@@ -122,11 +123,11 @@ test('ad export follows native required text, fixed step count, card identities 
 });
 
 test('ad structural limits are read from the native rules rather than duplicated constants', () => {
-  const isolated = loader({ './ad-page-content.mjs': { ...adRules, AD_TEXT_LIMIT: 12345, AD_HERO_STEP_COUNT: 5, AD_LIST_LIMIT: 12 } })('lib/ai-writing.ts');
+  const isolated = loader({ './ad-page-content.mjs': { ...adRules, AD_TEXT_LIMIT: 12345, AD_LIST_LIMIT: 12 } })('lib/ai-writing.ts');
   const schema = isolated.writingJsonSchema('ad').properties;
   assert.equal(schema.copy.properties.seoTitle.maxLength, 12345);
-  assert.equal(schema.heroSteps.minItems, 5);
-  assert.equal(schema.areaRows.maxItems, 12);
+  assert.equal(schema.areaGroups.prefixItems[0].properties.rows.maxItems, 12);
+  assert.equal(schema.rentGuide.properties.rows.maxItems, 12);
 });
 
 test('both legal pages export their current copy using the legal block schema', () => {

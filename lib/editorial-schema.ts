@@ -21,12 +21,12 @@ export const nonEmpty = z.string().trim().min(1, 'required');
  * match a real page simply never renders, silently.
  *
  * `slugifyMicromarket` collapses '/' to '-' ("Alipur/Budhpur" →
- * "alipur-budhpur"), so a slug here is plain lowercase kebab either way.
+ * "alipur-budhpur"), but backend city names can produce repeated hyphens. Preserve those canonical URLs.
  */
 export const slug = z
   .string()
   .trim()
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'lowercase letters, numbers and single hyphens only');
+  .regex(/^[a-z0-9]+(?:-+[a-z0-9]+)*$/, 'lowercase letters, numbers and hyphens only');
 
 export const imageSchema = z.object({
   // Written by the upload route, never typed by hand: an absolute URL on the R2

@@ -1,3 +1,4 @@
+import { WebsitePreviewProvider } from '@/components/WebsitePreview';
 import CmsNavigation from '@/components/CmsNavigation';
 import { requireUser } from '@/lib/auth';
 
@@ -14,11 +15,13 @@ export default async function AuthedLayout({ children }: { children: React.React
   const user = await requireUser();
 
   return (
+    <WebsitePreviewProvider value={process.env.WEBSITE_PREVIEW_ORIGIN || 'https://wareongo.com'}>
     <div className="min-h-screen">
       <CmsNavigation user={{ name: user.name, email: user.email }} />
       <div id="cms-content" tabIndex={-1} className="min-w-0 outline-none lg:ml-64">
         {children}
       </div>
     </div>
+    </WebsitePreviewProvider>
   );
 }

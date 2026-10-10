@@ -63,16 +63,14 @@ export function adPageWordSections(content: AdPageContent): WordCountSection[] {
   return AD_COPY_GROUPS.filter(group => group.id !== 'settings').map(group => {
     const texts = group.fields.map(field => content.copy[field.key]);
     switch (group.id) {
-      case 'hero': texts.push(...content.heroSteps); break;
-      case 'why': texts.push(...content.benefits.flatMap(item => [item.title, item.body])); break;
-      case 'services': texts.push(...content.services.flatMap(item => [item.title, item.body, item.cta])); break;
+      case 'why': texts.push(...content.benefits.flatMap(item => [item.title, item.mobileTitle, item.body])); break;
+      case 'services': texts.push(...content.services.flatMap(item => [item.title, item.body, item.cta, item.mobileTitle, item.mobileBody])); break;
       case 'audiences': texts.push(...content.audiences.flatMap(item => [
         item.title, item.body, item.primaryCta, ...(item.id === '3pls' ? [item.secondaryCta] : []),
       ])); break;
-      case 'areas': texts.push(...content.areaRows.flatMap(row => [row.need, ...row.areas])); break;
-      case 'overview': texts.push(
-        ...content.overviewParagraphs, ...content.overviewStats.flatMap(item => [item.value, item.label]),
-      ); break;
+      case 'areas': texts.push(...content.areaGroups.flatMap(group => [group.title, ...group.rows.flatMap(row => [row.need, row.areas])])); break;
+      case 'rent': texts.push(content.rentGuide.intro, content.rentGuide.description, ...content.rentGuide.rows.flatMap(row => [row.area, row.rent])); break;
+      case 'faqs': texts.push(...content.faqs.flatMap(faq => [faq.q, faq.a])); break;
     }
     return wordSection(group.id, group.title, texts, { formatted: false });
   });

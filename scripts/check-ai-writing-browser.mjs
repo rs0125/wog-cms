@@ -221,7 +221,12 @@ try {
     if (kind === 'state') { assert.ok(exported.schema.properties.citiesHeading); assert.equal(exported.schema.properties.corridorProse, undefined); }
     if (kind === 'micromarket') assert.equal(exported.page.citySlug, 'bengaluru');
     if (kind === 'service') assert.equal(exported.schema.allOf[0].properties.title.minLength, 1);
-    if (kind === 'ad') assert.equal(exported.schema.properties.heroSteps.maxItems, 4);
+    if (kind === 'ad') {
+      assert.equal(exported.schema.properties.areaGroups.maxItems, 2);
+      assert.equal(exported.schema.properties.rentGuide.properties.rows.maxItems, 30);
+      assert.equal(exported.schema.properties.faqs.minItems, 1);
+      assert.equal(exported.schema.properties.heroSteps, undefined);
+    }
   }
   console.log('PASS: all seven page types download their own schema and latest unsaved copy, including import-locked pages');
 

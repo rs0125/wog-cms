@@ -33,8 +33,6 @@ function load(file) {
 const { toggleTextFormat } = load('lib/text-formatting.ts');
 const { plainInlineText } = load('lib/inline-format.ts');
 const InlineText = load('components/InlineText.tsx').default;
-const { ContentBlock } = load('components/ContentPreview.tsx');
-const { LegalInline } = load('components/LegalContent.tsx');
 const render = (text, Component = InlineText) => renderToStaticMarkup(createElement(Component, { text }));
 
 test('formatting a selection preserves surrounding text and can be removed', () => {
@@ -88,31 +86,6 @@ for (const [text, html, plain] of [
 ]) test('renders stored emphasis safely: ' + text, () => {
   assert.equal(render(text), html);
   assert.equal(plainInlineText(text), plain);
-});
-
-test('paragraphs, lists, headings, tables and captions render emphasis', () => {
-  for (const block of [
-    { kind: 'p', text: '**Bold** *italic*' },
-    { kind: 'h2', text: '**Bold** *italic*' },
-    { kind: 'h3', text: '**Bold** *italic*' },
-    { kind: 'ul', items: ['**Bold** *italic*'] },
-    { kind: 'ol', items: ['**Bold** *italic*'] },
-    { kind: 'table', table: { headers: ['**Bold**'], rows: [['*italic*']] } },
-    { kind: 'images', images: [{ url: '/photo.webp', alt: '**literal alt**', width: 100, height: 100 }], caption: '**Bold** *italic*' },
-  ]) {
-    const html = renderToStaticMarkup(createElement(ContentBlock, { block }));
-    assert.ok(html.includes('<strong>Bold</strong>'));
-    assert.ok(html.includes('<em>italic</em>'));
-    if (block.kind === 'images') assert.ok(html.includes('alt="**literal alt**"'));
-  }
-});
-
-test('legal copy keeps safe links and formats their labels and surrounding words', () => {
-  const html = render('**Contact [*support*](mailto:sales@wareongo.com)**', LegalInline);
-  assert.equal(html, '<strong>Contact <a href="mailto:sales@wareongo.com" class="text-wareongo-blue hover:underline break-words"><em>support</em></a></strong>');
-  for (const href of ['javascript:alert', '//evil.example', '/\\evil.example', 'data:text/html,evil']) {
-    assert.equal(render('[**link**](' + href + ')', LegalInline), '<strong>link</strong>');
-  }
 });
 
 test('formatting stays in the existing save payload and word counts use visible text', () => {

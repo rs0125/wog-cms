@@ -25,7 +25,7 @@ Run `npm run test:word-count` for counting and section aggregation checks.
 ## Ad pages
 
 **Ad pages → Bangalore** (`/ad-pages/bangalore`) contains the existing `/bangalore`
-campaign copy, figures, area recommendations, card text, CTA labels and photos.
+campaign copy, area recommendations, rent guide, FAQs, card text, CTA labels and photos.
 Use **Preview** to review content, **Save draft** to keep it private, and **Save
 for next build** when it is ready. The existing Deploy button or nightly build
 then updates the website. Saving a draft never changes approved website content.
@@ -34,18 +34,20 @@ its response was lost, retrying the same content acknowledges that save without
 rewriting it. Build bookkeeping does not invalidate an open ad-page editor.
 
 Listing facts, micromarket counts, map positions, shared logos and the page layout
-remain connected to the website's existing data and components. The remaining
-overview placeholders stay editable. The hero uses four editable
-process steps. “Why choose WareOnGo” has six editable benefit cards and a section
-image. Older saved revisions gain the new slots when read, preserving existing
-copy without a database rewrite. Preview embeds the website's actual Bangalore renderer with the current,
-unsaved draft. Desktop (1440px), mobile (390px) and
-full-screen views retain the real typography, cards, map, forms and market tables.
+remain connected to the website's existing data and components. Version 2 follows
+the current page: two area groups, a rent guide, FAQs, six benefit cards and
+separate mobile service copy. Retired process steps, overview placeholders and
+the unused benefit image are no longer offered in the editor. Version 1 content
+upgrades when read without rewriting saved revisions. Preview embeds the website's
+actual Bangalore renderer with the current unsaved draft. Desktop (1440px), mobile
+(390px) and full-screen views retain the real typography, cards, map and forms.
 Links and form submissions are disabled, and preview traffic sends no analytics.
 Draft content passes directly from the authenticated editor to the website frame
 in browser memory; it is never put in a URL, public endpoint or browser storage.
 
-Deploy the website preview route before deploying this CMS version. Preview uses
+Deploy the backend, then the website preview routes, then this CMS version.
+This schema update requires no database migration. All page previews use
+the actual website renderer. Preview uses
 `https://wareongo.com` by default; set `WEBSITE_PREVIEW_ORIGIN` to a local website
 server for development. The website accepts drafts from `cms.wareongo.com` and
 `wog-cms.vercel.app`; a local website also accepts a local CMS. If the website is
@@ -245,20 +247,22 @@ the edge or at the CDN, where it can't reach the session store, so it could only
 ever do a partial check — which invites treating it as the boundary when it
 isn't. The portal takes the same approach.
 
-## Styling and the blog preview
+## Styling and previews
 
 `app/globals.css` ports the website's palette into a Tailwind 4 `@theme` block —
 Tailwind 4 has no JS config, so this is the equivalent of the site's
 `tailwind.config.ts`. **Keep the two in sync.** `app/layout.tsx` loads the same
-Montserrat + Instrument Serif via `next/font`, self-hosted.
+Montserrat via `next/font`, self-hosted.
 
-That shared palette is what lets `components/BlogPreview.tsx` reuse the public
-renderer's exact class names, so the Edit/Preview toggle shows real type,
-spacing and table treatment rather than an approximation. The preview is a
-deliberate copy of `BlogDetail.tsx`'s block switch and `FAQAccordion.tsx`, not a
-shared package — two separate deployments with separate Tailwind setups made a
-package cost more than it saves for five blogs. **If the site's blog markup
-changes, `BlogPreview.tsx` needs the same edit.**
+`components/WebsitePreview.tsx` embeds the actual website pages for blogs,
+services, legal pages, city/state/micromarket overviews and Bangalore. The website
+owns their markup, fonts, responsive styles and inventory rules; the CMS supplies
+unsaved content over an origin-checked connection. There are no duplicate page
+templates to synchronize. Run `npm run test:previews` for the contract checks and
+`npm run test:previews:browser` for isolated production builds and browser comparisons.
+Location previews include inventory added after the last website build. Previews
+use a guest authentication context and never read or change the website's login
+token. The browser checks cover both cases, including malformed stored tokens.
 
 Repeated form classes (`cms-input`, `cms-label`, `cms-btn`, `cms-card`, …) are
 defined once in `globals.css` under `@layer components`.

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { NAVIGATION_GROUPS } from '@/lib/navigation';
 import { AD_COPY_GROUPS } from '@/lib/ad-page-schema';
-import { AD_HERO_STEP_COUNT } from '@/lib/ad-page-content.mjs';
 import { isDeployConfigured } from '@/lib/deploy';
 import { WordCount } from './WordCount';
 import OverviewIntro from './OverviewIntro';
@@ -162,7 +161,6 @@ function AdFields() {
     <div className="cms-title text-lg">{group.title}{group.id !== 'settings' && <span className="ml-3 inline-block align-middle"><Skeleton className="h-3 w-16" /></span>}</div>
     {group.id === 'hero' && <div className="mt-5 space-y-5">
       {group.fields.map(field => <Field key={field.key} tall={field.multiline} />)}
-      <div className="grid gap-3 sm:grid-cols-2">{Array.from({ length: AD_HERO_STEP_COUNT }, (_, i) => <Field key={i} />)}</div>
     </div>}
   </div>)}</div>;
 }

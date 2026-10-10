@@ -78,7 +78,7 @@ export const micromarketOverviewPath = (
 ): string | null => {
   if (!market?.hasPage || !market.parentState) return null;
   const segments = [market.stateSlug, market.citySlug, market.slug];
-  return segments.every((segment) => segment && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segment))
+  return segments.every((segment) => segment && /^[a-z0-9]+(?:-+[a-z0-9]+)*$/.test(segment))
     ? `/overview/${segments.join('/')}`
     : null;
 };

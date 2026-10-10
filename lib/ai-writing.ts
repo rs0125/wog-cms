@@ -6,7 +6,7 @@ import { micromarketSchema } from './micromarket-schema';
 import { serviceDraftSchema, servicePublishSchema, hasServiceWriting } from './service-schema';
 import { legalContentSchema } from './legal-schema';
 import { AD_COPY_GROUPS } from './ad-page-schema';
-import { AD_TEXT_LIMIT, AD_LIST_LIMIT, AD_HERO_STEP_COUNT, AD_REQUIRED_COPY_FIELDS, AD_REQUIRED_CARD_FIELDS } from './ad-page-content.mjs';
+import { AD_TEXT_LIMIT, AD_LIST_LIMIT, AD_REQUIRED_TEXT_PATHS, AD_REQUIRED_LIST_PATHS, AD_REQUIRED_COPY_FIELDS, AD_REQUIRED_CARD_FIELDS } from './ad-page-content.mjs';
 import adTemplate from '../content/ad-pages/bangalore.json';
 
 export const WRITING_VERSION = 1;
@@ -16,9 +16,10 @@ const MAX_WRITING_ENTRIES = 2_000;
 export const writingTypes = ['blog', 'city', 'state', 'micromarket', 'service', 'legal', 'ad'] as const;
 export type WritingType = typeof writingTypes[number];
 export type WritingValues = Record<string, unknown>;
-const slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Enter the page slug first.');
+const slug = z.string().regex(/^[a-z0-9]+(?:-+[a-z0-9]+)*$/, 'Enter the page slug first.');
 export const writingTargetSchema = z.object({ type: z.enum(writingTypes), slug, citySlug: slug.optional() }).strict()
-  .refine(t => (t.type === 'micromarket') === Boolean(t.citySlug), 'A micromarket needs its city slug.');
+  .refine(t => (t.type === 'micromarket') === Boolean(t.citySlug), 'A micromarket needs its city slug.')
+  .refine(t => t.type !== 'blog' || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(t.slug), 'Blog slugs use single hyphens.');
 export type WritingTarget = z.infer<typeof writingTargetSchema>;
 export type WritingIssue = { path: string; label: string; message: string };
 export type WritingChange = { path: string; label: string; before: unknown; after: unknown; replacement: boolean };
@@ -35,17 +36,17 @@ function adShape(example: unknown, path: string): z.ZodType {
   const [group, field] = path.split('.');
   const cardFields = AD_REQUIRED_CARD_FIELDS[group as keyof typeof AD_REQUIRED_CARD_FIELDS];
   if (typeof example === 'string') return (group === 'copy' && AD_REQUIRED_COPY_FIELDS.includes(field))
-    || cardFields?.includes(field) || ['heroSteps', 'overviewParagraphs', 'areaRows.need', 'areaRows.areas'].includes(path)
+    || cardFields?.includes(field) || AD_REQUIRED_TEXT_PATHS.includes(path)
     ? adRequiredText : z.string().max(AD_TEXT_LIMIT);
   if (Array.isArray(example)) {
     if (cardFields) return z.array(z.union(example.map(item => adShape(item, path)))).length(example.length);
+    if (path === 'areaGroups') return z.tuple(example.map(item => adShape(item, path)) as [z.ZodType, ...z.ZodType[]]);
     const array = z.array(adShape(example[0], path)).max(AD_LIST_LIMIT);
-    return path === 'heroSteps' ? array.length(AD_HERO_STEP_COUNT)
-      : ['overviewParagraphs', 'areaRows', 'areaRows.areas'].includes(path) ? array.min(1) : array;
+    return AD_REQUIRED_LIST_PATHS.includes(path) ? array.min(1) : array;
   }
   const item = example as WritingValues;
   return z.object(Object.fromEntries(Object.entries(item).map(([key, value]) => [key,
-    cardFields && key === 'id' ? z.literal(value as string)
+    (cardFields && key === 'id') || (path === 'areaGroups' && ['id', 'scope'].includes(key)) ? z.literal(value as string)
       : group === 'audiences' && item.id === '3pls' && key === 'secondaryCta' ? adRequiredText
         : adShape(value, `${path}.${key}`),
   ]))).strict();
@@ -57,7 +58,7 @@ const schemas = {
   micromarket: micromarketSchema.pick(overviewFields),
   service: serviceDraftSchema.omit({ slug: true }),
   legal: z.object(legalContentSchema.shape).pick({ title: true, seoTitle: true, description: true, blocks: true, notice: true }),
-  ad: z.object(Object.fromEntries(['copy', 'heroSteps', 'benefits', 'services', 'audiences', 'areaRows', 'overviewParagraphs']
+  ad: z.object(Object.fromEntries(['copy', 'benefits', 'services', 'audiences', 'areaGroups', 'rentGuide', 'faqs']
     .map(k => [k, adShape(adTemplate[k as keyof typeof adTemplate], k)]))),
 };
 const labels: Record<string, string> = {
@@ -67,8 +68,8 @@ const labels: Record<string, string> = {
   rentsHeading: 'Pricing heading', rentsProse: 'Pricing paragraph', specHeading: 'Specification heading', specProse: 'Specification paragraph',
   inventoryHeading: 'Listings heading', corridorHeading: 'Corridor heading', corridorProse: 'Corridor paragraph',
   complianceHeading: 'Compliance heading', complianceProse: 'Compliance paragraph', citiesHeading: 'Cities heading',
-  notice: 'Closing notice', heroSteps: 'Process steps', benefits: 'Benefits', services: 'Service cards', audiences: 'Audience cards',
-  areaRows: 'Area recommendations', overviewParagraphs: 'Overview paragraphs', q: 'Question', a: 'Answer', text: 'Text',
+  notice: 'Closing notice', benefits: 'Benefits', services: 'Service cards', audiences: 'Audience cards',
+  areaGroups: 'Area recommendations', rentGuide: 'Rent guide', mobileTitle: 'Mobile heading', mobileBody: 'Mobile description', q: 'Question', a: 'Answer', text: 'Text',
   items: 'List items', table: 'Table', headers: 'Headers', rows: 'Rows', kind: 'Block type',
   ...Object.fromEntries(AD_COPY_GROUPS.flatMap(g => g.fields.map(f => [`copy.${f.key}`, `${g.title} → ${f.label}`]))),
 };
@@ -100,23 +101,33 @@ export function setWriting(values: WritingValues, path: string, value: unknown):
   return { ...values, [key]: rest.length ? setWriting((values[key] ?? {}) as WritingValues, rest.join('.'), value) : value };
 }
 export function writingContent(type: WritingType, values: WritingValues): WritingValues {
+  const empty = (schema: JsonSchema): unknown => schema.type === 'object'
+    ? Object.fromEntries(Object.entries(schema.properties ?? {}).map(([key, child]) => [key, empty(child)]))
+    : schema.type === 'array' ? [] : schema.anyOf?.some(s => s.type === 'null') ? null : '';
   return writingPaths(type).reduce((out, path) => {
     const v = getWriting(values, path);
     const schema = fieldJsonSchema(type, path);
     const nullable = schema.anyOf?.some((s: JsonSchema) => s.type === 'null');
-    const fallback = schema.type === 'array' ? [] : nullable ? null : '';
+    const fallback = empty(schema);
     return setWriting(out, path, (nullable && emptyWriting(v)) ? null : v ?? fallback);
   }, {});
 }
 type JsonSchema = { type?: string | string[]; const?: unknown; enum?: unknown[]; properties?: Record<string, JsonSchema>;
-  required?: string[]; items?: JsonSchema; anyOf?: JsonSchema[]; oneOf?: JsonSchema[]; [key: string]: unknown };
+  required?: string[]; items?: JsonSchema; prefixItems?: JsonSchema[]; anyOf?: JsonSchema[]; oneOf?: JsonSchema[]; [key: string]: unknown };
 const schemaCache = new Map<WritingType, JsonSchema>();
 function exportSchema(schema: z.ZodType): JsonSchema {
   return z.toJSONSchema(schema, { io: 'input', unrepresentable: 'any', override: ({ jsonSchema }) => {
     // The import allowlist is stricter than native schemas that strip unknown
     // keys. Advertise the actual import rules in every nested object/array.
     if (jsonSchema.type === 'object') jsonSchema.additionalProperties = false;
-    if (jsonSchema.type === 'array') jsonSchema.maxItems = Math.min(300, jsonSchema.maxItems ?? 300);
+    if (jsonSchema.type === 'array') {
+      jsonSchema.maxItems = Math.min(300, jsonSchema.maxItems ?? 300);
+      if (jsonSchema.prefixItems) {
+        jsonSchema.minItems = jsonSchema.prefixItems.length;
+        jsonSchema.maxItems = jsonSchema.prefixItems.length;
+        jsonSchema.items = false;
+      }
+    }
   } }) as JsonSchema;
 }
 export function writingJsonSchema(type: WritingType): JsonSchema {
@@ -137,7 +148,7 @@ function fieldJsonSchema(type: WritingType, path: string): JsonSchema {
 export function writingComplete(type: WritingType, values: WritingValues): boolean {
   const v = writingContent(type, values);
   const core = ['city', 'state', 'micromarket'].includes(type) ? ['seoTitle', 'metaDescription', 'h1', 'heroProse']
-    : type === 'ad' ? ['copy.seoTitle', 'copy.metaDescription', 'copy.heroHeading', 'overviewParagraphs']
+    : type === 'ad' ? ['copy.seoTitle', 'copy.metaDescription', 'copy.heroHeading', 'rentGuide.intro']
       : ['title', 'seoTitle', 'description', ...(type === 'legal' ? [] : ['summary']), 'blocks'];
   if (core.some(p => emptyWriting(getWriting(v, p)))) return false;
   if (type === 'blog' || type === 'service') {
@@ -195,7 +206,7 @@ function fieldGuidance(type: WritingType, field: string): string {
     author: 'An actual author or team name, without “By”. Use null to credit WareOnGo by default.',
     keywords: 'A short array of relevant phrases. Use [] if none are needed; do not stuff variations of the same keyword.',
     blocks: 'Structure the body with h2 sections, h3 subsections, p paragraphs, ul or ol lists, and tables where supported by the schema. Do not embed Markdown headings or lists inside paragraph text. Every table row needs one cell per header. Preserve existing image blocks.',
-    faqs: 'Use entries shaped {"q":"Question?","a":"Direct answer."}. Answer real reader questions, avoiding repetition of the main copy. Use [] if no useful FAQs; never leave a half-written entry.',
+    faqs: (type === 'ad' ? 'Keep at least one complete FAQ. ' : '') + 'Use entries shaped {"q":"Question?","a":"Direct answer."}. Answer real reader questions, avoiding repetition of the main copy. For pages other than ads, use [] if no useful FAQs; never leave a half-written entry.',
     heroEyebrow: 'A short location label above the main heading. Use null to keep the automatic location label.',
     heroProse: 'Explain why this location works as a warehouse market and which occupiers it suits. Live count, rent and size tiles sit beside this paragraph, so leave those figures out.',
     marketProse: type === 'city' ? 'Explain the city’s freight routes, industries and demand. Mention three to five relevant localities; reserve detailed comparisons for corridorProse.'
@@ -206,12 +217,13 @@ function fieldGuidance(type: WritingType, field: string): string {
     corridorProse: 'Compare which corridors or localities suit different operations. Explain tradeoffs in access and location rather than repeating marketProse or the automatic comparison table.',
     complianceProse: 'Explain locally relevant zoning, land use, fire NOC and building approvals. Verify legal claims against dated authoritative sources. Leave null if you cannot support them; avoid repeating FAQ answers.',
     notice: 'A short closing policy notice. Preserve its legal meaning; do not invent obligations or promises.',
-    heroSteps: `Keep ${AD_HERO_STEP_COUNT} short process steps in their existing order.`,
     benefits: 'Explain each existing benefit concisely. Preserve every card ID.',
     services: 'Explain each existing service and its action button. Preserve every card ID.',
     audiences: 'Describe the needs of each existing audience and the next action. Preserve every card ID.',
-    areaRows: 'Match occupier needs to appropriate local areas, using an array of area names. Do not make unsupported locality claims.',
-    overviewParagraphs: 'Write concise paragraphs explaining the local warehouse market, with no duplicated statistics or unsupported claims.',
+    areaGroups: 'Keep the two highway and city groups, their IDs and scopes in order. Edit their headings and rows; areas is plain text. Do not invent locality claims.',
+    rentGuide: 'Explain the local rent market. Preserve approved rent ranges unless supplied with verified replacements. Rows contain area and rent text.',
+    mobileTitle: 'Short mobile heading, separate from the desktop heading.',
+    mobileBody: 'Short mobile description, separate from the desktop description.',
     availableFooter: 'Keep the {listings} placeholder where a current listing count is needed; never replace it with a fixed number.',
   };
   return descriptions[field] ?? (/Heading$/.test(field) ? `A short, specific section heading in plain text.${['city', 'state', 'micromarket'].includes(type) ? ' Leave optional headings null to use the site’s default.' : ''}`
@@ -236,7 +248,7 @@ function shapeIssues(value: unknown, schema: JsonSchema, path: string, partial =
     if (!Array.isArray(value)) return [issue(path, 'Use a JSON array, as shown in the template.')];
     const limit = Math.min(300, typeof schema.maxItems === 'number' ? schema.maxItems : 300);
     if (value.length > limit) return [issue(path, `Use at most ${limit} entries.`)];
-    return value.flatMap((v, i) => shapeIssues(v, schema.items ?? {}, `${path}.${i}`));
+    return value.flatMap((v, i) => shapeIssues(v, schema.prefixItems?.[i] ?? schema.items ?? {}, `${path}.${i}`));
   }
   if (schema.type === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return [issue(path, 'Use a JSON object, as shown in the template.')];
@@ -329,7 +341,8 @@ export function protectedWritingIssues(type: WritingType, before: WritingValues,
       const ids = (v: unknown) => Array.isArray(v) ? v.map(x => x.id).sort() : [];
       if (!sameWriting(ids(before[key]), ids(after[key]))) return [issue(key, 'Keep the existing card IDs. Change only their copy.')];
     }
-    if (Array.isArray(after.heroSteps) && after.heroSteps.length !== AD_HERO_STEP_COUNT) return [issue('heroSteps', `Keep the ${AD_HERO_STEP_COUNT} process steps.`)];
+    const groups = (v: unknown) => Array.isArray(v) ? v.map(({ id, scope }) => ({ id, scope })) : [];
+    if (!sameWriting(groups(before.areaGroups), groups(after.areaGroups))) return [issue('areaGroups', 'Keep the highway and city groups in their existing order.')];
   }
   return [];
 }

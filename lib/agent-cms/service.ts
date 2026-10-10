@@ -8,6 +8,7 @@ import {
   pageRef,
   pageTypes,
   parseContent,
+  readStoredContent,
   schemaFor,
   targetSchema,
   type Content,
@@ -218,7 +219,7 @@ export async function cmsOperation(
         state: nativeState(target.page_type, row),
         has_import_draft: Boolean(draft),
         draft_revision: draft?.revision ?? null,
-        content: draft?.content ?? nativeContent(target.page_type, row),
+        content: draft ? readStoredContent(target, draft.content) : nativeContent(target.page_type, row),
         approved_content: approved,
         deployed_snapshot: row?.deployedContent ?? null,
         live_verification: 'not_checked',
@@ -357,7 +358,7 @@ export async function cmsOperation(
               409,
             );
           const before =
-            draft?.content ?? nativeContent(input.page_type, current);
+            draft ? readStoredContent(item.target, draft.content) : nativeContent(input.page_type, current);
           const after = parseContent(item.target, { ...before, ...item.patch });
           const diff = Object.keys(after)
             .filter(

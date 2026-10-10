@@ -5,14 +5,12 @@ import Link from '@/components/CmsLink';
 import RelatedPicker, { type BlogOption } from './RelatedPicker';
 import SingleImagePicker from './SingleImagePicker';
 import StatOverridesEditor from './StatOverridesEditor';
-import DeviceFrame from './DeviceFrame';
 import FormattedTextarea from './FormattedTextarea';
-import { applyOverrides } from '@/lib/micromarket-format';
 import { findMicromarket, type Micromarket } from '@/lib/micromarkets-api';
 import { findLocation, type Location } from '@/lib/locations-api';
-import EditorialPreview, { type PreviewScope } from './EditorialPreview';
+import WebsitePreview from './WebsitePreview';
 import type { CityOverviewContent } from '@/lib/city-overview';
-import { nearbyStates, stateCandidates, stateCities, type LocationPageSummary, type StateOverviewContent } from '@/lib/state-overview';
+import { stateCandidates, type LocationPageSummary, type StateOverviewContent } from '@/lib/state-overview';
 import type { StateCityEntry } from '@/lib/location-schema';
 import StateCitiesEditor from './StateCitiesEditor';
 import DeployButton from './DeployButton';
@@ -38,11 +36,8 @@ import AiWriting from './AiWriting';
  * how the preview names what sits above it. Nothing else in this form knows
  * which scope it is editing.
  *
- * The preview shows the real template at a real device width, with the computed
- * blocks — stat tiles, peer rent chart, specification table, listing grid —
- * drawn at their true size and labelled rather than filled with invented
- * numbers. See EditorialPreview for why dashes beat samples, and DeviceFrame
- * for why the width toggle has to be an iframe.
+ * WebsitePreview renders the actual website at desktop or mobile width,
+ * including its current inventory, layout conditions and text formatting.
  */
 
 /**
@@ -94,7 +89,6 @@ export default function EditorialForm({
   inventory = [],
   locationInventory = [],
   cityInventory = [],
-  locationPages = [],
 }: {
   page: EditorialFormPage;
   /** Which URL segments address this page — see FormIdentity. */
@@ -193,11 +187,6 @@ export default function EditorialForm({
   const plainFaqs = unkey(faqs);
 
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
-  const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
-
-  // What the page will publish: the derived figures with this form's unsaved
-  // corrections already applied, so the preview and the live page agree.
-  const previewStats = stats ? applyOverrides(stats, statOverrides) : null;
 
   const isMicromarket = identity.scope === 'micromarket';
   const isCity = identity.scope === 'city';
@@ -207,26 +196,11 @@ export default function EditorialForm({
   }, identity.scope);
   // Derived for the slug as typed, the way the site derives them at build.
   const candidates = isState ? stateCandidates(slug, cityInventory) : [];
-  const cities = isState ? stateCities(slug, cityInventory, locationPages, cityList && unkey(cityList)) : undefined;
-  const nearby = isState ? nearbyStates(location ?? null, locationInventory, locationPages) : null;
-  const parentLabel = isMicromarket ? market?.parentCity ?? null : location?.parentState ?? null;
   /** The URL the site will serve this content at, shown back to the editor. */
   const pagePath = isMicromarket
     ? `/overview/${market?.stateSlug || '{state}'}/${citySlug || '{city}'}/${slug || '{micromarket}'}`
     : identity.scope === 'city' ? `/overview/${location?.stateSlug || '{state}'}/${slug || '{city}'}`
     : `/overview/${slug || '{state}'}`;
-  const previewScope: PreviewScope = {
-    parentLabel,
-    ancestors: isMicromarket ? [market?.parentState || 'state', market?.parentCity || citySlug || 'city']
-      : identity.scope === 'city' ? [location?.parentState || 'state'] : [],
-    peersLabel: identity.scope === 'state' ? 'Other states' : 'Nearby markets',
-    up: parentLabel
-      ? {
-          label: `All of ${parentLabel}`,
-          linkLabel: `Warehouse for rent in ${parentLabel} →`,
-        }
-      : null,
-  };
 
   return (
     <form action={formAction} onInput={touch} className="space-y-8 pb-40">
@@ -293,35 +267,6 @@ export default function EditorialForm({
           ))}
         </div>
 
-        {tab === 'preview' && (
-          <div className="inline-flex rounded-xl border border-ui-outline bg-ui-surface p-1">
-            {(
-              [
-                ['desktop', 'Desktop'],
-                ['mobile', 'Mobile'],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setDevice(value)}
-                className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold capitalize transition-colors ${
-                  device === value ? 'bg-wareongo-blue text-ui-surface' : 'text-wareongo-slate hover:text-wareongo-blue'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {tab === 'preview' && (
-          <p className="text-xs text-wareongo-slate">
-            Preview of the website layout at a real{' '}
-            {device === 'mobile' ? '390px phone' : '1440px desktop'} viewport, scaled to fit. Dashes
-            are figures the build computes from live listings.
-          </p>
-        )}
       </div>
 
       <WordCountSummary sections={wordCounts} />
@@ -684,41 +629,12 @@ export default function EditorialForm({
       {/* 1280 is a real desktop viewport, so `lg:` applies; the frame scales to
           fit the editor column rather than rendering at whatever width happens
           to be free. */}
-      {tab === 'preview' && (
-        <DeviceFrame width={device === 'mobile' ? 390 : 1440}>
-          <EditorialPreview
-            data={{
-              isCity,
-              isState,
-              stateCities: cities,
-              nearbyStates: nearby,
-              scope: previewScope,
-              slug,
-              name: stats?.name || text.name,
-              h1: text.h1,
-              heroEyebrow: text.heroEyebrow,
-              heroProse,
-              heroImage,
-              marketHeading: text.marketHeading,
-              marketProse,
-              marketImage,
-              rentsHeading: text.rentsHeading,
-              rentsProse,
-              specHeading: text.specHeading,
-              specProse,
-              inventoryHeading: text.inventoryHeading,
-              corridorHeading: text.corridorHeading,
-              corridorProse,
-              complianceHeading: text.complianceHeading,
-              complianceProse,
-              citiesHeading: text.citiesHeading,
-              cityOverview: isCity ? location?.cityOverview : undefined,
-              faqs: plainFaqs,
-              stats: previewStats,
-            }}
-          />
-        </DeviceFrame>
-      )}
+      {tab === 'preview' && <WebsitePreview content={{ type: identity.scope, content: {
+        ...text, slug, citySlug, kind: isCity ? 'CITY' : 'STATE',
+        heroProse, marketProse, rentsProse, specProse, corridorProse, complianceProse,
+        heroImage, marketImage, faqs: plainFaqs, relatedBlogs, statOverrides,
+        stateCities: cityList && unkey(cityList),
+      } }} />}
 
       <div className="fixed inset-x-0 bottom-0 z-20 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3">

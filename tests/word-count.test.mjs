@@ -134,26 +134,25 @@ test('location totals include authored headings and FAQs, with scope-only copy c
   assert.deepEqual(plain(editorialWordSections(content, 'state')[3]), { id: 'cities', label: 'Cities heading', words: 3 });
 });
 
-test('ad pages count nested card, table, process and figure copy but exclude settings and image metadata', () => {
+test('ad pages count nested card, table, mobile and FAQ copy but exclude settings and image metadata', () => {
   const content = JSON.parse(fs.readFileSync(path.join(root, 'content/ad-pages/bangalore.json'), 'utf8'));
   content.copy = Object.fromEntries(Object.keys(content.copy).map(key => [key, '']));
   content.copy.seoTitle = 'Do not count this title';
   content.copy.metaDescription = 'Do not count this metadata';
   content.copy.heroHeading = 'Warehouse space';
-  content.heroSteps = ['Step one', '', '', ''];
-  content.benefits = [{ id: 'test', title: 'Benefit title', body: 'Benefit copy' }];
-  content.services = [{ id: 'test', title: 'Service title', body: 'Service copy', cta: 'Learn more' }];
+  content.benefits = [{ id: 'test', title: 'Benefit title', body: 'Benefit copy', mobileTitle: 'Mobile benefit' }];
+  content.services = [{ id: 'test', title: 'Service title', body: 'Service copy', cta: 'Learn more', mobileTitle: 'Mobile service', mobileBody: 'Mobile copy' }];
   content.audiences = [
     { id: '3pls', title: 'Audience title', body: 'Audience copy', primaryCta: 'Talk now', secondaryCta: 'Learn more' },
     { id: 'others', title: '', body: '', primaryCta: '', secondaryCta: 'Not rendered' },
   ];
-  content.areaRows = [{ need: 'Near airport', areas: ['North Bangalore', 'Devanahalli'] }];
-  content.overviewParagraphs = ['Overview copy'];
-  content.overviewStats = [{ value: '500+', label: 'Available warehouses' }];
+  content.areaGroups = [{ title: 'Highway belts', rows: [{ need: 'Near airport', areas: 'North Bangalore, Devanahalli' }] }];
+  content.rentGuide = { intro: 'Market intro', description: 'Market description', rows: [{ area: 'North Bangalore', rent: '20 rupees' }] };
+  content.faqs = [{ q: 'What fees?', a: 'One month' }];
   const sections = adPageWordSections(content);
-  assert.equal(totalWords(sections), 32);
+  assert.equal(totalWords(sections), 45);
   assert.deepEqual(plain(sections).filter(section => section.words).map(({ id, words }) => [id, words]), [
-    ['hero', 4], ['areas', 5], ['why', 4], ['services', 6], ['audiences', 8], ['overview', 5],
+    ['hero', 2], ['areas', 7], ['why', 6], ['services', 10], ['audiences', 8], ['rent', 8], ['faqs', 4],
   ]);
   assert.equal(sections.some(section => section.id === 'settings'), false);
 });

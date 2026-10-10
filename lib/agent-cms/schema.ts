@@ -48,14 +48,15 @@ export const digest = (v: unknown) =>
 const slug = z
   .string()
   .max(160)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+  .regex(/^[a-z0-9]+(?:-+[a-z0-9]+)*$/);
 export const targetSchema = z
   .object({ page_type: z.enum(pageTypes), slug, city_slug: slug.optional() })
   .strict()
   .refine(
     (t) => (t.page_type === 'micromarket') === Boolean(t.city_slug),
     'Only micromarkets require city_slug.',
-  );
+  )
+  .refine(t => t.page_type !== 'blog' || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(t.slug), 'Blog slugs use single hyphens.');
 export type Target = z.infer<typeof targetSchema>;
 export const pageRef = (target: Target) =>
   [target.page_type, target.city_slug, target.slug].filter(Boolean).join('/');
@@ -174,6 +175,16 @@ export function contentFields(type: PageType, value: Content): Content {
       .filter((key) => Object.hasOwn(value, key))
       .map((key) => [key, value[key]]),
   );
+}
+
+/** Upgrade stored editable content before projecting the current schema's fields.
+ * Historical approval/deployment snapshots and import plans remain untouched.
+ */
+export function readStoredContent(target: Target, value: Content): Content {
+  const current = target.page_type === 'ad' && Object.keys(value).length
+    ? readAdPage({ ...value, slug: target.slug }, true)
+    : value;
+  return contentFields(target.page_type, current);
 }
 
 /** Strict CSV grammar, including escaped quotes, quoted newlines and CRLF. */

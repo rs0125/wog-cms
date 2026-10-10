@@ -332,14 +332,9 @@ export default function BlogForm({
         </section>
       </div>
 
-      <div className={tab === 'edit' ? 'hidden' : ''}>
-        <p className="mb-3 text-xs text-wareongo-slate">
-          Rendered with the live site&apos;s components and palette. Links are inert here.
-        </p>
-        <BlogPreview
-          blog={{ title, summary, author, dateModified, blocks: plainBlocks, faqs: plainFaqs, related }}
-        />
-      </div>
+      {tab === 'preview' && <BlogPreview blog={{ ...blog, ...text, sortOrder: Number(text.sortOrder), title, summary, author, dateModified,
+        blocks: plainBlocks, faqs: plainFaqs, related, thumbnail, keywords: keywords.split(',').map(s => s.trim()).filter(Boolean),
+      }} />}
 
       <div className="fixed inset-x-0 bottom-0 z-20 lg:left-64 border-t border-ui-line bg-wareongo-ivory/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-3">
