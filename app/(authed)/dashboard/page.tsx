@@ -58,8 +58,8 @@ export default async function DashboardPage() {
 
   const cards: Record<string, { lead: string; detail: string }> = {
     'ad-pages': {
-      lead: '1 page',
-      detail: 'Bangalore',
+      lead: 'City & micromarket ads',
+      detail: 'Bangalore and local campaigns',
     },
     blogs: {
       lead: `${blogs.length} ${blogs.length === 1 ? 'article' : 'articles'}`,

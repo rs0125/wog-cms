@@ -18,6 +18,7 @@ export const NAVIGATION_GROUPS: { id: string; label: string; description: string
   { id: 'website', label: 'Website pages', description: 'The information pages that support your website.', items: [
     { id: 'ad-pages', description: 'Manage campaign landing page copy, images and enquiry buttons.', label: 'Ad pages', href: '/ad-pages', children: [
       { id: 'ad-bangalore', label: 'Bangalore', href: '/ad-pages/bangalore' },
+      { id: 'ad-micromarkets', label: 'Micromarket ad pages', href: '/ad-pages/micromarkets' },
     ] },
     { id: 'services', description: 'Describe your services. Only written, approved pages appear on the website.', label: 'Services', href: '/services', children: [
       { id: 'warehouse-search', label: 'Warehouse Search', href: '/services/warehouse-search' },

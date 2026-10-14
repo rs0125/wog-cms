@@ -44,6 +44,13 @@ function harness(options = {}) {
         findMany: async args => { calls.adPageReads.push(args); return [{ slug: 'bangalore', publishedContent: { title: 'Approved ad page' }, draftContent: { title: 'Private draft' }, updatedAt: new Date(AD_REVISION) }]; },
         updateMany: args => { calls.updates.push(args); return args; },
       },
+      micromarketAdPage: {
+        findMany: async () => [
+          { citySlug: 'bengaluru', slug: 'peenya', publishedContent: { title: 'Approved local copy' }, updatedAt: new Date(AD_REVISION) },
+          { citySlug: 'bengaluru', slug: 'hoskote', publishedContent: null, updatedAt: new Date(AD_REVISION) },
+        ],
+        updateMany: args => { calls.updates.push(args); return args; },
+      },
       $transaction: async () => { calls.transactions += 1; },
     } },
     '@/lib/staging': { contentOf: (row) => ({ title: row.title }) },
@@ -135,7 +142,7 @@ test('valid bearer auth triggers once and snapshots blogs, micromarkets and loca
   assert.ok(h.calls.fetch[0][1].signal instanceof AbortSignal);
   assert.equal(h.calls.sessions, 0);
   assert.equal(h.calls.transactions, 1);
-  assert.deepEqual(h.calls.updates.map((x) => x.where.id ?? x.where.slug).sort(), ['bangalore', 'blog', 'build-to-suit', 'location', 'micromarket', 'privacy-policy', 'warehouse-search']);
+  assert.deepEqual(h.calls.updates.map((x) => x.where.id ?? x.where.slug).sort(), ['bangalore', 'blog', 'build-to-suit', 'hoskote', 'location', 'micromarket', 'peenya', 'privacy-policy', 'warehouse-search']);
   const snapshot = key => h.calls.updates.find(x => (x.where.id ?? x.where.slug) === key).data.deployedContent;
   assert.equal(snapshot('blog').title, 'blog content');
   assert.equal(snapshot('micromarket').title, 'micromarket content');
@@ -144,6 +151,12 @@ test('valid bearer auth triggers once and snapshots blogs, micromarkets and loca
   assert.equal(snapshot('warehouse-search').title, 'Approved service');
   assert.equal(snapshot('bangalore').title, 'Approved ad page');
   assert.equal(snapshot('build-to-suit'), null);
+  assert.equal(snapshot('peenya').title, 'Approved local copy');
+  assert.equal(snapshot('hoskote'), null);
+  const local = h.calls.updates.find(x => x.where.slug === 'peenya');
+  assert.equal(local.where.citySlug, 'bengaluru');
+  assert.equal(local.where.updatedAt.toISOString(), AD_REVISION);
+  assert.equal(local.data.updatedAt.toISOString(), AD_REVISION);
   assert.ok(!JSON.stringify(h.calls.updates).includes('Private draft'));
   assert.ok(!JSON.stringify(json).includes(HOOK));
   assert.equal(h.route.GET, undefined);

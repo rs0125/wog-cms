@@ -9,6 +9,11 @@ export default async function AdPages() {
   return <main className="mx-auto max-w-4xl p-6 sm:p-10">
     <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h1 className="cms-title">Ad pages</h1><DeployButton configured={isDeployConfigured()} /></div>
     <p className="mb-8 text-sm text-wareongo-slate">Edit campaign landing pages. Save drafts privately, then use “Save for next build” when your changes are ready.</p>
+    <article className="cms-card mb-4">
+      <h2 className="ui-panel-title text-ui-ink"><Link href="/ad-pages/micromarkets" className="hover:underline">Micromarket ad pages</Link></h2>
+      <p className="mt-2 text-sm text-wareongo-slate">Peenya and new micromarket campaigns use the Bangalore template. Edit only their local copy.</p>
+      <Link href="/ad-pages/micromarkets" className="cms-btn mt-4">Manage micromarket ads</Link>
+    </article>
     <div className="space-y-4">{Object.entries(AD_PAGES).map(([slug, name]) => {
       const row = rows.find(page => page.slug === slug);
       const state = row ?? null;

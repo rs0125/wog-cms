@@ -1,7 +1,6 @@
-import type { AdPage } from '@prisma/client';
 import { sameContent } from './staging';
 
-export function adPageStateOf(row: Pick<AdPage, 'draftContent' | 'publishedContent' | 'deployedContent'>) {
+export function adPageStateOf(row: { draftContent: unknown; publishedContent: unknown; deployedContent: unknown }) {
   return {
     hasDraft: !sameContent(row.draftContent, row.publishedContent),
     staged: !sameContent(row.publishedContent, row.deployedContent),

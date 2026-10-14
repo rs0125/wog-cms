@@ -20,7 +20,8 @@
     "postinstall": "prisma generate",
     "test:legal": "node tests/legal-actions.test.mjs",
     "test:services": "node --test tests/service-actions.test.mjs",
-    "test:ad-pages": "node --test tests/ad-page-actions.test.mjs tests/ad-page-content.test.mjs",
+    "test:ad-pages": "node --test tests/ad-page-actions.test.mjs tests/ad-page-content.test.mjs tests/micromarket-ad-actions.test.mjs",
+    "test:ad-pages:postgres": "node tests/micromarket-ad-postgres.test.mjs",
     "test:previews": "node tests/preview-contract.test.mjs",
     "test:previews:browser": "node scripts/check-website-previews.mjs"
   },

@@ -22,7 +22,7 @@ const cmsPort = await freePort(), sitePort = await freePort();
 const cmsOrigin = `http://127.0.0.1:${cmsPort}`, siteOrigin = `http://127.0.0.1:${sitePort}`;
 const write = (file, value) => fs.writeFile(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
 const rows = Array.from({ length: 63 }, (_, i) => ({ id: 1000 + i, city: i < 50 ? 'Bengaluru' : i < 58 ? 'Vijayawada' : 'Chhatrapati Sambhajinagar / Aurangabad',
-  state: i < 50 ? 'Karnataka' : i < 58 ? 'Andhra Pradesh' : 'Maharashtra', visibility: true, address: `Preview warehouse ${i}`,
+  state: i < 50 ? 'Karnataka' : i < 58 ? 'Andhra Pradesh' : 'Maharashtra', visibility: true, address: `${i < 25 ? 'Peenya' : 'Hoskote'} preview warehouse ${i}`,
   micromarket: i < 25 ? ['Peenya'] : [], warehouseType: i < 50 ? 'PEB' : 'BTS', totalSpaceSqft: i < 50 ? [12000] : [1000],
   ratePerSqft: i < 50 ? '25' : '', clearHeightFt: i < 50 ? '30' : '', numberOfDocks: i < 50 ? '2' : '', flooringType: i < 50 ? 'VDF' : '',
   compliances: '', photos: [], photosWebp: [], images: [], otherSpecifications: '', warehouseData: { fireNocAvailable: false },
@@ -47,6 +47,8 @@ async function addFreshInventory() {
 }
 const { fixtures, editorial, loader } = await import(path.join(root, 'wareongo-cms/tests/helpers/agent-cms.mjs'));
 const ad = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/ad-pages/bangalore.json'), 'utf8'));
+const localAd = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/micromarket-ad-pages/peenya.json'), 'utf8'));
+const newLocalAd = JSON.parse(JSON.stringify(localAd).replaceAll('Peenya', 'Hoskote').replaceAll('peenya', 'hoskote'));
 const blog = { ...fixtures.blog.content, slug: 'preview-blog', title: 'Preview blog — title', seoTitle: 'Preview blog', status: 'PUBLISHED', related: ['preview-related'] };
 const related = { ...blog, slug: 'preview-related', title: 'Related article title', related: [] };
 const indexEntries = [blog, related].map((entry, i) => ({ id: i + 1, slug: entry.slug, title: entry.title, description: entry.description, updated: entry.dateModified, thumbnail: entry.thumbnail ?? null, sortOrder: i * 10 }));
@@ -81,9 +83,10 @@ const layout = path.join(cms, 'app/layout.tsx');
 await write(layout, (await fs.readFile(layout, 'utf8')).replace("import { Montserrat } from 'next/font/google';", "import localFont from 'next/font/local';").replace(/Montserrat\(\{[\s\S]*?\}\)/, "localFont({ src: '../public/fonts/montserrat.woff2', weight: '100 900', variable: '--font-montserrat', display: 'swap' })"));
 const fixtureDir = path.join(cms, 'app/(authed)/preview-check/[kind]');
 await fs.mkdir(fixtureDir, { recursive: true });
-await write(path.join(fixtureDir, 'data.json'), { ad, blog, indexEntries, service, services, legal, pages, marketPage, locations, markets });
+await write(path.join(fixtureDir, 'data.json'), { ad, localAd, newLocalAd, blog, indexEntries, service, services, legal, pages, marketPage, locations, markets });
 await write(path.join(fixtureDir, 'page.tsx'), `
 import AdPageForm from '@/components/AdPageForm';
+import MicromarketAdForm from '@/components/MicromarketAdForm';
 import BlogForm from '@/components/BlogForm';
 import ServiceForm from '@/components/ServiceForm';
 import LegalForm from '@/components/LegalForm';
@@ -96,6 +99,7 @@ export default async function Page({params}: {params: Promise<{kind:string}>}) {
  const item = kind === 'sparse' ? data.pages[1] : kind === 'slug' ? data.pages[2] : kind === 'state' ? data.pages[3] : kind === 'micromarket' ? data.marketPage : data.pages[0];
  return <div className="mx-auto max-w-5xl p-6">
  {kind === 'ad' ? <AdPageForm {...common} content={data.ad} previewUrl="${siteOrigin}/preview/ad-pages/bangalore"/>
+ : kind === 'ad-micromarket' || kind === 'ad-new-market' ? <MicromarketAdForm {...common} content={kind === 'ad-new-market' ? data.newLocalAd : data.localAd} previewUrl="${siteOrigin}/preview/ad-pages/micromarket"/>
  : kind === 'blog' ? <BlogForm {...common} id={1} blog={data.blog} indexEntries={data.indexEntries} relatedOptions={[{slug:'preview-related',title:'Related article title'}]}/>
  : kind.startsWith('service') ? <ServiceForm {...common} content={data.services.find((s:any)=>s.slug===kind.slice(8))??data.service}/>
  : kind === 'legal' || kind === 'terms' ? <LegalForm {...common} content={{...data.legal,slug:kind === 'terms' ? 'terms-of-service' : 'privacy-policy'}}/>
@@ -110,13 +114,15 @@ await generated('servicePages.generated.ts', 'servicePages', services);
 await generated('blogSummaries.generated.ts', 'blogSummaries', [blog, related].map(({slug,title,description,dateModified})=>({slug,title,description,updated:dateModified})));
 await generated('legalPages.generated.ts', 'legalPages', [legal, {...legal,slug:'terms-of-service'}]);
 await generated('adPages.generated.ts', 'adPages', [ad]);
+await generated('micromarketAdPages.generated.ts', 'micromarketAdPages', [localAd, newLocalAd]);
+await write(path.join(site, 'src/data/micromarketAdPaths.generated.ts'), 'export const micromarketAdSlugs: readonly string[] = ["peenya", "hoskote"];\n');
 await write(path.join(site, 'src/data/warehouse-build.generated.json'), { maxId: buildMaxId });
-const allowed = ['bangalore', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
+const allowed = ['bangalore', 'bangalore/:micromarket', 'preview/ad-pages/micromarket', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
 const routesFile = path.join(site, 'src/routes.tsx');
 const routes = (await fs.readFile(routesFile, 'utf8')).replace('export const routes: RouteRecord[] =', 'const allRoutes: RouteRecord[] =');
 await write(routesFile, routes + `\nexport const routes: RouteRecord[] = allRoutes.map(root => ({ ...root, children: root.children?.map(wrapper => ({ ...wrapper, children: wrapper.children?.filter(route => ${JSON.stringify(allowed)}.includes(route.path ?? '')) })) }));\n`);
 const configFile = path.join(site, 'vite.config.ts');
-await write(configFile, (await fs.readFile(configFile, 'utf8')).replace('plugins: [react()]', `plugins: [react(), { name: 'test-clean-urls', configurePreviewServer(server) { server.middlewares.use((req, _res, next) => { const [pathname,query] = (req.url || '').split('?'); if (!pathname.includes('.') && !pathname.endsWith('/')) req.url = pathname + '/' + (query ? '?' + query : ''); next(); }); } }]`));
+await write(configFile, (await fs.readFile(configFile, 'utf8')).replace('plugins: [react()', `plugins: [react(), { name: 'test-clean-urls', configurePreviewServer(server) { server.middlewares.use((req, _res, next) => { const [pathname,query] = (req.url || '').split('?'); if (!pathname.includes('.') && !pathname.endsWith('/')) req.url = pathname + '/' + (query ? '?' + query : ''); next(); }); } }`));
 const api = http.createServer((request, response) => {
   response.setHeader('Content-Type', 'application/json'); response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('X-Wareongo-Cache', 'bypass'); response.setHeader('X-Wareongo-Listing-Filters', '3');
@@ -165,7 +171,10 @@ const payload = Buffer.from(JSON.stringify({ e: 'reviewer@example.test', n: 'Pre
 const signature = createHmac('sha256', 'isolated-preview-test-secret-over-32-characters').update(payload).digest('base64url');
 await context.addCookies([{ name: 'cms_session', value: `${payload}.${signature}`, domain: '127.0.0.1', path: '/', httpOnly: true, sameSite: 'Lax' }]);
 const errors = [], posts = [], requests = [], results = [], audit = [];
-context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
+context.on('page', page => {
+  page.on('pageerror', error => errors.push(page.url() + ': ' + error.message));
+  page.on('console', message => { if (message.type() === 'error' && !message.text().includes('Failed to load resource')) console.log('Browser console', page.url(), message.text().slice(0, 600)); });
+});
 context.on('request', request => { requests.push(request.url()); if (request.method() === 'POST') posts.push(request.url()); });
 await context.route('**/*', route => {
   const url = new URL(route.request().url());
@@ -181,9 +190,11 @@ const cases = [
   ['state', '/overview/karnataka'], ['micromarket', '/overview/karnataka/bengaluru/peenya'],
   ['blog', '/blogs/preview-blog'], ['service', '/services/warehouse-search'], ['service-build-to-suit','/services/build-to-suit'], ['service-lease-negotiation','/services/lease-negotiation'], ['service-compliance-procurement','/services/compliance-procurement'], ['legal', '/privacy-policy'],
   ['terms', '/terms-of-service'], ['ad', '/bangalore'],
+  ['ad-micromarket', '/bangalore/peenya'], ['ad-new-market', '/bangalore/hoskote'],
 ];
 const selectedCase = process.argv.find(value => value.startsWith('--case='))?.slice(7);
-assert.ok(!selectedCase || cases.some(([kind]) => kind === selectedCase), 'Unknown preview case');
+const selectedCases = selectedCase?.split(',');
+assert.ok(!selectedCases || selectedCases.every(selected => cases.some(([kind]) => kind === selected)), 'Unknown preview case');
 async function frameReady() {
   const iframe = cms.locator('iframe');
   await expect(iframe).toHaveCount(1);
@@ -206,7 +217,7 @@ async function metrics(page) {
   });
 }
 try {
-  for (const [kind, routePath] of cases.filter(([kind]) => !selectedCase || kind === selectedCase)) {
+  for (const [kind, routePath] of cases.filter(([kind]) => !selectedCases || selectedCases.includes(kind))) {
     await cms.goto(`${state.cmsOrigin}/preview-check/${kind}`);
     console.log('Checking',kind);
     const editor=await cms.evaluate(()=>({
@@ -278,6 +289,29 @@ try {
       if (kind.startsWith('service')) assert.equal(rendered.keywordsInHead, true, 'Service keywords reach WebPage metadata');
       results.push(`${kind}/${device}: layout, fonts, content and viewport matched`);
       console.log('PASS '+results.at(-1));
+    }
+    if (kind === 'ad-micromarket' || kind === 'ad-new-market') {
+      await cms.getByRole('button', {name:'Edit local copy',exact:true}).click();
+      const inputIds = await cms.locator('input:not([type=hidden]), textarea').evaluateAll(inputs => inputs.map(input => input.id));
+      assert.ok(inputIds.every(id => /^(copy-|area-|rent-|faq-|map-byline-)/.test(id)), 'Only local copy fields are editable');
+      await cms.locator('#area-whereItIs').fill('Private local copy with {listings} spaces and **local emphasis**.');
+      await cms.locator('#rent-intro').fill('Private rents {rentRange}.');
+      const marketSlug = kind === 'ad-micromarket' ? 'peenya' : 'hoskote';
+      await cms.locator('#map-byline-' + marketSlug).fill('Private local map byline');
+      await cms.getByRole('button', {name:'Preview',exact:true}).click();
+      const frame = await frameReady();
+      await expect(frame.locator('.bangalore-landing__area-fit')).toContainText('Private local copy');
+      await expect(frame.locator('.bangalore-landing__area-fit')).not.toContainText('{listings}');
+      await expect(frame.locator('.bangalore-landing__area-fit strong').filter({hasText:'local emphasis'})).toHaveText('local emphasis');
+      await expect(frame.locator('.bangalore-landing__rent-guide')).toContainText('Private rents');
+      await expect(frame.locator('.bangalore-landing__rent-guide')).not.toContainText('{rentRange}');
+      await expect(frame.locator('#bangalore-mobile-market-' + marketSlug)).toContainText('Private local map byline');
+      for (const view of ['hero-success', 'contact', 'contact-success', 'page']) {
+        await cms.getByLabel('Preview state', {exact:true}).selectOption(view);
+        await expect(cms.locator('iframe')).toBeVisible();
+      }
+      await expect(publicPage.locator('.bangalore-landing__area-fit')).not.toContainText('Private local copy');
+      results.push(kind + ': local edits preview without changing the public page or submitting a lead');
     }
     if (kind === 'legal') {
       const frame = await frameReady(); await frame.getByRole('button',{name:'Back',exact:true}).click();

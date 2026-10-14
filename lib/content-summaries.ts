@@ -109,3 +109,13 @@ function snapshotSummaries(table: 'ServicePage' | 'LegalPage' | 'AdPage') {
 export const getServiceSummaries = () => snapshotSummaries('ServicePage');
 export const getLegalSummaries = () => snapshotSummaries('LegalPage');
 export const getAdPageSummaries = () => snapshotSummaries('AdPage');
+
+export function getMicromarketAdSummaries() {
+  return prisma.$queryRaw<(SnapshotSummary & { citySlug: string; name: string })[]>(Prisma.sql`
+    SELECT "citySlug", "slug", "name",
+      COALESCE("draftContent", 'null'::jsonb) <> COALESCE("publishedContent", 'null'::jsonb) AS "hasDraft",
+      COALESCE("publishedContent", 'null'::jsonb) <> COALESCE("deployedContent", 'null'::jsonb) AS "staged",
+      ("publishedContent" IS NOT NULL AND "publishedContent" <> 'null'::jsonb) AS "published",
+      ("deployedContent" IS NOT NULL AND "deployedContent" <> 'null'::jsonb) AS "deployed"
+    FROM "MicromarketAdPage" ORDER BY "name", "slug"`);
+}

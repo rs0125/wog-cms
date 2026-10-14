@@ -24,6 +24,11 @@ Run `npm run test:word-count` for counting and section aggregation checks.
 
 ## Ad pages
 
+**Ad pages → Micromarket ad pages** provides the shared Bangalore template for
+Peenya and new local campaigns. Only local copy is editable; the editor includes
+desktop/mobile previews and downloadable writing templates and JSON Schema.
+See [the micromarket ad-page workflow and rollout](docs/micromarket-ad-pages.md).
+
 **Ad pages → Bangalore** (`/ad-pages/bangalore`) contains the existing `/bangalore`
 campaign copy, area recommendations, rent guide, FAQs, card text, CTA labels and photos.
 Use **Preview** to review content, **Save draft** to keep it private, and **Save

@@ -18,6 +18,21 @@ generator client {
 }
 
 /// Backend-owned campaign content. Keep this mirror in sync by hand.
+model MicromarketAdPage {
+  citySlug         String
+  slug             String
+  name             String
+  draftContent     Json
+  publishedContent Json?
+  deployedContent  Json?
+  deployedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@id([citySlug, slug])
+}
+
+/// Backend-owned city campaign content.
 model AdPage {
   slug             String   @id
   draftContent     Json
