@@ -4,22 +4,25 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { requireUser } from '@/lib/auth';
 import { fetchMicromarkets } from '@/lib/micromarkets-api';
+import { fetchLocations } from '@/lib/locations-api';
 import { micromarketAdEditorPath, newMicromarketAdPage, readMicromarketAdPage } from '@/lib/micromarket-ad-schema';
-import { MAX_MICROMARKET_AD_BYTES } from '@/lib/micromarket-ad-content.mjs';
+import { MAX_MICROMARKET_AD_BYTES, isSupportedAdIdentity, micromarketAdChoices } from '@/lib/micromarket-ad-content.mjs';
 import { sameContent } from '@/lib/staging';
 import type { SaveResult } from '@/lib/action-results';
 
-const validKey = (citySlug: string, slug: string) => citySlug === 'bengaluru' && slug.length <= 100 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+const validKey = isSupportedAdIdentity;
 
 export async function createMicromarketAdPage(_previous: SaveResult | undefined, form: FormData): Promise<SaveResult> {
   await requireUser();
-  const citySlug = 'bengaluru';
+  const citySlug = String(form.get('citySlug') ?? 'bengaluru');
   const slug = String(form.get('slug') ?? '');
-  if (!validKey(citySlug, slug)) return { ok: false, error: 'Choose a Bangalore micromarket.' };
+  if (!validKey(citySlug, slug)) return { ok: false, error: 'Choose a supported area or city.' };
   try {
     const { data } = await fetchMicromarkets();
-    const market = data.find(item => item.citySlug === citySlug && item.slug === slug && item.listings > 0);
-    if (!market) return { ok: false, error: 'This micromarket has no current Bangalore inventory. Choose another market.' };
+    const cities = citySlug === 'hosur' ? (await fetchLocations()).cities : [];
+    const choices: { citySlug: string; slug: string; name: string }[] = micromarketAdChoices(data, cities);
+    const market = choices.find(item => item.citySlug === citySlug && item.slug === slug);
+    if (!market) return { ok: false, error: 'This area has no current inventory. Choose another area or city.' };
     const content = newMicromarketAdPage({ citySlug, slug, name: market.name });
     // An identical retry opens the existing page without replacing any edits.
     await prisma.micromarketAdPage.upsert({

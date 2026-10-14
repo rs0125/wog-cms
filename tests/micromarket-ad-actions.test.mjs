@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseMicromarketAdPage, MICROMARKET_AD_SCHEMA, createMicromarketAdTemplate } from '../lib/micromarket-ad-content.mjs';
+import { parseMicromarketAdPage, MICROMARKET_AD_SCHEMA, createMicromarketAdTemplate, micromarketAdPath, SOUTH_AD_SLUG } from '../lib/micromarket-ad-content.mjs';
 
 import { harness, form } from './helpers/micromarket-ad.mjs';
 const root = path.resolve(import.meta.dirname, '..');
@@ -78,4 +78,31 @@ test('the CMS, backend and website validators and Peenya seed agree', () => {
   const source = fs.readFileSync(path.join(root, 'lib/micromarket-ad-content.mjs'), 'utf8');
   for (const file of ['../WareOnGo-Website-Backend/services/micromarketAdContent.js', '../wareongo-website/scripts/lib/micromarket-ad-content.mjs']) assert.equal(fs.readFileSync(path.join(root, file), 'utf8'), source);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, '../WareOnGo-Website-Backend/data/micromarket-ad-pages/peenya.json'), 'utf8')), content);
+});
+
+test('Hosur and the combined southern page use verified inventory identities and private drafts', async () => {
+  for (const [citySlug, slug, options, expectedName] of [
+    ['hosur', 'hosur', { cities: [{ slug: 'hosur', name: 'Hosur', listings: 38 }] }, 'Hosur'],
+    ['bengaluru', SOUTH_AD_SLUG, { inventory: [{ citySlug: 'bengaluru', slug: 'hosur-road', name: 'Hosur Road', listings: 70 }] }, 'Electronic City, Jigani and Bommasandra'],
+  ]) {
+    const h = harness(options);
+    await assert.rejects(h.create(undefined, form({ citySlug, slug })), error => error.location === `/ad-pages/micromarkets/${citySlug}/${slug}`);
+    assert.equal(h.writes[0].create.name, expectedName);
+    assert.equal(h.writes[0].create.publishedContent, undefined);
+    const absent = harness({ inventory: [], cities: [] });
+    assert.equal((await absent.create(undefined, form({ citySlug, slug }))).ok, false);
+    assert.equal(absent.writes.length, 0);
+  }
+  assert.equal(micromarketAdPath('hosur', 'hosur'), '/hosur');
+  assert.equal((await harness().create(undefined, form({ citySlug: 'hosur', slug: 'peenya' }))).ok, false);
+});
+
+test('all handoff seeds validate without shared overrides and preserve optional missing bylines', () => {
+  for (const file of fs.readdirSync(path.join(root, 'content/micromarket-ad-pages'))) {
+    const page = JSON.parse(fs.readFileSync(path.join(root, 'content/micromarket-ad-pages', file), 'utf8'));
+    assert.deepEqual(parseMicromarketAdPage(page), page);
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, '../WareOnGo-Website-Backend/data/micromarket-ad-pages', file), 'utf8')), page);
+    assert.equal(page.faqs.some(faq => /WareOnGo Charge/.test(faq.q)), false);
+    assert.match(page.copy.metaDescription, /\{listings\}/);
+  }
 });

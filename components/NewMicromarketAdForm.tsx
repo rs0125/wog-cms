@@ -3,23 +3,26 @@
 import { useActionState, useState } from 'react';
 import { unstable_rethrow } from 'next/navigation';
 import type { SaveResult } from '@/lib/action-results';
+import { micromarketAdPath } from '@/lib/micromarket-ad-content.mjs';
 
 export default function NewMicromarketAdForm({ markets, action }: {
-  markets: { name: string; slug: string }[];
+  markets: { citySlug: string; name: string; slug: string }[];
   action: (previous: SaveResult | undefined, form: FormData) => Promise<SaveResult>;
 }) {
   const [slug, setSlug] = useState('');
+  const selected = markets.find(market => market.slug === slug);
   const [result, formAction, pending] = useActionState(async (previous: SaveResult | undefined, form: FormData): Promise<SaveResult> => {
     try { return await action(previous, form); }
     catch (error) { unstable_rethrow(error); return { ok: false, error: 'Could not confirm creation. Retry to open the same draft.' }; }
   }, undefined);
   return <form action={formAction} className="cms-card space-y-5" aria-busy={pending}>
-    <div><label htmlFor="micromarket" className="cms-label">Micromarket</label>
+    <input type="hidden" name="citySlug" value={selected?.citySlug ?? 'bengaluru'} />
+    <div><label htmlFor="micromarket" className="cms-label">Area or city</label>
       <select id="micromarket" name="slug" className="cms-input" value={slug} onChange={event => setSlug(event.target.value)} required disabled={pending}>
-        <option value="">Choose a micromarket</option>
+        <option value="">Choose an area or city</option>
         {markets.map(market => <option key={market.slug} value={market.slug}>{market.name}</option>)}
       </select>
-      <p className="cms-hint mt-2">{slug ? 'Website URL: /bangalore/' + slug : markets.length ? 'Existing ad pages are listed under Micromarket ad pages.' : 'All available micromarkets already have an ad-page draft.'}</p>
+      <p className="cms-hint mt-2">{selected ? 'Website URL: ' + micromarketAdPath(selected.slug, selected.citySlug) : markets.length ? 'Existing ad pages are listed under Micromarket ad pages.' : 'All available areas already have an ad-page draft.'}</p>
     </div>
     {result?.ok === false && <p role="alert" className="text-sm text-red-700">{result.error}</p>}
     <button type="submit" className="cms-btn-primary" disabled={pending || !slug}>{pending ? 'Creating…' : 'Create private draft'}</button>

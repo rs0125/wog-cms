@@ -8,7 +8,7 @@ const root = path.resolve(import.meta.dirname, '../..');
 const require = createRequire(import.meta.url);
 const content = JSON.parse(fs.readFileSync(path.join(root, 'content/micromarket-ad-pages/peenya.json'), 'utf8'));
 const stamp = '2026-10-14T00:00:00.000Z';
-export function harness({ denied = false, count = 1, failure = false, current = null, db, inventory = [{ citySlug: 'bengaluru', slug: 'peenya', name: 'Peenya', listings: 62 }] } = {}) {
+export function harness({ denied = false, count = 1, failure = false, current = null, db, inventory = [{ citySlug: 'bengaluru', slug: 'peenya', name: 'Peenya', listings: 62 }], cities = [] } = {}) {
   const writes = [], reads = [];
   const cache = {};
   const table = db ?? {
@@ -25,6 +25,7 @@ export function harness({ denied = false, count = 1, failure = false, current = 
       if (id === '@/lib/auth') return { requireUser: async () => { if (denied) throw new Error('unauthenticated'); } };
       if (id === '@/lib/prisma') return { prisma: { micromarketAdPage: table } };
       if (id === '@/lib/micromarkets-api') return { fetchMicromarkets: async () => ({ data: inventory }) };
+      if (id === '@/lib/locations-api') return { fetchLocations: async () => ({ cities }) };
       if (id.endsWith('.mjs')) return require(id.startsWith('@/') ? path.join(root, id.slice(2)) : path.resolve(root, path.dirname(file), id));
       if (id.startsWith('@/')) return load(`${id.slice(2)}.ts`);
       if (id.startsWith('./')) return load(path.join(path.dirname(file), `${id.slice(2)}.ts`));

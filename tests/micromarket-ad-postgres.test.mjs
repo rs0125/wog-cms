@@ -14,7 +14,7 @@ test('backend migration and CMS actions work together in disposable PostgreSQL',
   assert.equal(parsed.username, 'cms_test');
   assert.equal(parsed.pathname, '/cms_micromarket_ad_test');
   const backend = path.resolve(import.meta.dirname, '../../WareOnGo-Website-Backend');
-  const migrate = () => execFileSync(process.execPath, ['node_modules/prisma/build/index.js', 'db', 'execute', '--file', 'scripts/sql/20261014_micromarket_ad_pages.sql', '--url', url], { cwd: backend, stdio: 'pipe' });
+  const migrate = (file = '20261014_micromarket_ad_pages.sql') => execFileSync(process.execPath, ['node_modules/prisma/build/index.js', 'db', 'execute', '--file', 'scripts/sql/' + file, '--url', url], { cwd: backend, stdio: 'pipe' });
   const db = new PrismaClient({ datasources: { db: { url } } });
   try {
     migrate();
@@ -35,6 +35,31 @@ test('backend migration and CMS actions work together in disposable PostgreSQL',
     assert.equal(stale.ok, false);
     const security = await db.$queryRaw`SELECT relrowsecurity FROM pg_class WHERE relname = 'MicromarketAdPage'`;
     assert.equal(security[0].relrowsecurity, true);
+
+    migrate('20261014_area_ad_pages.sql');
+    for (const [citySlug, slug] of [['bengaluru', 'hoskote'], ['bengaluru', 'nelamangala'], ['bengaluru', 'electronic-city-jigani-bommasandra'], ['hosur', 'hosur']]) {
+      const identity = { citySlug, slug };
+      const areaSeed = JSON.parse(fs.readFileSync(path.join(backend, 'data/micromarket-ad-pages', slug + '.json'), 'utf8'));
+      const area = await db.micromarketAdPage.findUniqueOrThrow({ where: { citySlug_slug: identity } });
+      assert.deepEqual(area.draftContent, areaSeed);
+      assert.equal(area.publishedContent, null, slug + ' starts private');
+      const privateCopy = structuredClone(areaSeed); privateCopy.area.whereItIs = 'Private area revision.';
+      const areaActions = harness({ db: db.micromarketAdPage });
+      await assert.rejects(areaActions.save(undefined, form({ ...identity, expectedUpdatedAt: area.updatedAt.toISOString() }, privateCopy)), error => error.location?.endsWith('?saved=draft'));
+      migrate('20261014_area_ad_pages.sql');
+      const revised = await db.micromarketAdPage.findUniqueOrThrow({ where: { citySlug_slug: identity } });
+      assert.deepEqual(revised.draftContent, privateCopy);
+      assert.equal(revised.publishedContent, null);
+      if (citySlug === 'hosur') {
+        await assert.rejects(areaActions.save(undefined, form({ ...identity, expectedUpdatedAt: revised.updatedAt.toISOString(), intent: 'publish' }, areaSeed)), error => error.location?.endsWith('?saved=publish'));
+        const approvedArea = await db.micromarketAdPage.findUniqueOrThrow({ where: { citySlug_slug: identity } });
+        assert.deepEqual(approvedArea.publishedContent, areaSeed);
+      }
+      // Keep this isolated fixture repeatable; no deployed database is used.
+      await db.micromarketAdPage.update({ where: { citySlug_slug: identity }, data: { draftContent: areaSeed, publishedContent: Prisma.DbNull } });
+    }
+    await assert.rejects(db.micromarketAdPage.create({ data: { citySlug: 'hosur', slug: 'invalid-neighbor', name: 'Invalid', draftContent: seed } }), /constraint/);
+    await assert.rejects(db.micromarketAdPage.create({ data: { citySlug: 'delhi', slug: 'invalid-city', name: 'Invalid', draftContent: seed } }), /constraint/);
 
     const market = { citySlug: 'bengaluru', slug: 'cms-test-market', name: 'CMS Test Market', listings: 20 };
     const next = harness({ db: db.micromarketAdPage, inventory: [market] });

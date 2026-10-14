@@ -23,10 +23,24 @@ const cmsOrigin = `http://127.0.0.1:${cmsPort}`, siteOrigin = `http://127.0.0.1:
 const write = (file, value) => fs.writeFile(file, typeof value === 'string' ? value : JSON.stringify(value, null, 2));
 const rows = Array.from({ length: 63 }, (_, i) => ({ id: 1000 + i, city: i < 50 ? 'Bengaluru' : i < 58 ? 'Vijayawada' : 'Chhatrapati Sambhajinagar / Aurangabad',
   state: i < 50 ? 'Karnataka' : i < 58 ? 'Andhra Pradesh' : 'Maharashtra', visibility: true, address: `${i < 25 ? 'Peenya' : 'Hoskote'} preview warehouse ${i}`,
-  micromarket: i < 25 ? ['Peenya'] : [], warehouseType: i < 50 ? 'PEB' : 'BTS', totalSpaceSqft: i < 50 ? [12000] : [1000],
-  ratePerSqft: i < 50 ? '25' : '', clearHeightFt: i < 50 ? '30' : '', numberOfDocks: i < 50 ? '2' : '', flooringType: i < 50 ? 'VDF' : '',
+  micromarket: i < 25 ? ['Peenya'] : i < 50 ? ['Hoskote'] : [], warehouseType: i < 50 ? 'PEB' : 'BTS', totalSpaceSqft: i < 50 ? [12000] : [1000],
+  ratePerSqft: i < 50 ? (i % 10 === 0 ? '20' : '30') : '', clearHeightFt: i < 50 ? '30' : '', numberOfDocks: i < 50 ? '2' : '', flooringType: i < 50 ? 'VDF' : '',
   compliances: '', photos: [], photosWebp: [], images: [], otherSpecifications: '', warehouseData: { fireNocAvailable: false },
 }));
+for (const [group, city, state, tags] of [
+  ['Hosur', 'Hosur', 'Tamil Nadu', []],
+  ['Nelamangala', 'Bengaluru', 'Karnataka', ['Nelamangala', 'Budihal']],
+  ['Jigani', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Jigani']],
+  ['Bommasandra', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Bommasandra']],
+  ['Attibele', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Attibele']],
+  ['Bannerghatta', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Bannerghatta']],
+]) rows.push(...Array.from({length:12}, (_, i) => ({...rows[0], id: 2000 + rows.length + i,
+  city, state, micromarket: tags, address: `${group} private street ${i}`,
+  ratePerSqft: i === 0 ? '20' : '30', totalSpaceSqft: [[4000], [12000], [30000]][i % 3],
+  ...(group === 'Nelamangala' && i % 3 === 2 ? {
+    totalSpaceSqft: [200000], clearHeightFt: '40', numberOfDocks: null, warehouseData: { fireNocAvailable: true },
+  } : {}),
+})));
 const { default: prisma } = await import(path.join(root, 'WareOnGo-Website-Backend/models/prismaClient.js'));
 const originalRead = prisma.warehouse.findMany;
 const locationService = (await import(path.join(root, 'WareOnGo-Website-Backend/services/locationService.js'))).default;
@@ -48,7 +62,10 @@ async function addFreshInventory() {
 const { fixtures, editorial, loader } = await import(path.join(root, 'wareongo-cms/tests/helpers/agent-cms.mjs'));
 const ad = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/ad-pages/bangalore.json'), 'utf8'));
 const localAd = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/micromarket-ad-pages/peenya.json'), 'utf8'));
-const newLocalAd = JSON.parse(JSON.stringify(localAd).replaceAll('Peenya', 'Hoskote').replaceAll('peenya', 'hoskote'));
+const localAds = { 'ad-micromarket': localAd };
+for (const [kind, slug] of [['ad-new-market','hoskote'], ['ad-nelamangala','nelamangala'], ['ad-south','electronic-city-jigani-bommasandra'], ['ad-hosur','hosur']]) {
+  localAds[kind] = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/micromarket-ad-pages', slug + '.json'), 'utf8'));
+}
 const blog = { ...fixtures.blog.content, slug: 'preview-blog', title: 'Preview blog — title', seoTitle: 'Preview blog', status: 'PUBLISHED', related: ['preview-related'] };
 const related = { ...blog, slug: 'preview-related', title: 'Related article title', related: [] };
 const indexEntries = [blog, related].map((entry, i) => ({ id: i + 1, slug: entry.slug, title: entry.title, description: entry.description, updated: entry.dateModified, thumbnail: entry.thumbnail ?? null, sortOrder: i * 10 }));
@@ -83,7 +100,7 @@ const layout = path.join(cms, 'app/layout.tsx');
 await write(layout, (await fs.readFile(layout, 'utf8')).replace("import { Montserrat } from 'next/font/google';", "import localFont from 'next/font/local';").replace(/Montserrat\(\{[\s\S]*?\}\)/, "localFont({ src: '../public/fonts/montserrat.woff2', weight: '100 900', variable: '--font-montserrat', display: 'swap' })"));
 const fixtureDir = path.join(cms, 'app/(authed)/preview-check/[kind]');
 await fs.mkdir(fixtureDir, { recursive: true });
-await write(path.join(fixtureDir, 'data.json'), { ad, localAd, newLocalAd, blog, indexEntries, service, services, legal, pages, marketPage, locations, markets });
+await write(path.join(fixtureDir, 'data.json'), { ad, localAds, blog, indexEntries, service, services, legal, pages, marketPage, locations, markets });
 await write(path.join(fixtureDir, 'page.tsx'), `
 import AdPageForm from '@/components/AdPageForm';
 import MicromarketAdForm from '@/components/MicromarketAdForm';
@@ -99,7 +116,7 @@ export default async function Page({params}: {params: Promise<{kind:string}>}) {
  const item = kind === 'sparse' ? data.pages[1] : kind === 'slug' ? data.pages[2] : kind === 'state' ? data.pages[3] : kind === 'micromarket' ? data.marketPage : data.pages[0];
  return <div className="mx-auto max-w-5xl p-6">
  {kind === 'ad' ? <AdPageForm {...common} content={data.ad} previewUrl="${siteOrigin}/preview/ad-pages/bangalore"/>
- : kind === 'ad-micromarket' || kind === 'ad-new-market' ? <MicromarketAdForm {...common} content={kind === 'ad-new-market' ? data.newLocalAd : data.localAd} previewUrl="${siteOrigin}/preview/ad-pages/micromarket"/>
+ : data.localAds[kind] ? <MicromarketAdForm {...common} content={data.localAds[kind]} previewUrl="${siteOrigin}/preview/ad-pages/micromarket"/>
  : kind === 'blog' ? <BlogForm {...common} id={1} blog={data.blog} indexEntries={data.indexEntries} relatedOptions={[{slug:'preview-related',title:'Related article title'}]}/>
  : kind.startsWith('service') ? <ServiceForm {...common} content={data.services.find((s:any)=>s.slug===kind.slice(8))??data.service}/>
  : kind === 'legal' || kind === 'terms' ? <LegalForm {...common} content={{...data.legal,slug:kind === 'terms' ? 'terms-of-service' : 'privacy-policy'}}/>
@@ -114,10 +131,10 @@ await generated('servicePages.generated.ts', 'servicePages', services);
 await generated('blogSummaries.generated.ts', 'blogSummaries', [blog, related].map(({slug,title,description,dateModified})=>({slug,title,description,updated:dateModified})));
 await generated('legalPages.generated.ts', 'legalPages', [legal, {...legal,slug:'terms-of-service'}]);
 await generated('adPages.generated.ts', 'adPages', [ad]);
-await generated('micromarketAdPages.generated.ts', 'micromarketAdPages', [localAd, newLocalAd]);
-await write(path.join(site, 'src/data/micromarketAdPaths.generated.ts'), 'export const micromarketAdSlugs: readonly string[] = ["peenya", "hoskote"];\n');
+await generated('micromarketAdPages.generated.ts', 'micromarketAdPages', Object.values(localAds));
+await write(path.join(site, 'src/data/micromarketAdPaths.generated.ts'), `export const micromarketAdPaths: readonly string[] = ${JSON.stringify(Object.values(localAds).map(page => page.citySlug === 'hosur' ? '/hosur' : '/bangalore/' + page.slug))};\n`);
 await write(path.join(site, 'src/data/warehouse-build.generated.json'), { maxId: buildMaxId });
-const allowed = ['bangalore', 'bangalore/:micromarket', 'preview/ad-pages/micromarket', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
+const allowed = ['hosur', 'bangalore', 'bangalore/:micromarket', 'preview/ad-pages/micromarket', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
 const routesFile = path.join(site, 'src/routes.tsx');
 const routes = (await fs.readFile(routesFile, 'utf8')).replace('export const routes: RouteRecord[] =', 'const allRoutes: RouteRecord[] =');
 await write(routesFile, routes + `\nexport const routes: RouteRecord[] = allRoutes.map(root => ({ ...root, children: root.children?.map(wrapper => ({ ...wrapper, children: wrapper.children?.filter(route => ${JSON.stringify(allowed)}.includes(route.path ?? '')) })) }));\n`);
@@ -127,7 +144,11 @@ const api = http.createServer((request, response) => {
   response.setHeader('Content-Type', 'application/json'); response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('X-Wareongo-Cache', 'bypass'); response.setHeader('X-Wareongo-Listing-Filters', '3');
   const url = new URL(request.url, 'http://localhost'), { pathname } = url;
-  const inventory = rows.filter(row => !url.searchParams.has('maxId') || row.id <= Number(url.searchParams.get('maxId')));
+  const key = value => value?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const inventory = rows.filter(row => (!url.searchParams.has('maxId') || row.id <= Number(url.searchParams.get('maxId')))
+    && (!url.searchParams.has('city') || key(row.city) === key(url.searchParams.get('city')))
+    && (!url.searchParams.has('state') || key(row.state) === key(url.searchParams.get('state')))
+    && (!url.searchParams.has('micromarket') || row.micromarket.some(tag => key(tag) === key(url.searchParams.get('micromarket')))));
   const page = Number(url.searchParams.get('page') || 1), size = Number(url.searchParams.get('pageSize') || 500);
   const body = pathname === '/locations' ? locations : pathname === '/micromarkets' ? markets : pathname === '/warehouses'
     ? { data: inventory.slice((page - 1) * size, page * size), pagination: { currentPage: page, totalPages: Math.ceil(inventory.length / size), totalItems: inventory.length, itemsPerPage: size } } : { data: [] };
@@ -191,6 +212,7 @@ const cases = [
   ['blog', '/blogs/preview-blog'], ['service', '/services/warehouse-search'], ['service-build-to-suit','/services/build-to-suit'], ['service-lease-negotiation','/services/lease-negotiation'], ['service-compliance-procurement','/services/compliance-procurement'], ['legal', '/privacy-policy'],
   ['terms', '/terms-of-service'], ['ad', '/bangalore'],
   ['ad-micromarket', '/bangalore/peenya'], ['ad-new-market', '/bangalore/hoskote'],
+  ['ad-nelamangala', '/bangalore/nelamangala'], ['ad-south', '/bangalore/electronic-city-jigani-bommasandra'], ['ad-hosur', '/hosur'],
 ];
 const selectedCase = process.argv.find(value => value.startsWith('--case='))?.slice(7);
 const selectedCases = selectedCase?.split(',');
@@ -215,6 +237,37 @@ async function metrics(page) {
       return [{selector,x:r.x,y:r.y+scrollY,width:r.width,height:r.height,font:css.fontFamily,size:css.fontSize}];
     });
   });
+}
+async function assertAdLayout(page, label) {
+  await settled(page);
+  const issues = await page.evaluate(() => {
+    const issues = [];
+    const box = el => el.getBoundingClientRect();
+    const lineCount = el => Math.round(el.clientHeight / parseFloat(getComputedStyle(el).lineHeight));
+    for (const card of document.querySelectorAll('.bangalore-landing__featured .warehouse-card')) {
+      const values = [...card.querySelectorAll('.warehouse-card__metric dd strong')].map(box);
+      if (values.length === 2 && Math.abs(values[0].top - values[1].top) > 1) issues.push('Card figures have different baselines');
+      for (const metric of card.querySelectorAll('.warehouse-card__metric')) {
+        if (lineCount(metric.querySelector('dt')) !== 1) issues.push('Metric label wraps');
+        if (metric.scrollWidth > metric.clientWidth + 1) issues.push('Metric overflows');
+      }
+      for (const spec of card.querySelectorAll('.warehouse-card__spec')) {
+        if (!spec.checkVisibility()) continue;
+        const bounds = box(spec), row = box(spec.parentElement);
+        if (bounds.right > row.right + 1 || bounds.left < row.left - 1) issues.push('Specification overflows');
+      }
+    }
+    if (innerWidth >= 1024) {
+      const fields = [...document.querySelectorAll('#bangalore-enquiry .bangalore-landing__form-field')].map(box);
+      for (let i = 1; i < fields.length; i++) if (Math.abs(fields[i].top - fields[i - 1].bottom - 12) > 1) issues.push('Form field spacing stretched');
+    }
+    const market = document.querySelector('.bangalore-landing').dataset.micromarket;
+    if (market && innerWidth < 768 && lineCount(document.querySelector('#bangalore-locations-title')) !== 1) issues.push('Mobile map heading wraps');
+    if (market && innerWidth >= 1280 && lineCount(document.querySelector('#bangalore-title')) > (market === 'electronic-city-jigani-bommasandra' ? 3 : 2)) issues.push('Desktop title is too tall');
+    if (document.documentElement.scrollWidth > innerWidth) issues.push('Page overflows');
+    return issues;
+  });
+  assert.deepEqual(issues, [], label + ': ad layout');
 }
 try {
   for (const [kind, routePath] of cases.filter(([kind]) => !selectedCases || selectedCases.includes(kind))) {
@@ -253,6 +306,10 @@ try {
       await publicPage.goto(state.siteOrigin+routePath);
       await expect(publicPage.locator('h1')).toBeVisible();
       await Promise.all([settled(frame),settled(publicPage)]);
+      if (kind === 'ad' || localAds[kind]) {
+        await assertAdLayout(frame, `${kind}/${device}/preview`);
+        await assertAdLayout(publicPage, `${kind}/${device}/website`);
+      }
       const [preview, live] = await Promise.all([metrics(frame),metrics(publicPage)]);
       assert.deepEqual(preview.map(m=>m.selector),live.map(m=>m.selector),`${kind} sections`);
       for (let i=0;i<preview.length;i++) {
@@ -272,6 +329,17 @@ try {
         await expect(frame.locator('#specification tbody tr')).toHaveCount(0);
       }
       if (kind === 'blog') await expect(frame.locator('#blog-faq')).toHaveCount(1);
+      if (localAds[kind]) {
+        await expect(frame.locator('footer')).toContainText('Privacy Policy');
+        await expect(frame.locator('footer')).not.toContainText('Find the Right Warehouse');
+        await expect(frame.locator('.bangalore-landing__area-fit')).toContainText('Where It Is');
+        await expect(frame.locator('.bangalore-landing__area-fit')).toContainText('Who It Suits');
+        await expect(frame.locator('.warehouse-card').first()).not.toContainText('private street');
+        if (kind === 'ad-hosur') {
+          await expect(frame.locator('.warehouse-card').first()).toContainText('Tamil Nadu');
+          await expect(frame.locator('.bangalore-landing__map-credit')).toContainText('OpenStreetMap');
+        }
+      }
       const link = frame.locator('a[href="/request-warehouse"]').first();
       if (await link.count() && await link.isVisible()) { await link.click(); assert.ok(frame.url().includes('/preview/')); }
       await cms.locator('section[aria-label="Website preview"]').screenshot({path:`${state.work}/${kind}-${device.toLowerCase()}.png`});
@@ -290,16 +358,26 @@ try {
       results.push(`${kind}/${device}: layout, fonts, content and viewport matched`);
       console.log('PASS '+results.at(-1));
     }
-    if (kind === 'ad-micromarket' || kind === 'ad-new-market') {
+    if (kind === 'ad' || localAds[kind]) {
+      for (const width of [320, 1024, 1280]) {
+        await publicPage.setViewportSize({width, height:900});
+        await assertAdLayout(publicPage, `${kind}/${width}`);
+      }
+      results.push(`${kind}: narrow mobile and desktop card, heading and form regressions passed`);
+    }
+    if (localAds[kind]) {
       await cms.getByRole('button', {name:'Edit local copy',exact:true}).click();
       const inputIds = await cms.locator('input:not([type=hidden]), textarea').evaluateAll(inputs => inputs.map(input => input.id));
       assert.ok(inputIds.every(id => /^(copy-|area-|rent-|faq-|map-byline-)/.test(id)), 'Only local copy fields are editable');
       await cms.locator('#area-whereItIs').fill('Private local copy with {listings} spaces and **local emphasis**.');
       await cms.locator('#rent-intro').fill('Private rents {rentRange}.');
-      const marketSlug = kind === 'ad-micromarket' ? 'peenya' : 'hoskote';
+      await cms.locator('summary').filter({hasText:'Section headings'}).click();
+      await cms.locator('#copy-locationsHeading').fill('Private local map title');
+      const marketSlug = localAds[kind].mapBylines[0].slug;
       await cms.locator('#map-byline-' + marketSlug).fill('Private local map byline');
       await cms.getByRole('button', {name:'Preview',exact:true}).click();
       const frame = await frameReady();
+      await expect(frame.locator('#bangalore-locations-title')).toHaveText('Private local map title');
       await expect(frame.locator('.bangalore-landing__area-fit')).toContainText('Private local copy');
       await expect(frame.locator('.bangalore-landing__area-fit')).not.toContainText('{listings}');
       await expect(frame.locator('.bangalore-landing__area-fit strong').filter({hasText:'local emphasis'})).toHaveText('local emphasis');

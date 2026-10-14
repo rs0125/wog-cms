@@ -56,7 +56,7 @@ export default function MicromarketAdForm({ content, expectedUpdatedAt, state, a
     <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />
     <input type="hidden" name="content" value={serialized} />
     <p className="mb-3 text-sm leading-relaxed text-wareongo-slate">Edit only {content.name}’s local headings, area guide, rent explanation and FAQs. The Bangalore template supplies the shared sections, forms, footer and desktop/mobile layout. Warehouse counts and rent ranges come from current inventory.</p>
-    <p className="cms-hint mb-5">Use {'{listings}'} and {'{rentRange}'} for live figures and **text** for emphasis. The main heading automatically ends with “in {content.name}”. Complete every field before saving for the next build.</p>
+    <p className="cms-hint mb-5">Use {'{listings}'} and {'{rentRange}'} for live figures and **text** for emphasis. The main heading automatically ends with “in {content.name}”. Complete every field before saving for the next build; map-card bylines are optional.</p>
     <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Micromarket ad editor">
       {(['edit', 'preview'] as const).map(value => <button key={value} type="button" aria-pressed={tab === value} className={tab === value ? 'cms-btn-primary' : 'cms-btn'} onClick={() => setTab(value)}>{value === 'edit' ? 'Edit local copy' : 'Preview'}</button>)}
     </div>

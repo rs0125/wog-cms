@@ -1,6 +1,7 @@
 import Link from '@/components/CmsLink';
 import { getMicromarketAdSummaries } from '@/lib/content-summaries';
 import { micromarketAdEditorPath } from '@/lib/micromarket-ad-schema';
+import { micromarketAdPath } from '@/lib/micromarket-ad-content.mjs';
 import DeployButton from '@/components/DeployButton';
 import { isDeployConfigured } from '@/lib/deploy';
 
@@ -16,7 +17,7 @@ export default async function MicromarketAdPages() {
     </div>
     <div className="space-y-4">{rows.map(row => <article key={row.citySlug + '/' + row.slug} className="cms-card">
       <h2 className="ui-panel-title text-ui-ink"><Link href={micromarketAdEditorPath(row.citySlug, row.slug)} className="hover:underline">{row.name}</Link></h2>
-      <p className="mt-1 text-sm text-wareongo-slate">/bangalore/{row.slug}</p>
+      <p className="mt-1 text-sm text-wareongo-slate">{micromarketAdPath(row.slug, row.citySlug)}</p>
       <p className="mt-3 text-sm">{!row.published ? 'Private draft · Not included in website builds' : row.staged ? 'Ready for next build' : 'Included in last build request'}{row.published && row.hasDraft && <span className="ml-3 text-wareongo-sienna">Draft changes</span>}</p>
       <Link href={micromarketAdEditorPath(row.citySlug, row.slug)} className="cms-btn mt-4">Edit local copy</Link>
     </article>)}</div>
