@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { unstable_rethrow } from 'next/navigation';
-import { AD_COPY_GROUPS, type AdPageContent, type AdPageImageKey } from '@/lib/ad-page-schema';
+import { AD_COPY_GROUPS, AD_RETIRED_IMAGES, type AdPageContent, type AdPageImageKey } from '@/lib/ad-page-schema';
 import { MAX_AD_PAGE_BYTES } from '@/lib/ad-page-content.mjs';
 import type { SaveResult } from '@/lib/action-results';
 import SingleImagePicker from './SingleImagePicker';
@@ -52,8 +52,8 @@ export default function AdPageForm({ content, expectedUpdatedAt, state, action, 
     setEdited(true);
   }
   const changeAreaGroup = (index: number, group: AdPageContent['areaGroups'][number]) => change('areaGroups', fields.areaGroups.map((value, i) => i === index ? group : value));
-  const imageSlots = (group: string) => (Object.keys(fields.images) as AdPageImageKey[]).filter(key =>
-    group === 'featured' ? key.startsWith('featured-') : group === 'available' ? key.startsWith('warehouse-') : group === 'locations' ? key.startsWith('micromarket-') : group === 'services' ? key === 'services' : false,
+  const imageSlots = (group: string) => (Object.keys(fields.images) as AdPageImageKey[]).filter(key => !AD_RETIRED_IMAGES.includes(key) && (
+    group === 'featured' ? key.startsWith('featured-') : group === 'available' ? key.startsWith('warehouse-') : group === 'locations' ? key.startsWith('micromarket-') : group === 'services' ? key === 'services' : false),
   );
 
   return <form action={formAction} onSubmit={event => {
