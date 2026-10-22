@@ -19,7 +19,7 @@ export async function createMicromarketAdPage(_previous: SaveResult | undefined,
   if (!validKey(citySlug, slug)) return { ok: false, error: 'Choose a supported area or city.' };
   try {
     const { data } = await fetchMicromarkets();
-    const cities = citySlug === 'hosur' ? (await fetchLocations()).cities : [];
+    const cities = citySlug !== 'bengaluru' ? (await fetchLocations()).cities : [];
     const choices: { citySlug: string; slug: string; name: string }[] = micromarketAdChoices(data, cities);
     const market = choices.find(item => item.citySlug === citySlug && item.slug === slug);
     if (!market) return { ok: false, error: 'This area has no current inventory. Choose another area or city.' };
@@ -60,6 +60,9 @@ export async function saveMicromarketAdPage(_previous: SaveResult | undefined, f
     if (!identity || content.name !== identity.name) return { ok: false, error: 'The micromarket identity cannot be changed in the editor. Reload this page.' };
     const saved = readMicromarketAdPage(identity.draftContent, true);
     if (!sameContent(content.mapBylines.map(item => item.slug), saved.mapBylines.map(item => item.slug))) return { ok: false, error: 'Map locations come from the template. Edit only their bylines.' };
+    // The template also fixes the page's shape: one or two area cards, and a rent description or titled sections.
+    const shape = (page: typeof content) => ['whoItSuits' in page.area, 'description' in page.rentGuide, 'sections' in page.rentGuide];
+    if (!sameContent(shape(content), shape(saved))) return { ok: false, error: 'This page’s sections come from the template. Edit only their text.' };
     const { count } = await prisma.micromarketAdPage.updateMany({
       where: { citySlug, slug, updatedAt: new Date(expected) },
       data: { draftContent: content, ...(intent === 'publish' ? { publishedContent: content } : {}) },

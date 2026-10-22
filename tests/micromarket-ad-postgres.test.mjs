@@ -18,6 +18,8 @@ test('backend migration and CMS actions work together in disposable PostgreSQL',
   const db = new PrismaClient({ datasources: { db: { url } } });
   try {
     migrate();
+    // The 14 October area migration restores its Hosur-only constraint, so no Hyderabad row may survive an earlier run.
+    await db.micromarketAdPage.deleteMany({ where: { OR: [{ citySlug: 'hyderabad' }, { citySlug: 'bengaluru', slug: 'sheds' }] } });
     const key = { citySlug: 'bengaluru', slug: 'peenya' };
     await db.micromarketAdPage.deleteMany({ where: key });
     migrate();
@@ -58,6 +60,26 @@ test('backend migration and CMS actions work together in disposable PostgreSQL',
       // Keep this isolated fixture repeatable; no deployed database is used.
       await db.micromarketAdPage.update({ where: { citySlug_slug: identity }, data: { draftContent: areaSeed, publishedContent: Prisma.DbNull } });
     }
+    migrate('20261022_hyderabad_sheds_ad_pages.sql');
+    for (const [citySlug, slug] of [['hyderabad', 'hyderabad'], ['bengaluru', 'sheds']]) {
+      const identity = { citySlug, slug };
+      const pageSeed = JSON.parse(fs.readFileSync(path.join(backend, 'data/micromarket-ad-pages', slug + '.json'), 'utf8'));
+      const page = await db.micromarketAdPage.findUniqueOrThrow({ where: { citySlug_slug: identity } });
+      assert.deepEqual(page.draftContent, pageSeed);
+      assert.equal(page.publishedContent, null, slug + ' starts private');
+      const actions = harness({ db: db.micromarketAdPage });
+      const privateCopy = structuredClone(pageSeed); privateCopy.area.whereItIs = 'Private revision.';
+      await assert.rejects(actions.save(undefined, form({ ...identity, expectedUpdatedAt: page.updatedAt.toISOString() }, privateCopy)), error => error.location?.endsWith('?saved=draft'));
+      migrate('20261022_hyderabad_sheds_ad_pages.sql'); // A repeated seed keeps the private revision.
+      const revised = await db.micromarketAdPage.findUniqueOrThrow({ where: { citySlug_slug: identity } });
+      assert.deepEqual(revised.draftContent, privateCopy);
+      assert.equal(revised.publishedContent, null);
+      // The CMS action approves the single-card / sectioned shape as stored.
+      await assert.rejects(actions.save(undefined, form({ ...identity, expectedUpdatedAt: revised.updatedAt.toISOString(), intent: 'publish' }, pageSeed)), error => error.location?.endsWith('?saved=publish'));
+      migrate('20261022_hyderabad_sheds_ad_pages.sql'); // A repeated seed keeps the approval.
+      assert.deepEqual((await db.micromarketAdPage.findUniqueOrThrow({ where: { citySlug_slug: identity } })).publishedContent, pageSeed);
+    }
+    await assert.rejects(db.micromarketAdPage.create({ data: { citySlug: 'hyderabad', slug: 'kompally', name: 'Invalid', draftContent: seed } }), /constraint/);
     await assert.rejects(db.micromarketAdPage.create({ data: { citySlug: 'hosur', slug: 'invalid-neighbor', name: 'Invalid', draftContent: seed } }), /constraint/);
     await assert.rejects(db.micromarketAdPage.create({ data: { citySlug: 'delhi', slug: 'invalid-city', name: 'Invalid', draftContent: seed } }), /constraint/);
 

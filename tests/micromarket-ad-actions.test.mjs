@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseMicromarketAdPage, MICROMARKET_AD_SCHEMA, createMicromarketAdTemplate, micromarketAdPath, SOUTH_AD_SLUG } from '../lib/micromarket-ad-content.mjs';
+import { parseMicromarketAdPage, MICROMARKET_AD_SCHEMA, createMicromarketAdTemplate, micromarketAdPath, micromarketAdChoices, adPagePlace, SOUTH_AD_SLUG, SHEDS_AD_SLUG } from '../lib/micromarket-ad-content.mjs';
 
 import { harness, form } from './helpers/micromarket-ad.mjs';
 const root = path.resolve(import.meta.dirname, '..');
@@ -104,5 +104,55 @@ test('all handoff seeds validate without shared overrides and preserve optional 
     assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, '../WareOnGo-Website-Backend/data/micromarket-ad-pages', file), 'utf8')), page);
     assert.equal(page.faqs.some(faq => /WareOnGo Charge/.test(faq.q)), false);
     assert.match(page.copy.metaDescription, /\{listings\}/);
+  }
+});
+
+test('Hyderabad and Bangalore industrial sheds create private drafts from verified inventory', async () => {
+  for (const [citySlug, slug, options, expectedName] of [
+    ['hyderabad', 'hyderabad', { cities: [{ slug: 'hyderabad', name: 'Hyderabad', listings: 184 }] }, 'Hyderabad'],
+    ['bengaluru', SHEDS_AD_SLUG, {}, 'Industrial Sheds'],
+  ]) {
+    const h = harness(options);
+    await assert.rejects(h.create(undefined, form({ citySlug, slug })), error => error.location === `/ad-pages/micromarkets/${citySlug}/${slug}`);
+    assert.equal(h.writes[0].create.name, expectedName);
+    assert.equal(h.writes[0].create.publishedContent, undefined);
+    const absent = harness({ inventory: [], cities: [] });
+    assert.equal((await absent.create(undefined, form({ citySlug, slug }))).ok, false);
+    assert.equal(absent.writes.length, 0);
+  }
+  assert.equal(micromarketAdPath('hyderabad', 'hyderabad'), '/hyderabad');
+  assert.equal(micromarketAdPath(SHEDS_AD_SLUG), '/bangalore/sheds');
+  assert.equal((await harness({ cities: [{ slug: 'hyderabad', listings: 184 }] }).create(undefined, form({ citySlug: 'hyderabad', slug: 'kompally' }))).ok, false);
+  assert.deepEqual(micromarketAdChoices([], [{ slug: 'hyderabad', listings: 0 }]), []);
+});
+
+test('the Hyderabad template has one area card and titled rent sections; the shed template names Bangalore', () => {
+  const city = createMicromarketAdTemplate({ citySlug: 'hyderabad', slug: 'hyderabad', name: 'Hyderabad' });
+  assert.equal('whoItSuits' in city.area, false);
+  assert.equal('description' in city.rentGuide, false);
+  assert.deepEqual(city.rentGuide.sections.map(section => section.title), ['Where the Stock Sits', 'What Drives the Rent', 'What to Check']);
+  assert.match(city.copy.metaDescription, /Hyderabad, Telangana\./);
+  assert.throws(() => parseMicromarketAdPage(city), /add text/);
+  city.area.whereItIs = 'Belts.'; city.rentGuide.intro = 'Rents {rentRange}.';
+  city.rentGuide.sections.forEach(section => { section.body = 'Local detail.'; });
+  city.faqs.forEach(faq => { faq.a = 'Local answer.'; });
+  assert.deepEqual(parseMicromarketAdPage(city), city);
+  delete city.rentGuide.sections;
+  assert.throws(() => parseMicromarketAdPage(city), /description or titled sections/);
+  const sheds = createMicromarketAdTemplate({ citySlug: 'bengaluru', slug: SHEDS_AD_SLUG, name: 'Industrial Sheds' });
+  assert.equal(adPagePlace(sheds), 'Bangalore');
+  assert.equal(sheds.copy.availableHeading, 'Warehouses Available Now in Bangalore');
+  assert.deepEqual(sheds.mapBylines.map(item => item.slug), JSON.parse(fs.readFileSync(path.join(root, 'content/micromarket-ad-pages/sheds.json'), 'utf8')).mapBylines.map(item => item.slug));
+  assert.deepEqual(createMicromarketAdTemplate(city).mapBylines.map(item => item.slug), JSON.parse(fs.readFileSync(path.join(root, 'content/micromarket-ad-pages/hyderabad.json'), 'utf8')).mapBylines.map(item => item.slug));
+  assert.equal(MICROMARKET_AD_SCHEMA.properties.area.required.includes('whoItSuits'), false);
+});
+
+test('saving cannot change the page shape the template set', async () => {
+  for (const change of [p => { delete p.area.whoItSuits; }, p => { p.rentGuide.sections = [{ title: 'Rents', body: 'Local detail.' }]; },
+    p => { delete p.rentGuide.description; p.rentGuide.sections = [{ title: 'Rents', body: 'Local detail.' }]; }]) {
+    const page = structuredClone(content); change(page); const h = harness();
+    assert.deepEqual(parseMicromarketAdPage(page), page, 'the shape itself is valid content');
+    assert.match((await h.save(undefined, form({ intent: 'publish' }, page))).error, /sections come from the template/);
+    assert.equal(h.writes.length, 0);
   }
 });

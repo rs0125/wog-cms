@@ -27,15 +27,20 @@ const rows = Array.from({ length: 63 }, (_, i) => ({ id: 1000 + i, city: i < 50 
   ratePerSqft: i < 50 ? (i % 10 === 0 ? '20' : '30') : '', clearHeightFt: i < 50 ? '30' : '', numberOfDocks: i < 50 ? '2' : '', flooringType: i < 50 ? 'VDF' : '',
   compliances: '', photos: [], photosWebp: [], images: [], otherSpecifications: '', warehouseData: { fireNocAvailable: false },
 }));
-for (const [group, city, state, tags] of [
+for (const [group, city, state, tags, warehouseType = 'PEB'] of [
   ['Hosur', 'Hosur', 'Tamil Nadu', []],
+  ['Kompally', 'Hyderabad', 'Telangana', ['Kompally', 'Devaryamjal']],
+  ['Medchal', 'Hyderabad', 'Telangana', ['Medchal']],
+  ['Shamshabad', 'Hyderabad', 'Telangana', ['Shamshabad']],
+  ['Budigere', 'Bengaluru', 'Karnataka', ['Budigere', 'Bidrahalli'], 'Shed'],
+  ['Yelahanka', 'Bengaluru', 'Karnataka', ['Jakkur', 'Yelahanka'], 'Shed'],
   ['Nelamangala', 'Bengaluru', 'Karnataka', ['Nelamangala', 'Budihal']],
   ['Jigani', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Jigani']],
   ['Bommasandra', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Bommasandra']],
   ['Attibele', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Attibele']],
   ['Bannerghatta', 'Bengaluru', 'Karnataka', ['Hosur Road', 'Bannerghatta']],
 ]) rows.push(...Array.from({length:12}, (_, i) => ({...rows[0], id: 2000 + rows.length + i,
-  city, state, micromarket: tags, address: `${group} private street ${i}`,
+  city, state, micromarket: tags, address: `${group} private street ${i}`, warehouseType,
   ratePerSqft: i === 0 ? '20' : '30', totalSpaceSqft: [[4000], [12000], [30000]][i % 3],
   ...(group === 'Nelamangala' && i % 3 === 2 ? {
     totalSpaceSqft: [200000], clearHeightFt: '40', numberOfDocks: null, warehouseData: { fireNocAvailable: true },
@@ -63,7 +68,7 @@ const { fixtures, editorial, loader } = await import(path.join(root, 'wareongo-c
 const ad = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/ad-pages/bangalore.json'), 'utf8'));
 const localAd = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/micromarket-ad-pages/peenya.json'), 'utf8'));
 const localAds = { 'ad-micromarket': localAd };
-for (const [kind, slug] of [['ad-new-market','hoskote'], ['ad-nelamangala','nelamangala'], ['ad-south','electronic-city-jigani-bommasandra'], ['ad-hosur','hosur']]) {
+for (const [kind, slug] of [['ad-new-market','hoskote'], ['ad-nelamangala','nelamangala'], ['ad-south','electronic-city-jigani-bommasandra'], ['ad-hosur','hosur'], ['ad-hyderabad','hyderabad'], ['ad-sheds','sheds']]) {
   localAds[kind] = JSON.parse(await fs.readFile(path.join(root, 'wareongo-cms/content/micromarket-ad-pages', slug + '.json'), 'utf8'));
 }
 const blog = { ...fixtures.blog.content, slug: 'preview-blog', title: 'Preview blog — title', seoTitle: 'Preview blog', status: 'PUBLISHED', related: ['preview-related'] };
@@ -132,9 +137,9 @@ await generated('blogSummaries.generated.ts', 'blogSummaries', [blog, related].m
 await generated('legalPages.generated.ts', 'legalPages', [legal, {...legal,slug:'terms-of-service'}]);
 await generated('adPages.generated.ts', 'adPages', [ad]);
 await generated('micromarketAdPages.generated.ts', 'micromarketAdPages', Object.values(localAds));
-await write(path.join(site, 'src/data/micromarketAdPaths.generated.ts'), `export const micromarketAdPaths: readonly string[] = ${JSON.stringify(Object.values(localAds).map(page => page.citySlug === 'hosur' ? '/hosur' : '/bangalore/' + page.slug))};\n`);
+await write(path.join(site, 'src/data/micromarketAdPaths.generated.ts'), `export const micromarketAdPaths: readonly string[] = ${JSON.stringify(Object.values(localAds).map(page => ['hosur', 'hyderabad'].includes(page.citySlug) ? '/' + page.citySlug : '/bangalore/' + page.slug))};\n`);
 await write(path.join(site, 'src/data/warehouse-build.generated.json'), { maxId: buildMaxId });
-const allowed = ['hosur', 'bangalore', 'bangalore/:micromarket', 'preview/ad-pages/micromarket', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
+const allowed = ['hosur', 'hyderabad', 'bangalore', 'bangalore/:micromarket', 'preview/ad-pages/micromarket', 'preview/ad-pages/bangalore', 'preview/cms', 'blogs', 'blogs/:slug', 'services/:slug', 'privacy-policy', 'terms-of-service', 'overview/:state', 'overview/:state/:city', 'overview/:state/:city/:micromarket'];
 const routesFile = path.join(site, 'src/routes.tsx');
 const routes = (await fs.readFile(routesFile, 'utf8')).replace('export const routes: RouteRecord[] =', 'const allRoutes: RouteRecord[] =');
 await write(routesFile, routes + `\nexport const routes: RouteRecord[] = allRoutes.map(root => ({ ...root, children: root.children?.map(wrapper => ({ ...wrapper, children: wrapper.children?.filter(route => ${JSON.stringify(allowed)}.includes(route.path ?? '')) })) }));\n`);
@@ -213,6 +218,7 @@ const cases = [
   ['terms', '/terms-of-service'], ['ad', '/bangalore'],
   ['ad-micromarket', '/bangalore/peenya'], ['ad-new-market', '/bangalore/hoskote'],
   ['ad-nelamangala', '/bangalore/nelamangala'], ['ad-south', '/bangalore/electronic-city-jigani-bommasandra'], ['ad-hosur', '/hosur'],
+  ['ad-hyderabad', '/hyderabad'], ['ad-sheds', '/bangalore/sheds'],
 ];
 const selectedCase = process.argv.find(value => value.startsWith('--case='))?.slice(7);
 const selectedCases = selectedCase?.split(',');
@@ -238,9 +244,12 @@ async function metrics(page) {
     });
   });
 }
-async function assertAdLayout(page, label) {
+// The standard local map heading has a one-line phone label; custom CMS headings show as authored.
+const { adPagePlace } = await import(path.join(root, 'wareongo-cms/lib/micromarket-ad-content.mjs'));
+const standardMapHeading = page => page.copy.locationsHeading === 'Explore Spaces in & Around ' + adPagePlace(page).replace(' and ', ' & ');
+async function assertAdLayout(page, label, standardHeading = false) {
   await settled(page);
-  const issues = await page.evaluate(() => {
+  const issues = await page.evaluate(standardHeading => {
     const issues = [];
     const box = el => el.getBoundingClientRect();
     const lineCount = el => Math.round(el.clientHeight / parseFloat(getComputedStyle(el).lineHeight));
@@ -262,11 +271,13 @@ async function assertAdLayout(page, label) {
       for (let i = 1; i < fields.length; i++) if (Math.abs(fields[i].top - fields[i - 1].bottom - 12) > 1) issues.push('Form field spacing stretched');
     }
     const market = document.querySelector('.bangalore-landing').dataset.micromarket;
-    if (market && innerWidth < 768 && lineCount(document.querySelector('#bangalore-locations-title')) !== 1) issues.push('Mobile map heading wraps');
+    const mapTitle = document.querySelector('#bangalore-locations-title');
+    if (market && standardHeading && !mapTitle.querySelector('.bangalore-landing__mobile-copy')) issues.push('Standard map heading has no phone label');
+    if (market && standardHeading && innerWidth < 768 && lineCount(mapTitle) !== 1) issues.push('Mobile map heading wraps');
     if (market && innerWidth >= 1280 && lineCount(document.querySelector('#bangalore-title')) > (market === 'electronic-city-jigani-bommasandra' ? 3 : 2)) issues.push('Desktop title is too tall');
     if (document.documentElement.scrollWidth > innerWidth) issues.push('Page overflows');
     return issues;
-  });
+  }, standardHeading);
   assert.deepEqual(issues, [], label + ': ad layout');
 }
 try {
@@ -307,8 +318,8 @@ try {
       await expect(publicPage.locator('h1')).toBeVisible();
       await Promise.all([settled(frame),settled(publicPage)]);
       if (kind === 'ad' || localAds[kind]) {
-        await assertAdLayout(frame, `${kind}/${device}/preview`);
-        await assertAdLayout(publicPage, `${kind}/${device}/website`);
+        await assertAdLayout(frame, `${kind}/${device}/preview`, localAds[kind] && standardMapHeading(localAds[kind]));
+        await assertAdLayout(publicPage, `${kind}/${device}/website`, localAds[kind] && standardMapHeading(localAds[kind]));
       }
       const [preview, live] = await Promise.all([metrics(frame),metrics(publicPage)]);
       assert.deepEqual(preview.map(m=>m.selector),live.map(m=>m.selector),`${kind} sections`);
@@ -332,8 +343,26 @@ try {
       if (localAds[kind]) {
         await expect(frame.locator('footer')).toContainText('Privacy Policy');
         await expect(frame.locator('footer')).not.toContainText('Find the Right Warehouse');
-        await expect(frame.locator('.bangalore-landing__area-fit')).toContainText('Where It Is');
-        await expect(frame.locator('.bangalore-landing__area-fit')).toContainText('Who It Suits');
+        if (kind === 'ad-hyderabad') {
+          // One untitled area card, and the rent guide's titled sections.
+          await expect(frame.locator('.bangalore-landing__area-card')).toHaveCount(1);
+          await expect(frame.locator('.bangalore-landing__area-fit h3')).toHaveCount(0);
+          await expect(frame.locator('.bangalore-landing__rent-guide-section h3')).toHaveText(['Where the Stock Sits', 'What Drives the Rent', 'What to Check']);
+          // A named area shows its city ("Shamshabad · Hyderabad"); every fixture row has an area tag.
+          const card = frame.locator('.warehouse-card').first();
+          await expect(card).toContainText('Hyderabad');
+          await expect(card).not.toContainText('Telangana');
+          await expect(frame.locator('#bangalore-title')).toContainText('in Hyderabad');
+        } else {
+          const [where, who] = kind === 'ad-sheds' ? ['Where They Are', 'Who They Suit'] : ['Where It Is', 'Who It Suits'];
+          await expect(frame.locator('.bangalore-landing__area-fit')).toContainText(where);
+          await expect(frame.locator('.bangalore-landing__area-fit')).toContainText(who);
+        }
+        if (kind === 'ad-sheds') {
+          await expect(frame.locator('#bangalore-title')).toContainText('in Bangalore');
+          // Fixture rows have no photos, so the shed check uses the listings grid rather than featured cards.
+          await expect(frame.locator('.warehouse-card').first()).toContainText('Shed');
+        }
         await expect(frame.locator('.warehouse-card').first()).not.toContainText('private street');
         if (kind === 'ad-hosur') {
           await expect(frame.locator('.warehouse-card').first()).toContainText('Tamil Nadu');
@@ -361,7 +390,7 @@ try {
     if (kind === 'ad' || localAds[kind]) {
       for (const width of [320, 1024, 1280]) {
         await publicPage.setViewportSize({width, height:900});
-        await assertAdLayout(publicPage, `${kind}/${width}`);
+        await assertAdLayout(publicPage, `${kind}/${width}`, localAds[kind] && standardMapHeading(localAds[kind]));
       }
       results.push(`${kind}: narrow mobile and desktop card, heading and form regressions passed`);
     }

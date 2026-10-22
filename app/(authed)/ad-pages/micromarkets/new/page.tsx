@@ -14,7 +14,7 @@ export default async function NewMicromarketAdPage() {
   return <main className="mx-auto max-w-3xl p-6 sm:p-10">
     <Link href="/ad-pages/micromarkets" className="text-sm text-wareongo-slate hover:underline">← Micromarket ad pages</Link>
     <h1 className="cms-title mb-3 mt-4">New micromarket ad page</h1>
-    <p className="mb-6 text-sm text-wareongo-slate">Choose a Bangalore micromarket, the Electronic City/Jigani/Bommasandra area, or Hosur. We’ll create a private draft using the same layout as Peenya, with fields for its local copy.</p>
+    <p className="mb-6 text-sm text-wareongo-slate">Choose a Bangalore micromarket, the Electronic City/Jigani/Bommasandra area, Bangalore industrial sheds, Hosur or Hyderabad. We’ll create a private draft in the shared ad-page layout, with fields for its local copy.</p>
     {!inventory ? <p role="alert" className="cms-card">The inventory could not load. Reload this page to try again.</p> : <NewMicromarketAdForm markets={markets} action={createMicromarketAdPage} />}
   </main>;
 }

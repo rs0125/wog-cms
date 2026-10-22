@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { unstable_rethrow } from 'next/navigation';
-import { MICROMARKET_AD_COPY_FIELDS, MAX_MICROMARKET_AD_BYTES, createMicromarketAdTemplate } from '@/lib/micromarket-ad-content.mjs';
+import { MICROMARKET_AD_COPY_FIELDS, MAX_MICROMARKET_AD_BYTES, SHEDS_AD_SLUG, adPagePlace, createMicromarketAdTemplate } from '@/lib/micromarket-ad-content.mjs';
 import type { MicromarketAdContent } from '@/lib/micromarket-ad-schema';
 import type { SaveResult } from '@/lib/action-results';
 import DeployButton from './DeployButton';
@@ -39,6 +39,11 @@ export default function MicromarketAdForm({ content, expectedUpdatedAt, state, a
   const change = <K extends keyof MicromarketAdContent>(key: K, value: MicromarketAdContent[K]) => {
     setFields(current => ({ ...current, [key]: value })); setEdited(true);
   };
+  // The template fixes which optional parts a page has: one area card, or titled rent sections.
+  const sections = fields.rentGuide.sections;
+  // Labels follow the website's card titles ("Where They Are" on the shed page).
+  const areaLabels = content.citySlug === 'bengaluru' && content.slug === SHEDS_AD_SLUG ? ['Where they are', 'Who they suit'] : ['Where it is', 'Who it suits'];
+  const changeSections = (value: NonNullable<typeof sections>) => change('rentGuide', { ...fields.rentGuide, sections: value });
   const copyFields = (section: string) => MICROMARKET_AD_COPY_FIELDS.filter(field => field.section === section).map(field => {
     const key = field.key as keyof MicromarketAdContent['copy'];
     return <Field key={key} id={'copy-' + key} label={field.label} value={fields.copy[key]} limit={field.limit} multiline={field.multiline}
@@ -55,8 +60,8 @@ export default function MicromarketAdForm({ content, expectedUpdatedAt, state, a
     <input type="hidden" name="slug" value={content.slug} />
     <input type="hidden" name="expectedUpdatedAt" value={expectedUpdatedAt} />
     <input type="hidden" name="content" value={serialized} />
-    <p className="mb-3 text-sm leading-relaxed text-wareongo-slate">Edit only {content.name}’s local headings, area guide, rent explanation and FAQs. The Bangalore template supplies the shared sections, forms, footer and desktop/mobile layout. Warehouse counts and rent ranges come from current inventory.</p>
-    <p className="cms-hint mb-5">Use {'{listings}'} and {'{rentRange}'} for live figures and **text** for emphasis. The main heading automatically ends with “in {content.name}”. Complete every field before saving for the next build; map-card bylines are optional.</p>
+    <p className="mb-3 text-sm leading-relaxed text-wareongo-slate">Edit only the local headings, area guide, rent explanation and FAQs for {content.name}. The Bangalore template supplies the shared sections, forms, footer and desktop/mobile layout. Warehouse counts and rent ranges come from current inventory.</p>
+    <p className="cms-hint mb-5">Use {'{listings}'} and {'{rentRange}'} for live figures and **text** for emphasis. The main heading automatically ends with “in {adPagePlace(content)}”. Complete every field before saving for the next build; map-card bylines are optional.</p>
     <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Micromarket ad editor">
       {(['edit', 'preview'] as const).map(value => <button key={value} type="button" aria-pressed={tab === value} className={tab === value ? 'cms-btn-primary' : 'cms-btn'} onClick={() => setTab(value)}>{value === 'edit' ? 'Edit local copy' : 'Preview'}</button>)}
     </div>
@@ -72,11 +77,18 @@ export default function MicromarketAdForm({ content, expectedUpdatedAt, state, a
       <section className="cms-card space-y-5"><h2 className="cms-title text-lg">Main heading</h2>{copyFields('hero')}</section>
       <details className="cms-card"><summary className="cms-title cursor-pointer text-lg">Section headings</summary><div className="mt-5 space-y-5">{copyFields('headings')}</div></details>
       <section className="cms-card space-y-5"><h2 className="cms-title text-lg">About {content.name}</h2>
-        {(['whereItIs', 'whoItSuits'] as const).map(key => <Field key={key} id={'area-' + key} label={key === 'whereItIs' ? 'Where it is' : 'Who it suits'} value={fields.area[key]} limit={5000} multiline onChange={value => change('area', { ...fields.area, [key]: value })} />)}
+        {(['whereItIs', 'whoItSuits'] as const).filter(key => key in fields.area).map(key => <Field key={key} id={'area-' + key} label={!('whoItSuits' in fields.area) ? 'Area guide' : areaLabels[key === 'whereItIs' ? 0 : 1]} value={fields.area[key] ?? ''} limit={5000} multiline onChange={value => change('area', { ...fields.area, [key]: value })} />)}
       </section>
       <section className="cms-card space-y-5"><h2 className="cms-title text-lg">Local rent guide</h2>
         <p className="cms-hint">The rent table is calculated automatically. Explain the local differences here.</p>
-        {(['intro', 'description'] as const).map(key => <Field key={key} id={'rent-' + key} label={key === 'intro' ? 'Introduction' : 'Rent guide explanation'} value={fields.rentGuide[key]} limit={key === 'intro' ? 2000 : 4000} multiline onChange={value => change('rentGuide', { ...fields.rentGuide, [key]: value })} />)}
+        {(['intro', 'description'] as const).filter(key => key in fields.rentGuide).map(key => <Field key={key} id={'rent-' + key} label={key === 'intro' ? 'Introduction' : 'Rent guide explanation'} value={fields.rentGuide[key] ?? ''} limit={key === 'intro' ? 2000 : 4000} multiline onChange={value => change('rentGuide', { ...fields.rentGuide, [key]: value })} />)}
+        {sections && <>
+          {sections.map((section, index) => <div key={index} className="cms-card space-y-3">
+            {(['title', 'body'] as const).map(key => <Field key={key} id={'rent-section-' + index + '-' + key} label={(key === 'title' ? 'Section heading ' : 'Section text ') + (index + 1)} value={section[key]} limit={key === 'title' ? 120 : 4000} multiline={key === 'body'} onChange={value => changeSections(sections.map((item, i) => i === index ? { ...item, [key]: value } : item))} />)}
+            <button type="button" className="cms-btn-danger" disabled={sections.length <= 1} onClick={() => changeSections(sections.filter((_, i) => i !== index))}>Remove section</button>
+          </div>)}
+          <button type="button" className="cms-btn" disabled={sections.length >= 6} onClick={() => changeSections([...sections, { title: '', body: '' }])}>+ Rent guide section</button>
+        </>}
       </section>
       <section className="cms-card space-y-5"><h2 className="cms-title text-lg">Micromarket card bylines</h2>
         <p className="cms-hint">Short descriptions below the location names on desktop and mobile map cards.</p>
